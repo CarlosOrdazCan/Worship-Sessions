@@ -1,0 +1,719 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel General | CAN ALABANZA</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .dashboard-grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); 
+            gap: 24px; 
+            margin-top: 20px; 
+        }
+
+        .module-card { 
+            background: var(--bg-glass); 
+            backdrop-filter: blur(20px); 
+            -webkit-backdrop-filter: blur(20px); 
+            border: 1px solid var(--border-color); 
+            border-radius: var(--radius-pco); 
+            padding: 32px 28px; 
+            display: flex; 
+            flex-direction: column; 
+            justify-content: space-between; 
+            cursor: pointer; 
+            transition: var(--transition); 
+            box-shadow: var(--shadow-glass); 
+            position: relative; 
+            overflow: hidden; 
+        }
+
+        .module-card:hover { 
+            transform: translateY(-6px); 
+            border-color: var(--border-red); 
+            box-shadow: 
+                0 20px 40px rgba(255, 42, 75, 0.08), 
+                var(--shadow-glass); 
+        }
+
+        .module-icon { 
+            font-size: 38px; 
+            margin-bottom: 20px; 
+            display: inline-block; 
+            transition: var(--transition); 
+        }
+
+        .module-card:hover .module-icon { 
+            transform: scale(1.1); 
+        }
+
+        .module-title { 
+            font-size: 20px; 
+            font-family: var(--font-title); 
+            font-weight: 800; 
+            color: var(--text-main); 
+            margin-bottom: 8px; 
+            letter-spacing: -0.5px; 
+        }
+
+        .module-desc { 
+            font-size: 13px; 
+            color: var(--text-muted); 
+            line-height: 1.5; 
+            margin: 0; 
+        }
+
+        #welcome-overlay {
+            position: fixed; 
+            top: 0; 
+            left: 0; 
+            width: 100vw; 
+            height: 100vh; 
+            background: #040407; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            z-index: 9999; 
+            transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.8s;
+        }
+
+        #w-frame {
+            border: 1px solid var(--border-color);
+            background: var(--bg-glass-heavy);
+            padding: 40px 60px;
+            border-radius: var(--radius-pco);
+            text-align: center;
+            box-shadow: var(--shadow-glass);
+            transform: scale(0.95);
+            transition: transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+    </style>
+    <link rel="icon" type="image/png" href="can-logo.png">
+</head>
+<body>
+
+    <!-- Welcome Animated Overlay -->
+    <div id="welcome-overlay">
+        <div id="w-frame">
+            <img src="can-logo.png" alt="CAN" style="width:80px; height:80px; border-radius:50%; margin:0 auto 16px auto; display:block; box-shadow:0 0 35px var(--accent-red-glow); border:2px solid rgba(255,255,255,0.3); object-fit:cover;">
+            <h1 style="font-size: 34px; font-family: var(--font-title); font-weight: 900; letter-spacing: 4px; margin-bottom: 8px; color: var(--accent-red); text-shadow: 0 0 20px var(--accent-red-glow);">CAN ALABANZA</h1>
+            <p id="w-name" style="font-size: 12px; color: var(--text-pink); text-transform: uppercase; letter-spacing: 2.5px; opacity: 0; transition: 0.5s; font-weight: 700;"></p>
+        </div>
+    </div>
+
+    <!-- Top Navigation Bar -->
+    <nav class="pco-navbar">
+        <div style="display:flex; align-items:center; gap:16px;">
+            <img src="can-logo.png" alt="CAN" style="width:36px; height:36px; border-radius:50%; box-shadow: 0 0 14px var(--accent-red-glow); object-fit:cover; border:1px solid rgba(255,255,255,0.2);">
+            <span style="font-family:var(--font-title); font-weight:800; font-size:18px; letter-spacing:1px;">CAN <span style="color:var(--accent-red); font-weight:400;">ALABANZA</span></span>
+        </div>
+        <div style="display:flex; align-items:center; gap:20px;">
+            <!-- Notificaciones Bell Dropdown -->
+            <div style="position:relative;">
+                <button type="button" id="notifBellBtn" onclick="toggleNotifDropdown()" class="secondary" style="padding:8px 14px; display:flex; align-items:center; gap:8px; border-radius:12px; font-weight:800; font-size:13px; cursor:pointer;">
+                    <span>🔔</span>
+                    <span id="notifBadge" style="display:none; background:var(--accent-red); color:white; font-size:10px; font-weight:900; padding:2px 6px; border-radius:10px; box-shadow:0 0 10px var(--accent-red-glow);">0</span>
+                </button>
+                
+                <div id="notifDropdown" class="glass-card" style="display:none; position:absolute; right:0; top:48px; width:340px; max-width:90vw; z-index:1000; box-shadow:0 10px 40px rgba(0,0,0,0.8); border:1px solid var(--border-color); padding:16px; border-radius:14px; max-height:420px; overflow-y:auto;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; border-bottom:1px solid var(--border-color); padding-bottom:8px;">
+                        <div style="font-weight:900; font-family:var(--font-title); font-size:12px; color:white; letter-spacing:0.5px;">🔔 ACTIVIDAD DEL EQUIPO</div>
+                        <button type="button" onclick="markAllNotifsAsRead()" style="background:none; border:none; color:var(--accent-blue); font-size:11px; font-weight:800; cursor:pointer;">Marcar leídas</button>
+                    </div>
+                    <div id="notifListContainer" style="display:flex; flex-direction:column; gap:8px;">
+                        <p style="color:var(--text-muted); font-size:12px; text-align:center; padding:12px 0;">Cargando novedades...</p>
+                    </div>
+                </div>
+            </div>
+
+            <div style="text-align:right;">
+                <div id="nav-user-name" style="font-family:var(--font-title); font-weight:800; font-size:14px; letter-spacing: 0.5px;">...</div>
+                <div id="nav-user-min" class="status-pill confirmed" style="padding:3px 10px; font-size:9px; margin-top:4px;">---</div>
+            </div>
+            <button class="danger" onclick="logout()" style="padding:10px 18px; font-size:11px; font-weight:800;">CERRAR SESIÓN</button>
+        </div>
+    </nav>
+
+    <!-- Main Container -->
+    <main class="container animate-fade" id="main-content" style="opacity:0; transition: opacity 0.5s ease;">
+        
+        <header style="margin-bottom:40px; display:flex; justify-content:space-between; align-items:center; gap: 20px; flex-wrap: wrap;">
+            <div>
+                <h2 style="font-size:32px; font-family:var(--font-title); font-weight:900; letter-spacing:-0.5px;">Panel de Control General</h2>
+                <p style="color:var(--text-muted); font-size:15px; margin-top:4px;">Selecciona un módulo técnico para operar la plataforma de alabanza.</p>
+            </div>
+            <div id="date-indicator" style="font-size:12px; font-weight:800; color:var(--text-pink); background:var(--bg-glass); padding:12px 20px; border-radius:12px; border:1px solid var(--border-color); letter-spacing: 1px; box-shadow: var(--shadow-glass);"></div>
+        </header>
+
+        <div class="dashboard-grid" id="modulesGrid">
+            
+            <div class="module-card" onclick="location.href='overview.html'">
+                <div>
+                    <span class="module-icon">🎵</span>
+                    <h3 class="module-title">Repertorio & Charts</h3>
+                    <p class="module-desc">Explorador de canciones, cifrados y transportador automático de tonos en vivo.</p>
+                </div>
+            </div>
+
+            <div class="module-card" onclick="location.href='setlists.html'">
+                <div>
+                    <span class="module-icon">📅</span>
+                    <h3 class="module-title">Servicios Programados</h3>
+                    <p class="module-desc">Consulta de setlists activos, asignación de músicos y descarga de PDF de acordes.</p>
+                </div>
+            </div>
+
+            <div class="module-card" onclick="location.href='stage-select.html'">
+                <div>
+                    <span class="module-icon">🎸</span>
+                    <h3 class="module-title">Atril Digital de Escenario</h3>
+                    <p class="module-desc">Modo atril digital / teleprompter interactivo para músicos y cantantes en tiempo real.</p>
+                </div>
+            </div>
+
+            <div class="module-card" onclick="location.href='audio-index.html'">
+                <div>
+                    <span class="module-icon">🎛️</span>
+                    <h3 class="module-title">Audio FOH & Monitores</h3>
+                    <p class="module-desc">Matriz Stage Box 32ch, monitor de frecuencias inalámbricas y ruteo In-Ear.</p>
+                </div>
+            </div>
+
+            <div class="module-card" onclick="location.href='directorio.html'">
+                <div>
+                    <span class="module-icon">👥</span>
+                    <h3 class="module-title">Directorio del Equipo</h3>
+                    <p class="module-desc">Directorio de pastores, líderes, músicos y operadores técnicos de CAN.</p>
+                </div>
+            </div>
+
+            <div class="module-card" onclick="location.href='stats.html'">
+                <div>
+                    <span class="module-icon">📊</span>
+                    <h3 class="module-title">Estadísticas Musicales</h3>
+                    <p class="module-desc">Frecuencia de repetición de canciones y analíticas del repertorio.</p>
+                </div>
+            </div>
+
+            <div class="module-card" onclick="location.href='profile.html'">
+                <div>
+                    <span class="module-icon">👤</span>
+                    <h3 class="module-title">Mi Perfil</h3>
+                    <p class="module-desc">Personaliza tu información personal, foto de perfil, contraseña y fondo de pantalla.</p>
+                </div>
+            </div>
+
+            <div class="module-card" id="adminModuleCard" style="display:none;" onclick="location.href='admin.html'">
+                <div>
+                    <span class="module-icon">⚙️</span>
+                    <h3 class="module-title">Gestión de Usuarios</h3>
+                    <p class="module-desc">Administración de cuentas, instrumentos, áreas técnicas y permisos de acceso.</p>
+                </div>
+            </div>
+
+        </div>
+
+    </main>
+
+    <script>
+        let token = localStorage.getItem("token");
+        if (token && token.length > 1000) {
+            localStorage.removeItem("token");
+            window.location.href = "login.html";
+        }
+        if (!token) window.location.href = "login.html";
+
+        const savedWallpaper = localStorage.getItem("cordaz_wallpaper");
+        if (savedWallpaper) {
+            document.body.classList.add("ios-wallpaper-active");
+            document.body.style.setProperty("--ios-bg-image", `url(${savedWallpaper})`);
+        }
+
+        function formatDate() {
+            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            const today = new Date();
+            return today.toLocaleDateString('es-ES', options).toUpperCase();
+        }
+
+        async function initDashboard() {
+            document.getElementById("date-indicator").innerText = formatDate();
+
+            let userObj = {};
+            try {
+                const storedUser = localStorage.getItem("user");
+                if (storedUser) userObj = JSON.parse(storedUser);
+            } catch(e) {}
+
+            try {
+                let payload = {};
+                if (token && token.includes('.')) {
+                    payload = JSON.parse(window.atob(token.split('.')[1])) || {};
+                }
+                
+                const finalName = userObj.name || payload.name || userObj.username || payload.username || "Usuario";
+                const finalRole = userObj.role || payload.role || "Viewer";
+                const finalMin = localStorage.getItem("activeMinistry") || userObj.ministry || payload.ministry || "Principal";
+                const instStr = String(userObj.instrument || '').toLowerCase();
+                const roleStr = String(finalRole).toLowerCase();
+
+                const isPastor = instStr.includes("pastor") || roleStr.includes("pastor") || finalMin === "Pastoral";
+                const isAudio = instStr.includes("audio") || (finalMin === "Produccion" && (userObj.techBranch || '').includes("Audio"));
+                const isProd = finalMin === "Produccion" && !isAudio;
+                const isKids = finalMin === "KIDS";
+
+                // Si el usuario es Pastor, redirigir inmediatamente a su Centro de Mando Pastoral Ejecutivo
+                if (isPastor) {
+                    window.location.replace("pastor-dashboard.html");
+                    return;
+                }
+
+                // Aplicar clase de tema a nivel body
+                document.body.classList.remove("theme-pastoral", "theme-audio", "theme-prod", "theme-kids", "theme-principal");
+                
+                let minBadgeText = `ALABANZA ${finalMin.toUpperCase()}`;
+                if (isAudio) {
+                    document.body.classList.add("theme-audio");
+                    minBadgeText = "INGENIERO DE AUDIO";
+                } else if (isProd) {
+                    document.body.classList.add("theme-prod");
+                    minBadgeText = userObj.techBranch ? `PROD • ${userObj.techBranch}` : "PRODUCCIÓN TÉCNICA";
+                } else if (isKids) {
+                    document.body.classList.add("theme-kids");
+                    minBadgeText = "ALABANZA KIDS";
+                } else {
+                    document.body.classList.add("theme-principal");
+                    minBadgeText = finalMin === "Hibrido" ? "ALABANZA HÍBRIDO" : "ALABANZA PRINCIPAL";
+                }
+
+                document.getElementById("w-name").innerText = `BIENVENIDO, ${finalName.toUpperCase()}`;
+                document.getElementById("w-name").style.opacity = "1";
+                document.getElementById("w-frame").style.transform = "scale(1)";
+
+                document.getElementById("nav-user-name").innerText = finalName.toUpperCase();
+                document.getElementById("nav-user-min").innerText = minBadgeText;
+
+                // --- CONFIGURACIÓN DE MÓDULOS POR ROL (RBAC) ---
+                const grid = document.getElementById("modulesGrid");
+                let modulesHTML = "";
+
+                if (finalRole === "Full Administrador" || (userObj.username && userObj.username.toLowerCase() === "cordaz")) {
+                    // Vista Maestra de Full Administrador (Control Total del Sistema)
+                    modulesHTML = `
+                        <div class="module-card" style="border-color:var(--primary); box-shadow:0 0 20px var(--primary-glow);" onclick="location.href='admin.html'">
+                            <div>
+                                <span class="module-icon">⚙️</span>
+                                <h3 class="module-title" style="color:var(--primary);">Gestión de Usuarios</h3>
+                                <p class="module-desc">Altas, bajas, instrumentos, áreas técnicas y permisos de acceso.</p>
+                            </div>
+                        </div>
+                        <div class="module-card" onclick="location.href='setlists.html'">
+                            <div>
+                                <span class="module-icon">📅</span>
+                                <h3 class="module-title">Servicios Programados</h3>
+                                <p class="module-desc">Planificación de cultos, asignación de músicos y descarga de acordes.</p>
+                            </div>
+                        </div>
+                        <div class="module-card" onclick="location.href='overview.html'">
+                            <div>
+                                <span class="module-icon">🎵</span>
+                                <h3 class="module-title">Repertorio & Charts</h3>
+                                <p class="module-desc">Explorador de canciones, cifrados bilingües y transportador de tonos.</p>
+                            </div>
+                        </div>
+                        <div class="module-card" onclick="location.href='stage-select.html'">
+                            <div>
+                                <span class="module-icon">🎸</span>
+                                <h3 class="module-title">Atril Digital de Escenario</h3>
+                                <p class="module-desc">Modo atril digital / teleprompter interactivo en vivo.</p>
+                            </div>
+                        </div>
+                        <div class="module-card" onclick="location.href='audio-index.html'">
+                            <div>
+                                <span class="module-icon">🎛️</span>
+                                <h3 class="module-title">Audio FOH & Monitores</h3>
+                                <p class="module-desc">Matriz Stage Box 32ch, monitor de frecuencias inalámbricas y ruteo In-Ear.</p>
+                            </div>
+                        </div>
+                        <div class="module-card" onclick="location.href='prod-index.html'">
+                            <div>
+                                <span class="module-icon">🎬</span>
+                                <h3 class="module-title">Producción Técnica</h3>
+                                <p class="module-desc">Escaletas de culto, streaming, timers y monitores de cabina.</p>
+                            </div>
+                        </div>
+                        <div class="module-card" onclick="location.href='directorio.html'">
+                            <div>
+                                <span class="module-icon">👥</span>
+                                <h3 class="module-title">Directorio del Equipo</h3>
+                                <p class="module-desc">Directorio de pastores, líderes, músicos y operadores técnicos.</p>
+                            </div>
+                        </div>
+                        <div class="module-card" onclick="location.href='requisitions.html'">
+                            <div>
+                                <span class="module-icon">📋</span>
+                                <h3 class="module-title">Requisiciones & Cotizaciones</h3>
+                                <p class="module-desc">Cotizaciones de instrumentos, cables, monitores y equipo técnico para revisión pastoral.</p>
+                            </div>
+                        </div>
+                        <div class="module-card" onclick="location.href='stats.html'">
+                            <div>
+                                <span class="module-icon">📊</span>
+                                <h3 class="module-title">Estadísticas Musicales</h3>
+                                <p class="module-desc">Frecuencia de repetición de canciones y analíticas del repertorio.</p>
+                            </div>
+                        </div>
+                        <div class="module-card" onclick="location.href='profile.html'">
+                            <div>
+                                <span class="module-icon">👤</span>
+                                <h3 class="module-title">Mi Perfil</h3>
+                                <p class="module-desc">Personaliza tu información personal, foto y contraseña.</p>
+                            </div>
+                        </div>
+                    `;
+                } else if (isAudio) {
+                    // Vista Especializada de Ingeniero de Audio
+                    modulesHTML = `
+                        <div class="module-card" style="border-color:var(--audio-accent); box-shadow:0 0 25px rgba(16,185,129,0.25);" onclick="location.href='audio-index.html'">
+                            <div>
+                                <span class="module-icon">🎛️</span>
+                                <h3 class="module-title" style="color:var(--audio-accent);">Estación Audio FOH & Monitores</h3>
+                                <p class="module-desc">Ruteo análogo/digital por faders, mezclador In-Ear 48 CH y sincronización ROS.</p>
+                            </div>
+                        </div>
+                        <div class="module-card" onclick="location.href='prod-index.html'">
+                            <div>
+                                <span class="module-icon">🎬</span>
+                                <h3 class="module-title">Cabina de Control (Visualización)</h3>
+                                <p class="module-desc">Visualizador de escaleta ROS en vivo y estado técnico para audio.</p>
+                            </div>
+                        </div>
+                        <div class="module-card" onclick="location.href='setlists.html'">
+                            <div>
+                                <span class="module-icon">📅</span>
+                                <h3 class="module-title">Servicios Programados</h3>
+                                <p class="module-desc">Consulta de cultos activos, canciones, tonos y asignaciones.</p>
+                            </div>
+                        </div>
+                        <div class="module-card" onclick="location.href='directorio.html'">
+                            <div>
+                                <span class="module-icon">👥</span>
+                                <h3 class="module-title">Directorio del Equipo</h3>
+                                <p class="module-desc">Directorio de pastores, líderes, músicos y operadores técnicos.</p>
+                            </div>
+                        </div>
+                        <div class="module-card" onclick="location.href='profile.html'">
+                            <div>
+                                <span class="module-icon">👤</span>
+                                <h3 class="module-title">Mi Perfil</h3>
+                                <p class="module-desc">Ajustes personales, foto de perfil y contraseña.</p>
+                            </div>
+                        </div>
+                    `;
+                } else if (isProd) {
+                    // Vista Especializada de Operador de Producción
+                    modulesHTML = `
+                        <div class="module-card" style="border-color:var(--accent-purple); box-shadow:0 0 25px rgba(192,132,252,0.25);" onclick="location.href='prod-index.html'">
+                            <div>
+                                <span class="module-icon">🎬</span>
+                                <h3 class="module-title" style="color:var(--accent-purple);">Centro de Producción & Video</h3>
+                                <p class="module-desc">Escaletas en vivo, timers de culto, cámaras, ProPresenter y estados técnicos.</p>
+                            </div>
+                        </div>
+                        <div class="module-card" onclick="location.href='setlists.html'">
+                            <div>
+                                <span class="module-icon">📅</span>
+                                <h3 class="module-title">Servicios Programados</h3>
+                                <p class="module-desc">Consulta de setlists activos y asignación de roles técnicos.</p>
+                            </div>
+                        </div>
+                        <div class="module-card" onclick="location.href='propresenter.html'">
+                            <div>
+                                <span class="module-icon">📽️</span>
+                                <h3 class="module-title">ProPresenter 7 (Letras)</h3>
+                                <p class="module-desc">Copiador y formateador de diapositivas limpias para proyección.</p>
+                            </div>
+                        </div>
+                        <div class="module-card" onclick="location.href='directorio.html'">
+                            <div>
+                                <span class="module-icon">👥</span>
+                                <h3 class="module-title">Directorio del Equipo</h3>
+                                <p class="module-desc">Directorio de staff y operadores técnicos.</p>
+                            </div>
+                        </div>
+                        <div class="module-card" onclick="location.href='profile.html'">
+                            <div>
+                                <span class="module-icon">👤</span>
+                                <h3 class="module-title">Mi Perfil</h3>
+                                <p class="module-desc">Ajustes personales, foto y contraseña.</p>
+                            </div>
+                        </div>
+                    `;
+                } else if (isPastor) {
+                    // Vista Pastoral
+                    modulesHTML = `
+                        <div class="module-card" style="border-color:var(--accent-red); box-shadow:0 0 20px rgba(255, 42, 75, 0.2);" onclick="location.href='requisitions.html'">
+                            <div>
+                                <span class="module-icon">📋</span>
+                                <h3 class="module-title" style="color:var(--accent-red);">Requisiciones & Cotizaciones</h3>
+                                <p class="module-desc">Revisión de solicitudes de instrumentos y equipo del ministerio de alabanza.</p>
+                            </div>
+                        </div>
+                        <div class="module-card" onclick="location.href='setlists.html'">
+                            <div>
+                                <span class="module-icon">📅</span>
+                                <h3 class="module-title">Servicios Programados</h3>
+                                <p class="module-desc">Consulta de cultos, predicadores y repertorio asignado.</p>
+                            </div>
+                        </div>
+                        <div class="module-card" onclick="location.href='overview.html'">
+                            <div>
+                                <span class="module-icon">🎵</span>
+                                <h3 class="module-title">Repertorio & Letras</h3>
+                                <p class="module-desc">Catálogo de alabanzas y letras de las canciones de la iglesia.</p>
+                            </div>
+                        </div>
+                        <div class="module-card" onclick="location.href='directorio.html'">
+                            <div>
+                                <span class="module-icon">👥</span>
+                                <h3 class="module-title">Directorio del Equipo</h3>
+                                <p class="module-desc">Directorio de contacto de todo el equipo de alabanza y producción.</p>
+                            </div>
+                        </div>
+                        <div class="module-card" onclick="location.href='stats.html'">
+                            <div>
+                                <span class="module-icon">📊</span>
+                                <h3 class="module-title">Estadísticas Musicales</h3>
+                                <p class="module-desc">Histórico y frecuencia de temas cantados en la congregación.</p>
+                            </div>
+                        </div>
+                        <div class="module-card" onclick="location.href='profile.html'">
+                            <div>
+                                <span class="module-icon">👤</span>
+                                <h3 class="module-title">Mi Perfil</h3>
+                                <p class="module-desc">Ajustes personales, foto y contraseña.</p>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    // Vista de Músico / Cantante Estándar
+                    modulesHTML = `
+                        <div class="module-card" onclick="location.href='overview.html'">
+                            <div>
+                                <span class="module-icon">🎵</span>
+                                <h3 class="module-title">Repertorio & Charts</h3>
+                                <p class="module-desc">Explorador de canciones, cifrados y transportador automático de tonos en vivo.</p>
+                            </div>
+                        </div>
+                        <div class="module-card" onclick="location.href='setlists.html'">
+                            <div>
+                                <span class="module-icon">📅</span>
+                                <h3 class="module-title">Servicios Programados</h3>
+                                <p class="module-desc">Consulta de setlists activos, asignación de músicos y descarga de PDF.</p>
+                            </div>
+                        </div>
+                        <div class="module-card" onclick="location.href='stage-select.html'">
+                            <div>
+                                <span class="module-icon">🎸</span>
+                                <h3 class="module-title">Atril Digital de Escenario</h3>
+                                <p class="module-desc">Modo atril digital / teleprompter interactivo para músicos y cantantes.</p>
+                            </div>
+                        </div>
+                        <div class="module-card" onclick="location.href='directorio.html'">
+                            <div>
+                                <span class="module-icon">👥</span>
+                                <h3 class="module-title">Directorio del Equipo</h3>
+                                <p class="module-desc">Directorio de pastores, líderes, músicos y operadores técnicos de CAN.</p>
+                            </div>
+                        </div>
+                        <div class="module-card" onclick="location.href='profile.html'">
+                            <div>
+                                <span class="module-icon">👤</span>
+                                <h3 class="module-title">Mi Perfil</h3>
+                                <p class="module-desc">Personaliza tu información personal, foto de perfil y contraseña.</p>
+                            </div>
+                        </div>
+                    `;
+                }
+
+                grid.innerHTML = modulesHTML;
+
+                // Cargar notificaciones para el usuario actual
+                currentUsername = userObj.username || payload.username || "";
+                loadNotifications();
+
+                setTimeout(() => {
+                    const overlay = document.getElementById("welcome-overlay");
+                    if (overlay) {
+                        overlay.style.opacity = "0";
+                        setTimeout(() => {
+                            overlay.style.visibility = "hidden";
+                            const mainEl = document.getElementById("main-content");
+                            if (mainEl) mainEl.style.opacity = "1";
+                        }, 800);
+                    }
+                }, 1000);
+
+            } catch (e) {
+                console.error("Error al iniciar dashboard:", e);
+                const mainEl = document.getElementById("main-content");
+                if (mainEl) mainEl.style.opacity = "1";
+                const overlay = document.getElementById("welcome-overlay");
+                if (overlay) overlay.style.display = "none";
+            }
+        }
+
+        // --- SISTEMA DE NOTIFICACIONES DEL EQUIPO ---
+        let allNotifications = [];
+        let currentUsername = "";
+
+        async function loadNotifications() {
+            try {
+                const res = await fetch("/notifications");
+                if (!res.ok) return;
+                allNotifications = await res.json();
+                renderNotifications();
+            } catch(e) {
+                console.warn("Error cargando notificaciones:", e);
+            }
+        }
+
+        function timeAgo(dateString) {
+            const d = new Date(dateString);
+            const now = new Date();
+            const diffMin = Math.round((now - d) / 60000);
+            if (diffMin < 1) return "Justo ahora";
+            if (diffMin < 60) return `Hace ${diffMin} min`;
+            const diffH = Math.round(diffMin / 60);
+            if (diffH < 24) return `Hace ${diffH} h`;
+            const diffD = Math.round(diffH / 24);
+            return `Hace ${diffD} d`;
+        }
+
+        function getNotifIcon(type) {
+            if (type === 'setlist_created') return '📅';
+            if (type === 'absence_reported') return '⚠️';
+            if (type === 'song_created') return '🎵';
+            return '🔔';
+        }
+
+        function renderNotifications() {
+            const unread = allNotifications.filter(n => !n.readBy || !n.readBy.includes(currentUsername));
+            const badge = document.getElementById("notifBadge");
+            if (badge) {
+                if (unread.length > 0) {
+                    badge.innerText = unread.length;
+                    badge.style.display = "inline-block";
+                } else {
+                    badge.style.display = "none";
+                }
+            }
+
+            const container = document.getElementById("notifListContainer");
+            if (container) {
+                if (allNotifications.length === 0) {
+                    container.innerHTML = `<p style="color:var(--text-muted); font-size:12px; text-align:center; padding:12px 0;">No hay novedades recientes.</p>`;
+                } else {
+                    container.innerHTML = allNotifications.map(n => {
+                        const isUnread = !n.readBy || !n.readBy.includes(currentUsername);
+                        return `
+                            <div style="background:${isUnread ? 'rgba(56,189,248,0.08)' : 'rgba(255,255,255,0.02)'}; border:1px solid ${isUnread ? 'rgba(56,189,248,0.3)' : 'var(--border-color)'}; padding:10px; border-radius:10px; display:flex; gap:10px; align-items:flex-start;">
+                                <span style="font-size:18px;">${getNotifIcon(n.type)}</span>
+                                <div style="flex:1;">
+                                    <div style="font-weight:800; color:white; font-size:12px;">${n.title}</div>
+                                    <div style="font-size:11px; color:#cdd4df; margin-top:2px; line-height:1.4;">${n.message}</div>
+                                    <div style="font-size:10px; color:var(--text-muted); margin-top:4px;">${timeAgo(n.createdAt)}</div>
+                                </div>
+                            </div>
+                        `;
+                    }).join('');
+                }
+            }
+
+            // Modal emergente de inicio de sesión si hay notificaciones sin leer
+            const hasShownSessionNotif = sessionStorage.getItem("can_notifs_shown");
+            if (!hasShownSessionNotif && unread.length > 0) {
+                sessionStorage.setItem("can_notifs_shown", "true");
+                const welcomeList = document.getElementById("welcomeNotifList");
+                if (welcomeList) {
+                    welcomeList.innerHTML = unread.map(n => `
+                        <div style="background:rgba(255,255,255,0.04); border:1px solid var(--border-color); padding:12px; border-radius:12px; display:flex; gap:12px; align-items:flex-start;">
+                            <span style="font-size:20px;">${getNotifIcon(n.type)}</span>
+                            <div>
+                                <div style="font-weight:800; color:white; font-size:13px;">${n.title}</div>
+                                <div style="font-size:12px; color:#cdd4df; margin-top:3px; line-height:1.4;">${n.message}</div>
+                                <div style="font-size:10px; color:var(--accent-blue); font-weight:700; margin-top:5px;">${timeAgo(n.createdAt)}</div>
+                            </div>
+                        </div>
+                    `).join('');
+                    const modal = document.getElementById("welcomeNotifModal");
+                    if (modal) {
+                        modal.style.display = "flex";
+                        setTimeout(() => modal.classList.add("active"), 10);
+                    }
+                }
+            }
+        }
+
+        function toggleNotifDropdown() {
+            const drop = document.getElementById("notifDropdown");
+            if (!drop) return;
+            drop.style.display = (drop.style.display === "none" || !drop.style.display) ? "block" : "none";
+        }
+
+        async function markAllNotifsAsRead() {
+            if (!currentUsername) return;
+            try {
+                await fetch("/notifications/read-all", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ username: currentUsername })
+                });
+                allNotifications.forEach(n => {
+                    if (!n.readBy) n.readBy = [];
+                    if (!n.readBy.includes(currentUsername)) n.readBy.push(currentUsername);
+                });
+                renderNotifications();
+            } catch(e) {}
+        }
+
+        function closeWelcomeNotifs() {
+            const modal = document.getElementById("welcomeNotifModal");
+            if (modal) {
+                modal.classList.remove("active");
+                setTimeout(() => modal.style.display = "none", 300);
+            }
+            markAllNotifsAsRead();
+        }
+
+        function logout() {
+            localStorage.removeItem("token");
+            window.location.href = "login.html";
+        }
+
+        initDashboard();
+    </script>
+
+    <!-- Modal Popup de Novedades al Iniciar Sesión -->
+    <div id="welcomeNotifModal" class="modal-overlay" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.85); backdrop-filter:blur(12px); z-index:9999; justify-content:center; align-items:center; padding:20px;">
+        <div class="glass-card animate-scale" style="width:480px; max-width:100%; border-color:var(--accent-blue); box-shadow:0 0 35px rgba(56,189,248,0.25); padding:28px;">
+            <div style="display:flex; align-items:center; gap:12px; margin-bottom:14px;">
+                <div style="background:rgba(56,189,248,0.15); color:var(--accent-blue); width:40px; height:40px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:20px; border:1px solid rgba(56,189,248,0.3);">🔔</div>
+                <div>
+                    <h3 style="color:white; margin:0; font-family:var(--font-title); font-weight:900; font-size:18px;">
+                        NOVEDADES MIENTRAS NO ESTABAS
+                    </h3>
+                    <p style="margin:2px 0 0 0; font-size:11px; color:var(--text-muted);">Actividad reciente del equipo de alabanza y producción</p>
+                </div>
+            </div>
+            
+            <div id="welcomeNotifList" style="display:flex; flex-direction:column; gap:10px; max-height:260px; overflow-y:auto; margin-bottom:20px;"></div>
+            
+            <button type="button" onclick="closeWelcomeNotifs()" class="primary" style="width:100%; padding:12px; font-weight:900; border-radius:10px; background:var(--accent-blue); border-color:var(--accent-blue); color:black; box-shadow:0 0 20px rgba(56,189,248,0.3);">
+                ENTENDIDO / CONTINUAR AL PANEL
+            </button>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ProPresenter 7 • Centro de Letras & Slides | CAN ALABANZA</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        :root {
+            --prod-accent: var(--accent-purple);
+            --prod-accent-glow: rgba(192, 132, 252, 0.4);
+        }
+
+        html, body {
+            min-height: 100vh;
+            background-color: #040407;
+            background-attachment: fixed;
+            background-size: cover;
+        }
+
+        .prop-layout {
+            display: grid;
+            grid-template-columns: 320px 1fr;
+            gap: 28px;
+            margin-top: 24px;
+            align-items: start;
+        }
+
+        .prop-sidebar {
+            background: var(--bg-glass);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-pco);
+            padding: 24px;
+            box-shadow: var(--shadow-glass);
+        }
+
+        .prop-main {
+            background: var(--bg-glass);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-pco);
+            padding: 30px;
+            box-shadow: var(--shadow-glass);
+            display: flex;
+            flex-direction: column;
+            min-height: 520px;
+            justify-content: space-between;
+        }
+
+        /* Slide Stage Viewer */
+        .slide-carousel-container {
+            background: rgba(0, 0, 0, 0.6);
+            border: 2px solid var(--border-color);
+            border-radius: 18px;
+            padding: 30px;
+            margin: 20px 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            min-height: 300px;
+            position: relative;
+            box-shadow: inset 0 0 30px rgba(0,0,0,0.8);
+            transition: var(--transition);
+        }
+
+        .slide-carousel-container:hover {
+            border-color: rgba(192, 132, 252, 0.4);
+        }
+
+        .slide-tag-pill {
+            font-size: 11px;
+            font-weight: 900;
+            letter-spacing: 2px;
+            color: var(--accent-purple);
+            background: rgba(192, 132, 252, 0.15);
+            padding: 6px 14px;
+            border-radius: 8px;
+            border: 1px solid var(--accent-purple);
+            text-transform: uppercase;
+            display: inline-block;
+        }
+
+        .slide-text-carousel {
+            font-size: 26px;
+            line-height: 1.5;
+            font-weight: 800;
+            color: #ffffff;
+            text-align: center;
+            font-family: var(--font-title);
+            letter-spacing: -0.3px;
+            white-space: pre-wrap;
+            margin: 30px 0;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.9);
+        }
+
+        .nav-slide-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-color);
+            color: white;
+            padding: 14px 24px;
+            border-radius: 12px;
+            font-weight: 900;
+            font-size: 12px;
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .nav-slide-btn:hover:not(:disabled) {
+            background: var(--accent-purple);
+            color: black;
+            border-color: var(--accent-purple);
+            box-shadow: 0 0 20px var(--prod-accent-glow);
+            transform: translateY(-2px);
+        }
+
+        .nav-slide-btn:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+
+        .slide-pills-bar {
+            display: flex;
+            gap: 8px;
+            overflow-x: auto;
+            padding-bottom: 8px;
+            margin-top: 10px;
+        }
+
+        .slide-dot {
+            background: rgba(255,255,255,0.06);
+            border: 1px solid var(--border-color);
+            color: var(--text-muted);
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 11px;
+            font-weight: 800;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: var(--transition);
+        }
+
+        .slide-dot:hover {
+            border-color: var(--accent-purple);
+            color: white;
+        }
+
+        .slide-dot.active {
+            background: rgba(192, 132, 252, 0.2);
+            border-color: var(--accent-purple);
+            color: var(--accent-purple);
+            font-weight: 900;
+        }
+
+        .song-list-item {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border-color);
+            padding: 12px 14px;
+            border-radius: 10px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .song-list-item:hover, .song-list-item.active {
+            border-color: var(--accent-purple);
+            background: rgba(192, 132, 252, 0.12);
+            transform: translateX(4px);
+        }
+
+        @media (max-width: 900px) {
+            .prop-layout {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+    <link rel="icon" type="image/png" href="can-logo.png">
+</head>
+<body class="theme-prod animate-up">
+    <script>
+        const token = localStorage.getItem("token");
+        if (!token) window.location.href = "login.html";
+
+        const savedWallpaper = localStorage.getItem("cordaz_wallpaper");
+        if (savedWallpaper) {
+            document.body.classList.add("ios-wallpaper-active");
+            document.body.style.setProperty("--ios-bg-image", "url(" + savedWallpaper + ")");
+        }
+    </script>
+
+    <!-- Navigation Header (Limpia sin botones extra) -->
+    <div class="pco-navbar">
+        <div style="display:flex; align-items:center; gap:20px;">
+            <button class="secondary" onclick="location.href='prod-index.html'" style="padding:10px 18px; font-weight:800;">← VOLVER A PRODUCCIÓN</button>
+            <span style="font-family:var(--font-title); font-weight:800; font-size:18px; letter-spacing:1px;">PROPRESENTER 7 • <span style="color:var(--accent-purple); font-weight:400;">CENTRO DE LETRAS</span></span>
+        </div>
+        <button class="danger" onclick="localStorage.clear(); window.location.href='login.html';" style="padding:10px 18px; font-size:11px; font-weight:800;">SALIR</button>
+    </div>
+
+    <!-- Main Container -->
+    <div class="container animate-fade" style="padding-bottom:60px;">
+        <header style="margin-bottom:20px; border-bottom:1px solid var(--border-color); padding-bottom:18px; display:flex; justify-content:space-between; align-items:flex-end; flex-wrap:wrap; gap:16px;">
+            <div>
+                <h1 style="font-size:30px; font-family:var(--font-title); font-weight:900; letter-spacing:-0.5px; color:white; margin:0;">Copiador de Diapositivas ProPresenter 7</h1>
+                <p style="color:var(--text-muted); font-size:13px; margin-top:4px;">Navega diapositiva por diapositiva sin scrollear y copia al portapapeles con formato limpio.</p>
+            </div>
+        </header>
+
+        <div class="prop-layout">
+            <!-- Sidebar: Selector de Cultos y Canciones -->
+            <div class="prop-sidebar">
+                <label style="font-size:10px; color:var(--accent-purple); font-weight:900; letter-spacing:1.5px; text-transform:uppercase; display:block; margin-bottom:8px;">SELECCIONAR SERVICIO</label>
+                <select id="setlistSelect" onchange="onSetlistChange()" style="width:100%; padding:10px; font-weight:800; margin-bottom:20px;"></select>
+
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                    <label style="font-size:10px; color:var(--accent-purple); font-weight:900; letter-spacing:1.5px; text-transform:uppercase;">CANCIONES DEL SERVICIO</label>
+                </div>
+                <div id="songsListContainer" style="display:flex; flex-direction:column; gap:6px;"></div>
+
+                <div style="margin-top:24px; border-top:1px solid var(--border-color); padding-top:18px;">
+                    <label style="font-size:10px; color:var(--text-muted); font-weight:900; letter-spacing:1.5px; text-transform:uppercase; display:block; margin-bottom:8px;">O BUSCAR EN CATÁLOGO GENERAL</label>
+                    <input type="text" id="catalogSearch" placeholder="Buscar canción por título..." oninput="onCatalogSearch()" style="width:100%; font-size:12px; padding:8px 12px; margin-bottom:10px;">
+                    <div id="catalogSearchResults" style="max-height:160px; overflow-y:auto; display:flex; flex-direction:column; gap:4px;"></div>
+                </div>
+            </div>
+
+            <!-- Main Pane: Carrusel de Diapositivas sin Scroll -->
+            <div class="prop-main">
+                <!-- Info Header Canción -->
+                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px; border-bottom:1px solid var(--border-color); padding-bottom:16px;">
+                    <div>
+                        <h2 id="activeSongTitle" style="font-size:24px; font-family:var(--font-title); font-weight:900; color:white; margin:0;">SELECCIONA UNA CANCIÓN</h2>
+                        <p id="activeSongMeta" style="color:var(--text-muted); font-size:12px; margin:4px 0 0 0;">Duración: - • Tono: - • BPM: -</p>
+                    </div>
+                    <div>
+                        <button id="btnCopyFullSong" type="button" class="primary" onclick="copyFullSong()" style="background:var(--accent-purple); border-color:var(--accent-purple); color:black; font-weight:900; font-size:11px; padding:10px 18px; box-shadow:0 0 20px rgba(192, 132, 252, 0.35);">
+                            📋 COPIAR TODAS LAS LETRAS
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Barra de Miniaturas / Diapositivas -->
+                <div class="slide-pills-bar" id="slidePillsBar"></div>
+
+                <!-- Visor Interactivo Diapositiva Actual -->
+                <div class="slide-carousel-container" id="slideViewerBox">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <span class="slide-tag-pill" id="currentSlideTag">SECCIÓN</span>
+                        <span style="font-size:12px; font-weight:800; color:var(--text-muted);" id="currentSlideCounter">SLIDE 1 DE 1</span>
+                    </div>
+
+                    <div class="slide-text-carousel" id="currentSlideText">Selecciona una canción</div>
+
+                    <div style="display:flex; justify-content:center;">
+                        <button type="button" class="primary" onclick="copyCurrentSlide()" style="background:rgba(192,132,252,0.15); border:1px solid var(--accent-purple); color:var(--accent-purple); font-weight:900; font-size:12px; padding:10px 24px; border-radius:10px;">
+                            📋 COPIAR ESTA DIAPOSITIVA
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Botones de Navegación Slide Anterior / Siguiente -->
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-top:10px; gap:16px;">
+                    <button type="button" class="nav-slide-btn" id="btnPrevSlide" onclick="prevSlide()">
+                        ← SLIDE ANTERIOR (◀)
+                    </button>
+                    <span style="font-size:11px; color:var(--text-muted); font-weight:700;">Tip: Usa las flechas ◀ ▶ del teclado</span>
+                    <button type="button" class="nav-slide-btn" id="btnNextSlide" onclick="nextSlide()">
+                        SIGUIENTE SLIDE (▶) →
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="musicUtils.js"></script>
+    <script>
+        let allSetlists = [];
+        let allSongsCatalog = [];
+        let currentSong = null;
+        let currentSlideIndex = 0;
+        let currentSongSections = [];
+
+        // Limpia cualquier residuo de acordes, corchetes o tablaturas para ProPresenter puro
+        function cleanLyricsForProPresenter(rawText) {
+            if (!rawText) return "";
+            if (typeof cleanPureLyrics === 'function') {
+                return cleanPureLyrics(rawText);
+            }
+            return rawText
+                .split('\n')
+                .filter(line => !isLineOfChords(line))
+                .map(line => line.replace(/\[[^\]]+\]/g, '').trim())
+                .filter(line => line.length > 0)
+                .join('\n');
+        }
+
+        // Navegación con teclado flechas izquierda y derecha
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowLeft') prevSlide();
+            if (e.key === 'ArrowRight') nextSlide();
+        });
+
+        async function initProPresenter() {
+            try {
+                // 1. Cargar Canciones
+                const resSongs = await fetch("/songs", {
+                    headers: token ? { "Authorization": "Bearer " + token } : {}
+                });
+                const songsData = await resSongs.json();
+                allSongsCatalog = Array.isArray(songsData) ? songsData : [];
+
+                // 2. Cargar Setlists
+                const resSets = await fetch("/setlists", {
+                    headers: token ? { "Authorization": "Bearer " + token } : {}
+                });
+                const setsData = await resSets.json();
+                allSetlists = Array.isArray(setsData) ? setsData.filter(s => s && !s.archived).reverse() : [];
+
+                populateSetlistsDropdown();
+
+                if (allSetlists.length > 0) {
+                    onSetlistChange();
+                } else if (allSongsCatalog.length > 0) {
+                    loadSongObject(allSongsCatalog[0]);
+                }
+            } catch(e) {
+                console.error("Error al iniciar ProPresenter:", e);
+                document.getElementById("currentSlideText").innerText = "Error al conectar con el servidor.";
+            }
+        }
+
+        function populateSetlistsDropdown() {
+            const select = document.getElementById("setlistSelect");
+            if (allSetlists.length === 0) {
+                select.innerHTML = "<option value=''>No hay servicios activos</option>";
+                return;
+            }
+            select.innerHTML = allSetlists.map(s => {
+                return "<option value='" + s._id + "'>" + (s.name || 'Servicio').toUpperCase() + " (" + (s.date || '') + ")</option>";
+            }).join('');
+        }
+
+        function onSetlistChange() {
+            const select = document.getElementById("setlistSelect");
+            const setId = select.value;
+            const setObj = allSetlists.find(s => s._id === setId);
+
+            const container = document.getElementById("songsListContainer");
+            if (!setObj || !setObj.songs || setObj.songs.length === 0) {
+                container.innerHTML = "<p style='color:var(--text-muted); font-size:12px;'>Este servicio no tiene canciones agregadas.</p>";
+                return;
+            }
+
+            container.innerHTML = setObj.songs.map((item, idx) => {
+                let s = null;
+                if (typeof item.songId === 'object' && item.songId !== null) {
+                    s = item.songId;
+                } else {
+                    s = allSongsCatalog.find(x => String(x._id) === String(item.songId || item)) || {};
+                }
+                const songTitle = (s.name || item.name || 'Canción').toUpperCase();
+                const songArtist = s.artist || 'CAN';
+                const songKey = item.setlistKey || s.key || 'C';
+
+                return `
+                    <div class="song-list-item ${idx === 0 ? 'active' : ''}" id="songItem_${idx}" onclick="selectSetSong(${idx})">
+                        <div>
+                            <div style="font-weight:800; font-size:13px; color:white;">${idx + 1}. ${songTitle}</div>
+                            <div style="font-size:11px; color:var(--text-muted);">${songArtist}</div>
+                        </div>
+                        <span class="status-pill confirmed" style="font-size:9px; border-color:var(--accent-purple); color:var(--accent-purple); padding:2px 8px; font-weight:800;">${songKey}</span>
+                    </div>
+                `;
+            }).join('');
+
+            selectSetSong(0);
+        }
+
+        function selectSetSong(idx) {
+            const select = document.getElementById("setlistSelect");
+            const setId = select.value;
+            const setObj = allSetlists.find(s => s._id === setId);
+            if (!setObj || !setObj.songs || !setObj.songs[idx]) return;
+
+            document.querySelectorAll(".song-list-item").forEach(el => el.classList.remove("active"));
+            const targetEl = document.getElementById("songItem_" + idx);
+            if (targetEl) targetEl.classList.add("active");
+
+            const item = setObj.songs[idx];
+            let song = null;
+            if (typeof item.songId === 'object' && item.songId !== null) {
+                song = item.songId;
+            } else {
+                song = allSongsCatalog.find(x => String(x._id) === String(item.songId || item)) || {};
+            }
+
+            loadSongObject(song, item.setlistKey, item.tempo);
+        }
+
+        function loadSongObject(song, customKey = null, customTempo = null) {
+            currentSong = song;
+            currentSlideIndex = 0;
+            const key = customKey || song.key || 'C';
+            const bpm = customTempo || song.tempo || '68';
+            const duration = song.duration ? song.duration + " min" : '5:00 min';
+
+            document.getElementById("activeSongTitle").innerText = (song.name || "Sin título").toUpperCase();
+            document.getElementById("activeSongMeta").innerText = "Artista: " + (song.artist || 'CAN') + " • Duración: " + duration + " • Tono: " + key + " • BPM: " + bpm;
+
+            currentSongSections = (song.sections && song.sections.length > 0) ? song.sections : [];
+
+            renderSlidePills();
+            renderCurrentSlide();
+        }
+
+        function renderSlidePills() {
+            const container = document.getElementById("slidePillsBar");
+            if (currentSongSections.length === 0) {
+                container.innerHTML = "";
+                return;
+            }
+
+            container.innerHTML = currentSongSections.map((sec, idx) => {
+                return `
+                    <button type="button" class="slide-dot ${idx === currentSlideIndex ? 'active' : ''}" onclick="goToSlide(${idx})">
+                        ${idx + 1}. ${(sec.name || 'Slide').toUpperCase()}
+                    </button>
+                `;
+            }).join('');
+        }
+
+        function renderCurrentSlide() {
+            if (currentSongSections.length === 0) {
+                document.getElementById("currentSlideTag").innerText = "SIN LETRAS";
+                document.getElementById("currentSlideCounter").innerText = "0 DE 0";
+                document.getElementById("currentSlideText").innerHTML = "<i style='color:var(--text-muted);'>Esta canción no tiene secciones de letras registradas.</i>";
+                document.getElementById("btnPrevSlide").disabled = true;
+                document.getElementById("btnNextSlide").disabled = true;
+                return;
+            }
+
+            const sec = currentSongSections[currentSlideIndex];
+            const cleanText = cleanLyricsForProPresenter(sec.lyrics || sec.chordSheet || "");
+            const isInstrumental = cleanText.length === 0;
+
+            document.getElementById("currentSlideTag").innerText = (sec.name || 'SECCIÓN').toUpperCase();
+            document.getElementById("currentSlideCounter").innerText = "DIAPOSITIVA " + (currentSlideIndex + 1) + " DE " + currentSongSections.length;
+            
+            document.getElementById("currentSlideText").innerHTML = isInstrumental 
+                ? "<span style='color:var(--text-muted); font-style:italic;'>[SECCIÓN INSTRUMENTAL / SIN LETRA]</span>"
+                : cleanText;
+
+            // Actualizar estado botones anterior/siguiente
+            document.getElementById("btnPrevSlide").disabled = (currentSlideIndex === 0);
+            document.getElementById("btnNextSlide").disabled = (currentSlideIndex === currentSongSections.length - 1);
+
+            renderSlidePills();
+        }
+
+        function goToSlide(idx) {
+            currentSlideIndex = idx;
+            renderCurrentSlide();
+        }
+
+        function prevSlide() {
+            if (currentSlideIndex > 0) {
+                currentSlideIndex--;
+                renderCurrentSlide();
+            }
+        }
+
+        function nextSlide() {
+            if (currentSlideIndex < currentSongSections.length - 1) {
+                currentSlideIndex++;
+                renderCurrentSlide();
+            }
+        }
+
+        function copyCurrentSlide() {
+            if (currentSongSections.length === 0) return;
+            const sec = currentSongSections[currentSlideIndex];
+            const cleanText = cleanLyricsForProPresenter(sec.lyrics || sec.chordSheet || "");
+            
+            navigator.clipboard.writeText(cleanText).then(() => {
+                alert("✅ Letra de \"" + (sec.name || 'Slide') + "\" copiada al portapapeles.");
+            });
+        }
+
+        function copyFullSong() {
+            if (!currentSong || currentSongSections.length === 0) {
+                alert("No hay letras disponibles para copiar.");
+                return;
+            }
+
+            const formattedText = currentSongSections.map(sec => {
+                const clean = cleanLyricsForProPresenter(sec.lyrics || sec.chordSheet || "");
+                if (!clean) return null;
+                return "[" + (sec.name || 'SECCIÓN').toUpperCase() + "]\n" + clean;
+            }).filter(Boolean).join('\n\n');
+
+            navigator.clipboard.writeText(formattedText).then(() => {
+                alert("🎉 ¡Canción completa de \"" + currentSong.name + "\" copiada en formato ProPresenter!");
+            });
+        }
+
+        function onCatalogSearch() {
+            const query = document.getElementById("catalogSearch").value.toLowerCase().trim();
+            const resultsContainer = document.getElementById("catalogSearchResults");
+            if (!query) {
+                resultsContainer.innerHTML = "";
+                return;
+            }
+
+            const matches = allSongsCatalog.filter(s => (s.name || '').toLowerCase().includes(query) || (s.artist || '').toLowerCase().includes(query)).slice(0, 6);
+            if (matches.length === 0) {
+                resultsContainer.innerHTML = "<p style='color:var(--text-muted); font-size:11px;'>No se encontraron canciones.</p>";
+                return;
+            }
+
+            resultsContainer.innerHTML = matches.map(s => `
+                <div class="song-list-item" style="padding:6px 10px; margin-bottom:4px;" onclick="loadSongObject(allSongsCatalog.find(x => x._id === '${s._id}'))">
+                    <div style="font-size:11px; font-weight:800; color:white;">${s.name.toUpperCase()}</div>
+                    <span style="font-size:9px; color:var(--accent-purple);">${s.key || 'C'}</span>
+                </div>
+            `).join('');
+        }
+
+        initProPresenter();
+    </script>
+</body>
+</html>

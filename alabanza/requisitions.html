@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Requisiciones & Cotizaciones de Equipo | CAN ALABANZA</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        html, body {
+            min-height: 100vh;
+            background-color: #040407;
+            background-attachment: fixed;
+            background-size: cover;
+        }
+
+        .req-form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        .req-item-card {
+            background: var(--bg-glass);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-pco);
+            padding: 24px;
+            margin-bottom: 18px;
+            box-shadow: var(--shadow-glass);
+            transition: var(--transition);
+        }
+
+        .req-item-card:hover {
+            border-color: var(--accent-red);
+            transform: translateY(-2px);
+        }
+
+        @media (max-width: 800px) {
+            .req-form-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+    <link rel="icon" type="image/png" href="can-logo.png">
+</head>
+<body class="theme-principal animate-up">
+    <script>
+        const token = localStorage.getItem("token");
+        if (!token) window.location.href = "login.html";
+
+        const savedWallpaper = localStorage.getItem("cordaz_wallpaper");
+        if (savedWallpaper) {
+            document.body.classList.add("ios-wallpaper-active");
+            document.body.style.setProperty("--ios-bg-image", "url(" + savedWallpaper + ")");
+        }
+    </script>
+
+    <!-- Navigation Header -->
+    <div class="pco-navbar">
+        <div style="display:flex; align-items:center; gap:20px;">
+            <button type="button" class="secondary" onclick="history.back()" style="padding:10px 18px; font-weight:800;">← VOLVER</button>
+            <span style="font-family:var(--font-title); font-weight:900; font-size:18px; letter-spacing:1px;">REQUISICIONES & COTIZACIONES • <span style="color:var(--accent-red); font-weight:400;">ALABANZA & AUDIO</span></span>
+        </div>
+        <button type="button" class="primary" onclick="openNewReqModal()" style="padding:10px 20px; font-weight:900; font-size:11px;">+ NUEVA REQUISICIÓN</button>
+    </div>
+
+    <!-- Main Container -->
+    <div class="container animate-fade" style="padding-bottom:60px;">
+        <header style="margin-bottom:24px; border-bottom:1px solid var(--border-color); padding-bottom:18px; display:flex; justify-content:space-between; align-items:flex-end; flex-wrap:wrap; gap:16px;">
+            <div>
+                <h1 style="font-size:30px; font-family:var(--font-title); font-weight:900; letter-spacing:-0.5px; color:white; margin:0;">Gestión de Requisiciones de Equipo</h1>
+                <p style="color:var(--text-muted); font-size:13px; margin-top:4px;">Cotizaciones de instrumentos, cables, monitores y equipo técnico para revisión y prioridad pastoral.</p>
+            </div>
+        </header>
+
+        <!-- Banner Explicativo -->
+        <div style="background:rgba(255, 42, 75, 0.08); border:1px dashed rgba(255, 42, 75, 0.4); border-radius:12px; padding:16px 20px; margin-bottom:24px; font-size:12px; color:white; line-height:1.6;">
+            <b>ℹ️ ¿Cómo funciona este módulo?</b><br>
+            Cuando algún equipo falla o se desgasta (platillos, monitores IEM, cuerdas, cables, micrófonos), el equipo de Alabanza/Audio cotiza el reemplazo con el proveedor. El Pastor revisa la cotización y brinda su criterio o prioridad. <i>Para que la compra sea oficial, el visto bueno pasa posteriormente al área de Administración.</i>
+        </div>
+
+        <!-- Lista de Requisiciones -->
+        <div id="requisitionsContainer" style="display:flex; flex-direction:column; gap:12px;">
+            <p style="color:var(--text-muted); font-size:13px;">Cargando requisiciones...</p>
+        </div>
+    </div>
+
+    <!-- Modal: Nueva Requisición -->
+    <div id="reqModal" class="modal-overlay" style="display:none;">
+        <div class="modal-glass" style="width: 580px; max-width:95vw;">
+            <h3 style="color:white; margin-top:0; font-family:var(--font-title); font-weight:900; font-size:22px; margin-bottom:18px;">NUEVA REQUISICIÓN DE EQUIPO</h3>
+            
+            <form onsubmit="submitRequisition(event)">
+                <div class="req-form-grid">
+                    <div>
+                        <label style="font-size:10px; color:var(--accent-red); font-weight:900; letter-spacing:1px; text-transform:uppercase; display:block; margin-bottom:6px;">EQUIPO O INSTRUMENTO *</label>
+                        <input type="text" id="reqTitle" placeholder="Ej: Platillo Crash Zildjian K 18&quot;" required style="width:100%; margin-bottom:12px;">
+                    </div>
+                    <div>
+                        <label style="font-size:10px; color:var(--accent-red); font-weight:900; letter-spacing:1px; text-transform:uppercase; display:block; margin-bottom:6px;">CATEGORÍA</label>
+                        <select id="reqCategory" style="width:100%; margin-bottom:12px;">
+                            <option value="Alabanza">🎸 Alabanza / Instrumentos</option>
+                            <option value="Audio FOH & IEMs">🎛️ Audio (FOH & Monitoreo)</option>
+                            <option value="Producción & Cams">🎬 Producción & Cámaras</option>
+                            <option value="Iluminación">💡 Iluminación</option>
+                            <option value="General">📦 General</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="req-form-grid">
+                    <div>
+                        <label style="font-size:10px; color:var(--accent-red); font-weight:900; letter-spacing:1px; text-transform:uppercase; display:block; margin-bottom:6px;">COTIZACIÓN ESTIMADA (MXN) *</label>
+                        <input type="number" id="reqCost" placeholder="Ej: 6850" required style="width:100%; margin-bottom:12px;">
+                    </div>
+                    <div>
+                        <label style="font-size:10px; color:var(--accent-red); font-weight:900; letter-spacing:1px; text-transform:uppercase; display:block; margin-bottom:6px;">URGENCIA</label>
+                        <select id="reqUrgency" style="width:100%; margin-bottom:12px;">
+                            <option value="Baja">🟢 Baja (Mantenimiento)</option>
+                            <option value="Media" selected>🟡 Media (Desgaste notorio)</option>
+                            <option value="Alta">🟠 Alta (Afecta el servicio)</option>
+                            <option value="Crítica">🔴 Crítica (Inoperable)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="req-form-grid">
+                    <div>
+                        <label style="font-size:10px; color:var(--accent-red); font-weight:900; letter-spacing:1px; text-transform:uppercase; display:block; margin-bottom:6px;">PROVEEDOR SUGERIDO</label>
+                        <input type="text" id="reqSupplier" placeholder="Ej: Casa Veerkamp / Amazon" style="width:100%; margin-bottom:12px;">
+                    </div>
+                    <div>
+                        <label style="font-size:10px; color:var(--accent-red); font-weight:900; letter-spacing:1px; text-transform:uppercase; display:block; margin-bottom:6px;">ENLACE DE COMPRA / REFERENCIA</label>
+                        <input type="url" id="reqLink" placeholder="https://..." style="width:100%; margin-bottom:12px;">
+                    </div>
+                </div>
+
+                <label style="font-size:10px; color:var(--accent-red); font-weight:900; letter-spacing:1px; text-transform:uppercase; display:block; margin-bottom:6px;">MOTIVO / DESCRIPCIÓN DEL DAÑO O NECESIDAD *</label>
+                <textarea id="reqReason" rows="3" placeholder="Explica detalladamente qué falló, por qué se requiere el reemplazo y en qué culto se utilizará..." required style="width:100%; margin-bottom:20px;"></textarea>
+
+                <div style="display:flex; gap:12px;">
+                    <button type="submit" class="primary" style="flex:2; padding:12px; font-weight:900;">GUARDAR & ENVIAR A REVISIÓN</button>
+                    <button type="button" onclick="closeNewReqModal()" class="secondary" style="flex:1; padding:12px; font-weight:800;">CANCELAR</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        let allRequisitions = [];
+
+        async function fetchRequisitions() {
+            try {
+                const res = await fetch("/requisitions", { headers: token ? { "Authorization": "Bearer " + token } : {} });
+                const list = await res.json();
+                allRequisitions = Array.isArray(list) ? list : [];
+
+                const container = document.getElementById("requisitionsContainer");
+                if (allRequisitions.length === 0) {
+                    container.innerHTML = "<p style='color:var(--text-muted); font-size:13px;'>No hay requisiciones activas. Haz clic en '+ NUEVA REQUISICIÓN' para registrar una cotización.</p>";
+                    return;
+                }
+
+                container.innerHTML = allRequisitions.map(r => {
+                    const statusBg = (r.status === 'Aprobada (No oficial)') 
+                        ? 'rgba(16,185,129,0.15); color:#10b981; border:1px solid rgba(16,185,129,0.3);' 
+                        : (r.status === 'No Aprobada' 
+                            ? 'rgba(239,68,68,0.15); color:#ef4444; border:1px solid rgba(239,68,68,0.3);' 
+                            : 'rgba(245,158,11,0.15); color:#f59e0b; border:1px solid rgba(245,158,11,0.3);');
+
+                    const cost = r.estimatedCost ? "$" + Number(r.estimatedCost).toLocaleString('es-MX') + " MXN" : "Por definir";
+
+                    return `
+                    <div class="req-item-card">
+                        <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:10px; flex-wrap:wrap; gap:10px;">
+                            <div>
+                                <span style="background:${statusBg} padding:4px 10px; border-radius:8px; font-size:10px; font-weight:900; display:inline-block; margin-bottom:6px;">
+                                    ${(r.status || 'PENDIENTE').toUpperCase()}
+                                </span>
+                                <h3 style="font-size:20px; font-family:var(--font-title); font-weight:900; color:white; margin:2px 0;">${r.title.toUpperCase()}</h3>
+                                <p style="font-size:12px; color:var(--text-muted); margin:0;">🏷️ ${r.category} • Solicitado por: <b>${r.requestedBy}</b> • Urgencia: <b>${r.urgency}</b> • ${new Date(r.createdAt || Date.now()).toLocaleDateString()}</p>
+                            </div>
+                            <div style="text-align:right;">
+                                <div style="font-size:20px; font-weight:900; color:#10b981; font-family:var(--font-title);">${cost}</div>
+                                ${r.supplier ? '<div style="font-size:11px; color:var(--text-muted);">Proveedor: ' + r.supplier + '</div>' : ''}
+                                ${r.itemLink ? '<a href="' + r.itemLink + '" target="_blank" style="color:var(--accent-blue); font-size:11px; font-weight:800; text-decoration:underline;">Ver producto / tienda ↗</a>' : ''}
+                            </div>
+                        </div>
+
+                        <div style="background:rgba(0,0,0,0.4); padding:12px 16px; border-radius:10px; font-size:13px; color:#e2e8f0; line-height:1.6; margin:12px 0;">
+                            <b>Motivo / Daño reportado:</b> ${r.reason}
+                        </div>
+
+                        ${r.pastorFeedback ? `
+                        <div style="background:rgba(37,99,235,0.1); border-left:4px solid var(--pastoral-blue); padding:10px 14px; border-radius:8px; font-size:12px; color:#93c5fd; margin-top:10px;">
+                            <b>✝ Criterio / Observación Pastoral:</b> "${r.pastorFeedback}"
+                        </div>
+                        ` : '<div style="font-size:11px; color:var(--text-muted); margin-top:8px;"><i>Pendiente de observaciones por el Pastor.</i></div>'}
+
+                        <div style="display:flex; justify-content:flex-end; margin-top:14px;">
+                            <button type="button" class="danger" onclick="deleteRequisition('${r._id}')" style="font-size:10px; padding:6px 12px; font-weight:800;">ELIMINAR REQUISICIÓN</button>
+                        </div>
+                    </div>`;
+                }).join('');
+
+            } catch (e) {
+                console.error("Error al cargar requisiciones:", e);
+            }
+        }
+
+        function openNewReqModal() {
+            const modal = document.getElementById("reqModal");
+            modal.style.display = "flex";
+            setTimeout(() => modal.classList.add("active"), 10);
+        }
+
+        function closeNewReqModal() {
+            const modal = document.getElementById("reqModal");
+            modal.classList.remove("active");
+            setTimeout(() => modal.style.display = "none", 300);
+        }
+
+        async function submitRequisition(e) {
+            e.preventDefault();
+            const userObj = JSON.parse(localStorage.getItem("user") || "{}");
+            const requestedBy = userObj.name || "Carlos Ordaz";
+
+            const payload = {
+                title: document.getElementById("reqTitle").value.trim(),
+                category: document.getElementById("reqCategory").value,
+                estimatedCost: Number(document.getElementById("reqCost").value) || 0,
+                urgency: document.getElementById("reqUrgency").value,
+                supplier: document.getElementById("reqSupplier").value.trim(),
+                itemLink: document.getElementById("reqLink").value.trim(),
+                reason: document.getElementById("reqReason").value.trim(),
+                requestedBy
+            };
+
+            try {
+                const res = await fetch("/requisitions", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json", "Authorization": "Bearer " + token },
+                    body: JSON.stringify(payload)
+                });
+
+                if (res.ok) {
+                    alert("🎉 ¡Requisición creada y enviada a revisión pastoral!");
+                    closeNewReqModal();
+                    fetchRequisitions();
+                } else {
+                    alert("Error al guardar la requisición.");
+                }
+            } catch(e) {
+                alert("Error de conexión con el servidor.");
+            }
+        }
+
+        async function deleteRequisition(id) {
+            if (!confirm("¿Deseas eliminar esta requisición?")) return;
+            try {
+                const res = await fetch("/requisitions/" + id, {
+                    method: "DELETE",
+                    headers: { "Authorization": "Bearer " + token }
+                });
+                if (res.ok) {
+                    fetchRequisitions();
+                }
+            } catch(e) {
+                alert("Error al eliminar la requisición.");
+            }
+        }
+
+        fetchRequisitions();
+    </script>
+</body>
+</html>

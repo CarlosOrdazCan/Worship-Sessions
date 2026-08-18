@@ -1,0 +1,697 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Centro de Mando Pastoral | CAN ALABANZA</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        :root {
+            --pastoral-blue: #2563eb;
+            --pastoral-glow: rgba(37, 99, 235, 0.4);
+            --pastoral-light: #60a5fa;
+        }
+
+        html, body {
+            min-height: 100vh;
+            background-color: #040407;
+            background-attachment: fixed;
+            background-size: cover;
+        }
+
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .kpi-card {
+            background: var(--bg-glass);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-pco);
+            padding: 24px;
+            box-shadow: var(--shadow-glass);
+            position: relative;
+            overflow: hidden;
+            transition: var(--transition);
+        }
+
+        .kpi-card:hover {
+            border-color: var(--pastoral-blue);
+            transform: translateY(-4px);
+            box-shadow: 0 15px 35px var(--pastoral-glow), var(--shadow-glass);
+        }
+
+        .kpi-title {
+            font-size: 11px;
+            color: var(--pastoral-light);
+            font-weight: 900;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+        }
+
+        .kpi-value {
+            font-size: 36px;
+            font-family: var(--font-title);
+            font-weight: 900;
+            color: white;
+            letter-spacing: -0.5px;
+            margin-bottom: 4px;
+        }
+
+        .kpi-subtitle {
+            font-size: 12px;
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+
+        .pastoral-grid {
+            display: grid;
+            grid-template-columns: 1.6fr 1fr;
+            gap: 28px;
+            align-items: start;
+        }
+
+        .front-card {
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid var(--border-color);
+            border-radius: 14px;
+            padding: 18px 20px;
+            margin-bottom: 14px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: var(--transition);
+        }
+
+        .front-card:hover {
+            transform: translateX(4px);
+        }
+
+        .quick-action-btn {
+            background: var(--bg-glass);
+            border: 1px solid var(--border-color);
+            color: white;
+            padding: 16px 20px;
+            border-radius: 14px;
+            font-weight: 800;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+            transition: var(--transition);
+            width: 100%;
+            text-align: left;
+        }
+
+        .quick-action-btn:hover {
+            border-color: var(--pastoral-blue);
+            background: rgba(37, 99, 235, 0.1);
+            transform: translateX(4px);
+            box-shadow: 0 5px 20px var(--pastoral-glow);
+        }
+
+        .req-card {
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid var(--border-color);
+            border-radius: 14px;
+            padding: 20px;
+            margin-bottom: 16px;
+            transition: var(--transition);
+        }
+        .req-card:hover {
+            border-color: var(--pastoral-blue);
+        }
+
+        .attendance-badge-serves {
+            background: rgba(16, 185, 129, 0.15);
+            color: #10b981;
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            padding: 4px 10px;
+            border-radius: 8px;
+            font-size: 11px;
+            font-weight: 800;
+        }
+
+        .attendance-badge-receives {
+            background: rgba(56, 189, 248, 0.15);
+            color: #38bdf8;
+            border: 1px solid rgba(56, 189, 248, 0.3);
+            padding: 4px 10px;
+            border-radius: 8px;
+            font-size: 11px;
+            font-weight: 800;
+        }
+
+        .attendance-badge-absent {
+            background: rgba(239, 68, 68, 0.15);
+            color: #ef4444;
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            padding: 4px 10px;
+            border-radius: 8px;
+            font-size: 11px;
+            font-weight: 800;
+        }
+
+        @media (max-width: 960px) {
+            .pastoral-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+    <link rel="icon" type="image/png" href="can-logo.png">
+</head>
+<body class="theme-pastoral animate-up">
+    <script>
+        const token = localStorage.getItem("token");
+        if (!token) window.location.href = "login.html";
+
+        const savedWallpaper = localStorage.getItem("cordaz_wallpaper");
+        if (savedWallpaper) {
+            document.body.classList.add("ios-wallpaper-active");
+            document.body.style.setProperty("--ios-bg-image", "url(" + savedWallpaper + ")");
+        }
+    </script>
+
+    <!-- Navigation Header -->
+    <div class="pco-navbar">
+        <div style="display:flex; align-items:center; gap:20px;">
+            <div style="background:var(--pastoral-blue); width:36px; height:36px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-family:var(--font-title); font-weight:900; font-size:18px; color:white; box-shadow: 0 0 15px var(--pastoral-glow);">✝</div>
+            <span style="font-family:var(--font-title); font-weight:900; font-size:18px; letter-spacing:1px;">CAN <span style="color:var(--pastoral-light); font-weight:400;">PASTORAL</span> • CENTRO DE MANDO</span>
+        </div>
+        <div style="display:flex; gap:16px; align-items:center;">
+            <button class="secondary" onclick="location.href='directorio.html'" style="padding:10px 18px; font-weight:800; font-size:11px;">👥 DIRECTORIO</button>
+            <button class="secondary" onclick="location.href='requisitions.html'" style="padding:10px 18px; font-weight:800; font-size:11px; color:var(--pastoral-light); border-color:var(--pastoral-blue);">📋 REQUISICIONES</button>
+            <button class="secondary" onclick="location.href='profile.html'" style="padding:10px 18px; font-weight:800; font-size:11px;">👤 MI PERFIL</button>
+            <button class="danger" onclick="localStorage.clear(); window.location.href='login.html';" style="padding:10px 18px; font-size:11px; font-weight:800;">SALIR</button>
+        </div>
+    </div>
+
+    <!-- Main Container -->
+    <div class="container animate-fade" style="padding-top:20px; padding-bottom:60px;">
+        
+        <!-- Header Principal -->
+        <header style="margin-bottom:30px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px; border-bottom:1px solid var(--border-color); padding-bottom:20px;">
+            <div>
+                <h1 style="font-size:32px; font-family:var(--font-title); font-weight:900; letter-spacing:-0.5px; color:white; margin:0;">Panorama Ejecutivo Ministerial</h1>
+                <p style="color:var(--text-muted); font-size:14px; margin-top:4px;">Estatus global en tiempo real de cultos, asistencia, justificaciones de ausencia y cotizaciones de equipo.</p>
+            </div>
+            <div style="display:flex; gap:10px; align-items:center;">
+                <span id="liveDateBadge" class="status-pill confirmed" style="border-color:var(--pastoral-blue); color:var(--pastoral-light); font-size:11px; padding:6px 16px; font-weight:800;">HOY</span>
+            </div>
+        </header>
+
+        <!-- KPI Grid Superior -->
+        <div class="kpi-grid">
+            <div class="kpi-card animate-fade">
+                <div class="kpi-title">👥 SERVIDORES ACTIVOS</div>
+                <div class="kpi-value" id="kpiTotalUsers">--</div>
+                <div class="kpi-subtitle" id="kpiUsersDetail">Alabanza, Kids, Audio y Cabina</div>
+            </div>
+
+            <div class="kpi-card animate-fade">
+                <div class="kpi-title">🎵 REPERTORIO ACTIVO</div>
+                <div class="kpi-value" id="kpiTotalSongs">--</div>
+                <div class="kpi-subtitle">Canciones con charts y tonalidades</div>
+            </div>
+
+            <div class="kpi-card animate-fade">
+                <div class="kpi-title">📅 SERVICIOS PROGRAMADOS</div>
+                <div class="kpi-value" id="kpiTotalSets">--</div>
+                <div class="kpi-subtitle">Planificados para este mes</div>
+            </div>
+
+            <div class="kpi-card animate-fade">
+                <div class="kpi-title">📋 REQUISICIONES PENDIENTES</div>
+                <div class="kpi-value" style="color:var(--pastoral-light);" id="kpiPendingReqs">--</div>
+                <div class="kpi-subtitle">Cotizaciones de equipo por revisar</div>
+            </div>
+        </div>
+
+        <!-- 2 Column Layout -->
+        <div class="pastoral-grid">
+            
+            <!-- Columna Izquierda: Snapshot Próximo Servicio, Asistencia & Escaleta ROS -->
+            <div>
+                <!-- Próximo Servicio Card -->
+                <div class="glass-card" style="margin-bottom:28px; border-left:6px solid var(--pastoral-blue);">
+                    <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:16px; flex-wrap:wrap; gap:12px;">
+                        <div>
+                            <span class="status-pill" style="border-color:var(--pastoral-blue); color:var(--pastoral-light); font-size:10px; font-weight:900; padding:4px 10px;">
+                                ⛪ PRÓXIMO SERVICIO EN VIVO
+                            </span>
+                            <h2 id="nextSetName" style="font-size:24px; font-family:var(--font-title); font-weight:900; color:white; margin:10px 0 2px 0;">CARGANDO SERVICIO...</h2>
+                            <p id="nextSetMeta" style="color:var(--text-muted); font-size:13px; margin:0;">🗓️ ---</p>
+                        </div>
+                        <button onclick="window.print()" class="secondary" style="font-size:11px; padding:8px 14px; font-weight:800;">🖨️ IMPRIMIR ORDEN</button>
+                    </div>
+
+                    <!-- NUEVO BLOQUE: Asistencia por Servicio & Justificación de Ausencias -->
+                    <div style="background:rgba(0,0,0,0.5); border:1px solid var(--border-color); border-radius:14px; padding:18px; margin-top:16px;">
+                        <h4 style="font-size:11px; color:var(--pastoral-light); font-weight:900; letter-spacing:1.5px; text-transform:uppercase; margin:0 0 12px 0; display:flex; justify-content:space-between;">
+                            <span>👥 ESTADO DE ASISTENCIA & AUSENCIAS DEL CULTO</span>
+                        </h4>
+                        
+                        <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:14px;">
+                            <!-- Quienes Sirven -->
+                            <div style="background:rgba(16,185,129,0.06); border:1px solid rgba(16,185,129,0.2); border-radius:10px; padding:12px;">
+                                <div style="font-size:11px; font-weight:900; color:#10b981; margin-bottom:8px; text-transform:uppercase;">✅ SIRVEN EN PLATAFORMA</div>
+                                <div id="attendeesServing" style="display:flex; flex-direction:column; gap:6px; font-size:12px;">
+                                    <p style="color:var(--text-muted); font-size:11px;">Cargando...</p>
+                                </div>
+                            </div>
+
+                            <!-- Quienes Reciben -->
+                            <div style="background:rgba(56,189,248,0.06); border:1px solid rgba(56,189,248,0.2); border-radius:10px; padding:12px;">
+                                <div style="font-size:11px; font-weight:900; color:#38bdf8; margin-bottom:8px; text-transform:uppercase;">🛋️ RECIBEN EN CONGREGACIÓN</div>
+                                <div id="attendeesReceiving" style="display:flex; flex-direction:column; gap:6px; font-size:12px;">
+                                    <p style="color:var(--text-muted); font-size:11px;">Cargando...</p>
+                                </div>
+                            </div>
+
+                            <!-- Inasistencias con Motivo -->
+                            <div style="background:rgba(239,68,68,0.06); border:1px solid rgba(239,68,68,0.2); border-radius:10px; padding:12px;">
+                                <div style="font-size:11px; font-weight:900; color:#ef4444; margin-bottom:8px; text-transform:uppercase;">✖ NO ASISTEN (JUSTIFICACIÓN)</div>
+                                <div id="attendeesAbsent" style="display:flex; flex-direction:column; gap:8px; font-size:12px;">
+                                    <p style="color:var(--text-muted); font-size:11px;">Cargando...</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Orden de Culto / ROS Preview -->
+                    <div style="background:rgba(0,0,0,0.5); border:1px solid var(--border-color); border-radius:14px; padding:18px; margin-top:16px;">
+                        <h4 style="font-size:11px; color:var(--pastoral-light); font-weight:900; letter-spacing:1.5px; text-transform:uppercase; margin:0 0 12px 0;">
+                            📋 ORDEN DEL CULTO (ESCALETA EJECUTIVA)
+                        </h4>
+                        <div id="rosBlocksContainer" style="display:flex; flex-direction:column; gap:10px;">
+                            <p style="color:var(--text-muted); font-size:12px;">Cargando escaleta del servicio...</p>
+                        </div>
+                    </div>
+
+                    <!-- Canciones Programadas -->
+                    <div style="margin-top:20px;">
+                        <h4 style="font-size:11px; color:var(--pastoral-light); font-weight:900; letter-spacing:1.5px; text-transform:uppercase; margin:0 0 12px 0;">
+                            🎵 CANCIONES DEL SETLIST
+                        </h4>
+                        <div id="setSongsContainer" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:10px;">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SECCIÓN DE REQUISICIONES DE EQUIPO (PASTORAL REVIEW) -->
+                <div class="glass-card" style="border-left:6px solid #f59e0b;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:10px;">
+                        <h3 style="font-size:15px; font-family:var(--font-title); font-weight:900; color:white; letter-spacing:1px; margin:0; text-transform:uppercase;">
+                            📋 REQUISICIONES & COTIZACIONES DE EQUIPO
+                        </h3>
+                        <span class="status-pill" style="background:rgba(245,158,11,0.15); color:#f59e0b; border-color:rgba(245,158,11,0.3); font-size:9px; font-weight:800;">
+                            SOLICITUDES DE ALABANZA & AUDIO
+                        </span>
+                    </div>
+
+                    <!-- Banner de Aviso No Oficial -->
+                    <div style="background:rgba(245, 158, 11, 0.08); border:1px dashed rgba(245, 158, 11, 0.4); border-radius:10px; padding:12px 16px; margin-bottom:18px; font-size:11px; color:#fbbf24; line-height:1.5;">
+                        <b>⚠️ NOTA INFORMATIVA:</b> Esta aprobación pastoral representa un <b>visto bueno de prioridad ministerial</b> para que el equipo de Alabanza conozca el criterio pastoral. Para que la compra sea <b>OFICIAL</b>, deberá tramitarse y aprobarse a través del área de Administración General.
+                    </div>
+
+                    <div id="pastorReqsList" style="display:flex; flex-direction:column; gap:14px;">
+                        <p style="color:var(--text-muted); font-size:12px;">Cargando requisiciones...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Columna Derecha: Estatus de los 4 Frentes & Acciones Rápidas -->
+            <div>
+                <!-- Estatus de los 4 Frentes -->
+                <div class="glass-card" style="margin-bottom:28px;">
+                    <h3 style="font-size:13px; font-family:var(--font-title); font-weight:900; color:var(--pastoral-light); letter-spacing:1.5px; margin-top:0; margin-bottom:18px; text-transform:uppercase;">
+                        🛡️ ESTATUS MINISTERIAL (4 FRENTES)
+                    </h3>
+
+                    <!-- Alabanza Principal -->
+                    <div class="front-card" style="border-left:4px solid var(--accent-red);">
+                        <div>
+                            <div style="font-weight:900; font-size:13px; color:white;">🎸 ALABANZA PRINCIPAL</div>
+                            <div id="statusPrincipal" style="font-size:11px; color:var(--text-muted); margin-top:2px;">Cargando...</div>
+                        </div>
+                        <span id="badgePrincipal" class="status-pill confirmed" style="font-size:9px; border-color:var(--accent-red); color:var(--accent-red);">ACTIVO</span>
+                    </div>
+
+                    <!-- Alabanza Kids -->
+                    <div class="front-card" style="border-left:4px solid var(--accent-blue);">
+                        <div>
+                            <div style="font-weight:900; font-size:13px; color:white;">👶 ALABANZA KIDS</div>
+                            <div id="statusKids" style="font-size:11px; color:var(--text-muted); margin-top:2px;">Cargando...</div>
+                        </div>
+                        <span id="badgeKids" class="status-pill confirmed" style="font-size:9px; border-color:var(--accent-blue); color:var(--accent-blue);">ACTIVO</span>
+                    </div>
+
+                    <!-- Audio FOH -->
+                    <div class="front-card" style="border-left:4px solid var(--audio-accent);">
+                        <div>
+                            <div style="font-weight:900; font-size:13px; color:white;">🎛️ AUDIO (FOH & IEMs)</div>
+                            <div id="statusAudio" style="font-size:11px; color:var(--text-muted); margin-top:2px;">David Montes • Stage Patch Listo</div>
+                        </div>
+                        <span class="status-pill confirmed" style="font-size:9px; border-color:var(--audio-accent); color:var(--audio-accent);">LISTO</span>
+                    </div>
+
+                    <!-- Producción Técnica -->
+                    <div class="front-card" style="border-left:4px solid var(--accent-purple);">
+                        <div>
+                            <div style="font-weight:900; font-size:13px; color:white;">🎬 PRODUCCIÓN & CABINA</div>
+                            <div id="statusProd" style="font-size:11px; color:var(--text-muted); margin-top:2px;">Daniela Alva • ProPresenter, Cams & Luces</div>
+                        </div>
+                        <span class="status-pill confirmed" style="font-size:9px; border-color:var(--accent-purple); color:var(--accent-purple);">LISTO</span>
+                    </div>
+                </div>
+
+                <!-- Distribución de Fuerza Ministerial -->
+                <div class="glass-card" style="margin-bottom:28px;">
+                    <h3 style="font-size:13px; font-family:var(--font-title); font-weight:900; color:white; letter-spacing:1px; margin-top:0; margin-bottom:16px; text-transform:uppercase;">
+                        📈 DISTRIBUCIÓN DE SERVIDORES
+                    </h3>
+                    <div id="teamDistribution" style="display:flex; flex-direction:column; gap:10px;">
+                    </div>
+                </div>
+
+                <!-- Acciones Rápidas Pastorales -->
+                <div class="glass-card">
+                    <h3 style="font-size:13px; font-family:var(--font-title); font-weight:900; color:var(--pastoral-light); letter-spacing:1.5px; margin-top:0; margin-bottom:16px; text-transform:uppercase;">
+                        ⚡ HERRAMIENTAS PASTORALES
+                    </h3>
+                    <div style="display:flex; flex-direction:column; gap:10px;">
+                        <button class="quick-action-btn" onclick="location.href='directorio.html'">
+                            <span style="font-size:20px;">👥</span>
+                            <div>
+                                <div style="font-weight:800; font-size:13px;">Directorio del Equipo de Alabanza & Producción</div>
+                                <div style="font-size:11px; color:var(--text-muted);">Consultar contactos y ministerios</div>
+                            </div>
+                        </button>
+                        <button class="quick-action-btn" onclick="location.href='requisitions.html'">
+                            <span style="font-size:20px;">📋</span>
+                            <div>
+                                <div style="font-weight:800; font-size:13px;">Requisiciones & Cotizaciones</div>
+                                <div style="font-size:11px; color:var(--text-muted);">Ver cotizaciones de instrumentos y equipo</div>
+                            </div>
+                        </button>
+                        <button class="quick-action-btn" onclick="location.href='overview.html'">
+                            <span style="font-size:20px;">🎵</span>
+                            <div>
+                                <div style="font-weight:800; font-size:13px;">Explorador de Repertorio</div>
+                                <div style="font-size:11px; color:var(--text-muted);">Consultar letras y tonalidades del catálogo</div>
+                            </div>
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let allRequisitions = [];
+
+        async function loadPastoralDashboard() {
+            try {
+                const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+                document.getElementById("liveDateBadge").innerText = new Date().toLocaleDateString('es-ES', options).toUpperCase();
+
+                // 1. Cargar Usuarios
+                const uRes = await fetch("/users", { headers: token ? { "Authorization": "Bearer " + token } : {} });
+                const users = await uRes.json();
+                const totalUsers = Array.isArray(users) ? users.length : 0;
+                document.getElementById("kpiTotalUsers").innerText = totalUsers;
+
+                const principalUsers = users.filter(u => (u.ministry || '').toLowerCase().includes('principal') || (!u.ministry && !u.techBranch));
+                const kidsUsers = users.filter(u => (u.ministry || '').toLowerCase().includes('kids'));
+                const audioUsers = users.filter(u => (u.ministry || '').toLowerCase().includes('audio') || (u.instrument || '').toLowerCase().includes('audio'));
+                const prodUsers = users.filter(u => (u.ministry || '').toLowerCase().includes('prod') || u.techBranch);
+
+                document.getElementById("kpiUsersDetail").innerText = principalUsers.length + " Alabanza, " + kidsUsers.length + " Kids, " + prodUsers.length + " Producción";
+
+                document.getElementById("statusPrincipal").innerText = principalUsers.length + " Músicos Activos";
+                document.getElementById("statusKids").innerText = kidsUsers.length + " Músicos Kids";
+
+                // Distribución
+                const distContainer = document.getElementById("teamDistribution");
+                distContainer.innerHTML = [
+                    { name: 'Alabanza Principal', count: principalUsers.length, color: 'var(--accent-red)' },
+                    { name: 'Producción & Cabina', count: prodUsers.length, color: 'var(--accent-purple)' },
+                    { name: 'Audio (FOH / IEMs)', count: audioUsers.length, color: 'var(--audio-accent)' },
+                    { name: 'Alabanza Kids', count: kidsUsers.length, color: 'var(--accent-blue)' }
+                ].map(d => {
+                    const pct = totalUsers > 0 ? Math.round((d.count / totalUsers) * 100) : 0;
+                    return `
+                    <div>
+                        <div style="display:flex; justify-content:space-between; font-size:11px; margin-bottom:4px;">
+                            <span style="color:white; font-weight:800;">${d.name.toUpperCase()}</span>
+                            <span style="color:var(--text-muted); font-weight:800;">${d.count} integrantes (${pct}%)</span>
+                        </div>
+                        <div style="background:rgba(0,0,0,0.5); height:6px; border-radius:10px; overflow:hidden;">
+                            <div style="background:${d.color}; height:100%; width:${pct}%;"></div>
+                        </div>
+                    </div>`;
+                }).join('');
+
+                // 2. Cargar Canciones
+                const sRes = await fetch("/songs", { headers: token ? { "Authorization": "Bearer " + token } : {} });
+                const songs = await sRes.json();
+                document.getElementById("kpiTotalSongs").innerText = Array.isArray(songs) ? songs.length : 0;
+
+                // 3. Cargar Setlists
+                const setRes = await fetch("/setlists", { headers: token ? { "Authorization": "Bearer " + token } : {} });
+                const setlists = await setRes.json();
+                const activeSets = Array.isArray(setlists) ? setlists.filter(s => s && !s.archived).reverse() : [];
+                document.getElementById("kpiTotalSets").innerText = activeSets.length;
+
+                // Próximo Servicio Activo
+                if (activeSets.length > 0) {
+                    const next = activeSets[0];
+                    document.getElementById("nextSetName").innerText = (next.name || "Servicio").toUpperCase();
+                    
+                    const isMiercoles = (next.name || '').toLowerCase().includes('miercoles') || (next.meetingType || '').toLowerCase().includes('miercoles');
+                    const subtitle = isMiercoles 
+                        ? ("🗓️ " + (next.date || '') + " • Servicio de Oración & Enseñanza (8:00 PM)")
+                        : ("🗓️ " + (next.date || '') + " • Servicio Dominical (9:00 AM, 11:00 AM, 1:00 PM)");
+
+                    document.getElementById("nextSetMeta").innerText = subtitle;
+
+                    // Desglose de Asistencia & Ausencias
+                    renderServiceAttendance(next, users);
+
+                    // Escaleta ROS
+                    const rosContainer = document.getElementById("rosBlocksContainer");
+                    if (next.runOfService && next.runOfService.length > 0) {
+                        rosContainer.innerHTML = next.runOfService.map(r => `
+                            <div style="display:grid; grid-template-columns: 80px 1.5fr 2fr; gap:10px; background:rgba(255,255,255,0.03); padding:8px 12px; border-radius:8px; font-size:12px; align-items:center;">
+                                <span style="color:var(--pastoral-light); font-weight:800;">${r.time}</span>
+                                <span style="color:white; font-weight:800;">${r.activity.toUpperCase()}</span>
+                                <span style="color:var(--text-muted); font-size:11px;">${r.cabinaNotes || r.videoNotes || '-'}</span>
+                            </div>
+                        `).join('');
+                    } else {
+                        rosContainer.innerHTML = "<p style='color:var(--text-muted); font-size:12px;'>La escaleta no ha sido configurada para este servicio.</p>";
+                    }
+
+                    // Canciones
+                    const songsContainer = document.getElementById("setSongsContainer");
+                    if (next.songs && next.songs.length > 0) {
+                        songsContainer.innerHTML = next.songs.map((item, idx) => {
+                            const songObj = (typeof item.songId === 'object' && item.songId !== null) 
+                                ? item.songId 
+                                : (songs.find(s => s._id === (item.songId || item)) || {});
+                            const title = (songObj.name || item.name || 'Canción').toUpperCase();
+                            const key = item.setlistKey || songObj.key || 'C';
+                            return `
+                            <div style="background:rgba(0,0,0,0.4); border:1px solid var(--border-color); padding:8px 12px; border-radius:8px; display:flex; justify-content:space-between; align-items:center;">
+                                <span style="font-weight:800; font-size:11px; color:white;">${idx + 1}. ${title}</span>
+                                <span class="status-pill confirmed" style="font-size:9px; border-color:var(--pastoral-blue); color:var(--pastoral-light); font-weight:900;">${key}</span>
+                            </div>`;
+                        }).join('');
+                    } else {
+                        songsContainer.innerHTML = "<p style='color:var(--text-muted); font-size:12px;'>No hay canciones asignadas.</p>";
+                    }
+                }
+
+                // 4. Cargar Requisiciones de Equipo
+                loadRequisitions();
+
+            } catch (e) {
+                console.error("Error en dashboard pastoral:", e);
+            }
+        }
+
+        function renderServiceAttendance(service, allUsers) {
+            const servingEl = document.getElementById("attendeesServing");
+            const receivingEl = document.getElementById("attendeesReceiving");
+            const absentEl = document.getElementById("attendeesAbsent");
+
+            const team = service.team || [];
+            const prodTeam = service.prodTeam || [];
+            const absenceReasons = service.absenceReasons || {};
+
+            let servingList = [];
+            let receivingList = [];
+            let absentList = [];
+
+            // Procesar Músicos
+            team.forEach(t => {
+                const name = typeof t === 'object' ? t.name : t;
+                const schedules = (t && t.schedules) ? Object.values(t.schedules) : [];
+                const reason = absenceReasons[name] || "";
+
+                if (schedules.includes("sirve") || (t.attendance && Object.values(t.attendance).includes("Sirve"))) {
+                    servingList.push({ name, role: t.role || 'Músico', type: 'band' });
+                } else if (schedules.includes("recibe") || (t.attendance && Object.values(t.attendance).includes("Recibe"))) {
+                    receivingList.push({ name, role: t.role || 'Músico', type: 'band' });
+                } else if (schedules.includes("no") || reason || (t.attendance && Object.values(t.attendance).includes("No sirve"))) {
+                    absentList.push({ name, role: t.role || 'Músico', reason: reason || "No disponible para este servicio" });
+                } else {
+                    servingList.push({ name, role: t.role || 'Músico', type: 'band' });
+                }
+            });
+
+            // Procesar Técnicos
+            prodTeam.forEach(p => {
+                const slots = p.attendanceBySlot ? Object.values(p.attendanceBySlot) : [p.attendance || ''];
+                const reason = absenceReasons[p.name] || "";
+
+                if (slots.includes("Sirve")) {
+                    servingList.push({ name: p.name, role: p.role || 'Técnico', type: 'prod' });
+                } else if (slots.includes("Recibe")) {
+                    receivingList.push({ name: p.name, role: p.role || 'Técnico', type: 'prod' });
+                } else if (slots.includes("No sirve") || reason) {
+                    absentList.push({ name: p.name, role: p.role || 'Técnico', reason: reason || "No asignado en turnos" });
+                }
+            });
+
+            // Incluir cualquier inasistencia justificada en el setlist
+            Object.entries(absenceReasons).forEach(([name, reason]) => {
+                if (reason && !absentList.some(a => a.name.toLowerCase() === name.toLowerCase())) {
+                    absentList.push({ name, role: 'Equipo', reason: reason });
+                }
+            });
+
+            // Renderizar Sirven
+            servingEl.innerHTML = servingList.length > 0
+                ? servingList.map(s => `<div><b style="color:white;">${s.name.toUpperCase()}</b> <span style="color:var(--text-muted); font-size:11px;">(${s.role})</span></div>`).join('')
+                : "<i style='color:var(--text-muted); font-size:11px;'>Sin asignaciones</i>";
+
+            // Renderizar Reciben
+            receivingEl.innerHTML = receivingList.length > 0
+                ? receivingList.map(s => `<div><b style="color:white;">${s.name.toUpperCase()}</b> <span style="color:var(--text-muted); font-size:11px;">(${s.role})</span></div>`).join('')
+                : "<i style='color:var(--text-muted); font-size:11px;'>Ninguno en congregación</i>";
+
+            // Renderizar Inasistencias con Motivo
+            absentEl.innerHTML = absentList.length > 0
+                ? absentList.map(s => `
+                    <div style="background:rgba(0,0,0,0.3); padding:6px 10px; border-radius:6px; border-left:3px solid #ef4444;">
+                        <div style="font-weight:800; color:white; font-size:12px;">${s.name.toUpperCase()} <span style="color:var(--text-muted); font-size:10px;">(${s.role})</span></div>
+                        <div style="color:#fca5a5; font-size:11px; margin-top:2px;">💬 "${s.reason}"</div>
+                    </div>
+                `).join('')
+                : "<i style='color:var(--text-muted); font-size:11px;'>Asistencia completa confirmada</i>";
+        }
+
+        async function loadRequisitions() {
+            try {
+                const res = await fetch("/requisitions", { headers: token ? { "Authorization": "Bearer " + token } : {} });
+                const reqs = await res.json();
+                allRequisitions = Array.isArray(reqs) ? reqs : [];
+
+                const pending = allRequisitions.filter(r => (r.status || 'Pendiente').toLowerCase().includes('pendiente') || (r.status || '').toLowerCase().includes('revisión'));
+                document.getElementById("kpiPendingReqs").innerText = pending.length;
+
+                const container = document.getElementById("pastorReqsList");
+                if (allRequisitions.length === 0) {
+                    container.innerHTML = "<p style='color:var(--text-muted); font-size:12px;'>No hay requisiciones de equipo registradas.</p>";
+                    return;
+                }
+
+                container.innerHTML = allRequisitions.map(r => {
+                    const statusClass = (r.status === 'Aprobada (No oficial)') 
+                        ? 'attendance-badge-serves' 
+                        : (r.status === 'No Aprobada' ? 'attendance-badge-absent' : 'attendance-badge-receives');
+                    
+                    const costFormatted = r.estimatedCost ? "$" + Number(r.estimatedCost).toLocaleString('es-MX') + " MXN" : "Cotización por confirmar";
+
+                    return `
+                    <div class="req-card">
+                        <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:8px; flex-wrap:wrap; gap:8px;">
+                            <div>
+                                <span class="${statusClass}" style="margin-bottom:6px; display:inline-block;">${(r.status || 'PENDIENTE').toUpperCase()}</span>
+                                <h4 style="font-size:16px; font-family:var(--font-title); font-weight:900; color:white; margin:4px 0 2px 0;">${r.title.toUpperCase()}</h4>
+                                <p style="font-size:11px; color:var(--pastoral-light); margin:0;">🏷️ ${r.category || 'Alabanza'} • Solicitado por: <b>${r.requestedBy || 'Carlos Ordaz'}</b> • Urgencia: <b>${r.urgency || 'Media'}</b></p>
+                            </div>
+                            <div style="text-align:right;">
+                                <div style="font-size:16px; font-weight:900; color:#10b981; font-family:var(--font-title);">${costFormatted}</div>
+                                ${r.supplier ? '<div style="font-size:11px; color:var(--text-muted);">Proveedor: ' + r.supplier + '</div>' : ''}
+                                ${r.itemLink ? '<a href="' + r.itemLink + '" target="_blank" style="color:var(--pastoral-light); font-size:11px; font-weight:800; text-decoration:underline;">Ver cotización / producto ↗</a>' : ''}
+                            </div>
+                        </div>
+
+                        <div style="background:rgba(0,0,0,0.4); padding:10px 14px; border-radius:8px; font-size:12px; color:#e2e8f0; line-height:1.5; margin:10px 0;">
+                            <b>Motivo / Daño:</b> ${r.reason}
+                        </div>
+
+                        <!-- Decisión Pastoral & Feedback -->
+                        <div style="margin-top:14px; border-top:1px solid var(--border-color); padding-top:12px;">
+                            <label style="font-size:10px; color:var(--pastoral-light); font-weight:900; letter-spacing:1px; text-transform:uppercase; display:block; margin-bottom:6px;">
+                                💬 COMENTARIOS / CRITERIO DEL PASTOR:
+                            </label>
+                            <input type="text" id="feedback_${r._id}" value="${r.pastorFeedback || ''}" placeholder="Escribe observaciones (ej: 'Revisar proveedor alterno' o 'Aprobado para gestión adm. el lunes')..." style="width:100%; font-size:12px; padding:8px 12px; margin-bottom:10px;">
+                            
+                            <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                                <button type="button" class="primary" onclick="updateReqStatus('${r._id}', 'Aprobada (No oficial)')" style="background:#10b981; border-color:#10b981; color:black; font-weight:900; font-size:11px; padding:8px 14px;">
+                                    🟢 APROBAR (P/ GESTIÓN ADM.)
+                                </button>
+                                <button type="button" class="secondary" onclick="updateReqStatus('${r._id}', 'En Revisión')" style="border-color:#f59e0b; color:#f59e0b; font-weight:900; font-size:11px; padding:8px 14px;">
+                                    🟡 EN REVISIÓN
+                                </button>
+                                <button type="button" class="danger" onclick="updateReqStatus('${r._id}', 'No Aprobada')" style="font-weight:900; font-size:11px; padding:8px 14px;">
+                                    🔴 NO APROBADA
+                                </button>
+                            </div>
+                        </div>
+                    </div>`;
+                }).join('');
+
+            } catch (e) {
+                console.error("Error al cargar requisiciones:", e);
+            }
+        }
+
+        async function updateReqStatus(reqId, status) {
+            const feedbackInput = document.getElementById("feedback_" + reqId);
+            const pastorFeedback = feedbackInput ? feedbackInput.value : "";
+
+            try {
+                const res = await fetch("/requisitions/" + reqId, {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json", "Authorization": "Bearer " + token },
+                    body: JSON.stringify({
+                        status,
+                        pastorFeedback,
+                        pastorReviewedAt: new Date()
+                    })
+                });
+
+                if (res.ok) {
+                    alert("✅ Criterio pastoral registrado con éxito (" + status + ").");
+                    loadRequisitions();
+                } else {
+                    alert("Error al actualizar la requisición.");
+                }
+            } catch(e) {
+                alert("Error de conexión con el servidor.");
+            }
+        }
+
+        loadPastoralDashboard();
+    </script>
+</body>
+</html>

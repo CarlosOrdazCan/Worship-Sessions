@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Editor de Canción | CAN ALABANZA</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+        }
+
+        .section-card {
+            background: var(--bg-glass);
+            border: 1px solid var(--border-color);
+            border-left: 5px solid var(--accent-red);
+            border-radius: var(--radius-pco);
+            padding: 24px;
+            margin-bottom: 20px;
+            box-shadow: var(--shadow-glass);
+            transition: var(--transition);
+        }
+        .section-card:hover {
+            border-color: var(--border-red);
+            transform: translateY(-2px);
+        }
+
+        .sec-custom-name {
+            display: none;
+            margin-top: 8px;
+        }
+
+        .chord-preview-box {
+            font-family: var(--font-chords);
+            font-size: 14px;
+            line-height: 1.8;
+            white-space: pre;
+            background: rgba(0,0,0,0.6);
+            padding: 16px;
+            border-radius: 10px;
+            border: 1px solid var(--border-color);
+            overflow-x: auto;
+            color: var(--accent-blue);
+        }
+    </style>
+    <link rel="icon" type="image/png" href="can-logo.png">
+</head>
+<body class="animate-up">
+    <script>
+        const token = localStorage.getItem("token");
+        if (!token) window.location.href = "login.html";
+
+        try {
+            const storedUser = JSON.parse(localStorage.getItem("user") || "{}");
+            const role = storedUser.role || "Viewer";
+            const min = storedUser.ministry || "";
+            const isFullAdmin = (role === "Full Administrador" || (storedUser.username && storedUser.username.toLowerCase() === "cordaz"));
+            const isWorshipEditor = isFullAdmin || (role === "Editor" && min !== "Produccion" && !String(storedUser.instrument || '').toLowerCase().includes("audio"));
+            if (!isWorshipEditor) {
+                alert("No tienes acceso, consúltalo con el administrador.");
+                window.location.replace("index.html");
+            }
+        } catch(e) {
+            window.location.replace("index.html");
+        }
+
+        const activeMin = localStorage.getItem("activeMinistry") || "Principal";
+        if(activeMin === "KIDS") document.body.classList.add("kids-theme");
+
+        const savedWallpaper = localStorage.getItem("cordaz_wallpaper");
+        if (savedWallpaper) {
+            document.body.classList.add("ios-wallpaper-active");
+            document.body.style.setProperty("--ios-bg-image", `url(${savedWallpaper})`);
+        }
+    </script>
+
+    <!-- Navigation Header -->
+    <div class="pco-navbar">
+        <div style="display:flex; align-items:center; gap:20px;">
+            <button class="secondary" onclick="location.href='overview.html'" style="padding:10px 18px; font-weight:800;">← VOLVER AL REPERTORIO</button>
+            <span style="font-family:var(--font-title); font-weight:800; font-size:18px; letter-spacing:1px;">CAN <span style="color:var(--accent-red); font-weight:400;">ALABANZA</span> • EDITOR</span>
+        </div>
+        <button class="primary" onclick="saveSong()" style="padding:10px 22px; font-size:12px; font-weight:800;">💾 GUARDAR CANCIÓN</button>
+    </div>
+
+    <!-- Main Container -->
+    <div class="container animate-fade">
+        <header style="margin-bottom:35px; border-bottom:1px solid var(--border-color); padding-bottom:20px;">
+            <h1 id="formTitle" style="font-size:32px; font-family:var(--font-title); font-weight:900; letter-spacing:-0.5px; color:white;">Nueva Canción</h1>
+            <p style="color:var(--text-muted); font-size:14px; margin-top:5px;">Ingresa los metadatos musicales, o pega la canción completa con acordes sobre la letra.</p>
+        </header>
+
+        <!-- General Info Card -->
+        <div class="glass-card" style="margin-bottom:30px;">
+            <h3 style="color:var(--accent-red); font-size:13px; letter-spacing:2px; margin-bottom:20px; font-weight:900; font-family:var(--font-title); text-transform:uppercase;">METADATOS GENERALES</h3>
+            
+            <div class="form-grid">
+                <div class="pco-input-group">
+                    <label>Título de la Canción</label>
+                    <input type="text" id="sName" placeholder="Ej: Way Maker (Aquí Estás)">
+                </div>
+                <div class="pco-input-group">
+                    <label>Artista / Compositor</label>
+                    <input type="text" id="sArtist" placeholder="Ej: Sinach / Leeland">
+                </div>
+                <div class="pco-input-group">
+                    <label>Tono Base</label>
+                    <select id="sKey">
+                        <option value="C">C (Do)</option><option value="C#">C# (Do#)</option><option value="Db">Db (Re♭)</option>
+                        <option value="D">D (Re)</option><option value="D#">D# (Re#)</option><option value="Eb">Eb (Mi♭)</option>
+                        <option value="E">E (Mi)</option><option value="F">F (Fa)</option><option value="F#">F# (Fa#)</option>
+                        <option value="Gb">Gb (Sol♭)</option><option value="G">G (Sol)</option><option value="G#">G# (Sol#)</option>
+                        <option value="Ab">Ab (La♭)</option><option value="A">A (La)</option><option value="A#">A# (La#)</option>
+                        <option value="Bb">Bb (Si♭)</option><option value="B">B (Si)</option>
+                    </select>
+                </div>
+                <div class="pco-input-group">
+                    <label>BPM (Tempo)</label>
+                    <input type="text" id="sTempo" placeholder="Ej: 68">
+                </div>
+                <div class="pco-input-group">
+                    <label>Duración Estimada (Min:Seg)</label>
+                    <input type="text" id="sDuration" placeholder="Ej: 5:30 ó 4:45">
+                </div>
+                <div class="pco-input-group">
+                    <label>Link de Referencia (YouTube / Spotify)</label>
+                    <input type="text" id="sLink" placeholder="https://youtube.com/...">
+                </div>
+            </div>
+        </div>
+
+        <!-- Smart Parser Card (Acordes sobre Letra & ChordPro Bilingüe) -->
+        <div class="glass-card" style="margin-bottom:30px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:12px;">
+                <div>
+                    <h3 style="margin:0; font-family:var(--font-title); font-weight:900; color:white; font-size:16px; display:flex; align-items:center; gap:8px;">
+                        <span>⚡</span> PARSER INTELIGENTE BILINGÜE (Acordes y Letra)
+                    </h3>
+                    <p style="font-size:12px; color:var(--text-muted); margin-top:4px;">
+                        Pega la canción en cualquier formato: con encabezados en inglés (<em>Verse, Chorus, Bridge</em>) o español (<em>Verso, Coro, Puente</em>), con acordes arriba o en línea tipo ChordPro <code>[D2]</code>.
+                    </p>
+                </div>
+                <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                    <button type="button" onclick="loadTemplate('worship')" class="secondary" style="font-size:10px; padding:6px 12px; font-weight:800;">📄 PLANTILLA WORSHIP</button>
+                    <button type="button" onclick="loadTemplate('chordpro')" class="secondary" style="font-size:10px; padding:6px 12px; font-weight:800;">📄 PLANTILLA CHORDPRO</button>
+                    <button type="button" onclick="document.getElementById('rawSongText').value=''" class="secondary" style="font-size:10px; padding:6px 10px;">🧹 LIMPIAR</button>
+                    <button type="button" onclick="parseRawSong()" class="primary" style="padding:8px 16px; font-size:11px; font-weight:900; background:linear-gradient(135deg, var(--accent-red), #e01a3b); box-shadow: 0 0 15px var(--accent-red-glow);">⚡ INTERPRETAR Y SEPARAR</button>
+                </div>
+            </div>
+            
+            <div style="display:flex; gap:6px; margin-bottom:10px; flex-wrap:wrap;">
+                <span class="status-pill confirmed" style="font-size:9px;">✓ Detecta Bridge / Puente</span>
+                <span class="status-pill confirmed" style="font-size:9px;">✓ Detecta Chorus / Coro</span>
+                <span class="status-pill confirmed" style="font-size:9px;">✓ Detecta Verse / Verso</span>
+                <span class="status-pill confirmed" style="font-size:9px;">✓ Soporta Acordes sobre Letra</span>
+                <span class="status-pill confirmed" style="font-size:9px;">✓ Soporta ChordPro [Acorde]</span>
+            </div>
+
+            <textarea id="rawSongText" rows="9" placeholder="Pega aquí la canción completa...&#10;&#10;Ejemplo:&#10;[Verse 1]&#10;D2                        F#m7&#10;How I live for the moments&#10;                A5&#10;Where I'm still in Your presence&#10;&#10;[Chorus]&#10;D2                E&#10;Aquí estás, te vemos mover&#10;&#10;[Bridge]&#10;F#m7      D2        A        E&#10;Milagroso, abres camino, cumples promesas" style="font-family:var(--font-chords); font-size:13px; resize:vertical; line-height:1.5; background:rgba(0,0,0,0.5);"></textarea>
+        </div>
+
+        <!-- Sections Header -->
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+            <h2 style="margin:0; font-family:var(--font-title); font-weight:900; font-size:22px; color:white;">Estructura y Letra</h2>
+            <button onclick="addSection()" class="secondary" style="font-size:11px; padding:10px 18px; font-weight:800; border-color:var(--accent-red); color:var(--accent-red);">+ AGREGAR SECCIÓN</button>
+        </div>
+
+        <div id="sectionsContainer" style="display:flex; flex-direction:column; gap:16px;"></div>
+    </div>
+
+    <script src="musicUtils.js"></script>
+    <script>
+        const token = localStorage.getItem("token");
+        if (!token) window.location.href = "login.html";
+
+        const urlParams = new URLSearchParams(window.location.search);
+        let songId = urlParams.get('id');
+
+        const SECTION_OPTIONS = [
+            "Intro",
+            "Verso 1",
+            "Verso 2",
+            "Verso 3",
+            "Verso 4",
+            "Pre-Coro",
+            "Pre-Coro 2",
+            "Coro",
+            "Coro 2",
+            "Puente",
+            "Puente 2",
+            "Solo (Guitarra)",
+            "Solo (Piano)",
+            "Solo (Batería)",
+            "Tag",
+            "Interludio",
+            "Outro",
+            "Espontáneo / Ministración",
+            "Instrumental",
+            "Alabanza Libre",
+            "Oración",
+            "Lectura",
+            "Otro..."
+        ];
+
+        async function init() {
+            if (songId) {
+                document.getElementById("formTitle").innerText = "EDITAR CANCIÓN";
+                try {
+                    const res = await fetch("/songs", { headers: { "Authorization": `Bearer ${token}` } });
+                    const raw = await res.json();
+                    const songs = Array.isArray(raw) ? raw : [];
+                    const s = songs.find(x => x && x._id === songId);
+                    if (s) {
+                        document.getElementById("sName").value = s.name || "";
+                        document.getElementById("sArtist").value = s.artist || "";
+                        document.getElementById("sKey").value = s.key || "C";
+                        document.getElementById("sTempo").value = s.tempo || "";
+                        document.getElementById("sDuration").value = s.duration || "";
+                        document.getElementById("sLink").value = s.referenceLink || "";
+                        
+                        const sections = Array.isArray(s.sections) ? s.sections : [];
+                        if(sections.length > 0) {
+                            sections.forEach(sec => {
+                                if (!sec) return;
+                                const chordsStr = Array.isArray(sec.chords) ? sec.chords.join(" ") : (sec.chords || "");
+                                addSection(sec.name || "Sección", chordsStr, sec.lyrics, sec.chordSheet || "");
+                            });
+                        } else {
+                            addSection("Intro", "", "");
+                        }
+                    }
+                } catch(e) {
+                    console.error("Error al cargar canción:", e);
+                }
+            } else {
+                addSection("Intro", "", "");
+            }
+        }
+
+        function addSection(name = "Verso 1", chords = "", lyrics = "", chordSheet = "") {
+            const div = document.createElement("div");
+            div.className = "section-card animate-fade";
+
+            const isStandard = SECTION_OPTIONS.includes(name) && name !== "Otro...";
+            const selectedVal = isStandard ? name : "Otro...";
+            const customVal = isStandard ? "" : name;
+
+            const optionsHTML = SECTION_OPTIONS.map(opt => `
+                <option value="${opt}" ${opt === selectedVal ? 'selected' : ''}>${opt}</option>
+            `).join('');
+
+            div.innerHTML = `
+                <div style="display:grid; grid-template-columns: 1.2fr 2fr 40px; gap:15px; margin-bottom:14px; align-items:start;">
+                    <div>
+                        <label>TIPO DE SECCIÓN</label>
+                        <select class="sec-select" onchange="handleSectionSelectChange(this)">
+                            ${optionsHTML}
+                        </select>
+                        <input type="text" class="sec-custom-name" placeholder="Especificar nombre..." value="${customVal}" style="${selectedVal === 'Otro...' ? 'display:block;' : 'display:none;'}">
+                    </div>
+                    <div>
+                        <label>ACORDES GENERALES (Guía rápida)</label>
+                        <input class="sec-chords" value="${chords}" style="font-family:var(--font-chords); font-size:15px; color:var(--accent-blue); font-weight:bold;" placeholder="Ej: D2 - F#m7 - A5">
+                    </div>
+                    <button class="danger" onclick="this.parentElement.parentElement.remove()" style="padding:12px; height:46px; border-radius:10px; margin-top:20px;" title="Eliminar sección">✕</button>
+                </div>
+                <div>
+                    <label>LETRA / PARTITURA CON ACORDES ALINEADOS (Chart)</label>
+                    <textarea class="sec-lyrics" rows="4" style="font-family:var(--font-chords); font-size:13px; line-height:1.6; resize:vertical; white-space:pre;" placeholder="Pega aquí la letra con los acordes encima exactamente donde se tocan...">${chordSheet || lyrics || ''}</textarea>
+                </div>
+            `;
+            document.getElementById("sectionsContainer").appendChild(div);
+        }
+
+        function handleSectionSelectChange(select) {
+            const customInput = select.parentElement.querySelector(".sec-custom-name");
+            if (select.value === "Otro...") {
+                customInput.style.display = "block";
+                customInput.focus();
+            } else {
+                customInput.style.display = "none";
+                customInput.value = "";
+            }
+        }
+
+        async function saveSong() {
+            const sections = Array.from(document.querySelectorAll("#sectionsContainer > div")).map(div => {
+                const selectVal = div.querySelector(".sec-select").value;
+                const customVal = div.querySelector(".sec-custom-name").value.trim();
+                const sectionName = (selectVal === "Otro..." && customVal) ? customVal : selectVal;
+
+                const chordSheetRaw = div.querySelector(".sec-lyrics").value;
+                const chordsRaw = div.querySelector(".sec-chords").value;
+
+                // Extraer acordes individuales
+                const extractedChords = chordsRaw.split(/[\s\-]+/).filter(c => c.trim() !== "");
+
+                return {
+                    name: sectionName,
+                    chords: extractedChords,
+                    lyrics: typeof cleanPureLyrics === 'function' ? cleanPureLyrics(chordSheetRaw) : chordSheetRaw,
+                    chordSheet: chordSheetRaw
+                };
+            });
+            
+            let durInput = document.getElementById("sDuration").value.trim();
+            let finalDuration = "5:00";
+            if (durInput) {
+                if (durInput.includes(':')) {
+                    const parts = durInput.split(':');
+                    const m = parseInt(parts[0]) || 0;
+                    const s = (parts[1] || '00').padEnd(2, '0').slice(0, 2);
+                    finalDuration = `${m}:${s}`;
+                } else if (durInput.includes('.')) {
+                    const parts = durInput.split('.');
+                    const m = parseInt(parts[0]) || 0;
+                    const s = (parts[1] || '00').padEnd(2, '0').slice(0, 2);
+                    finalDuration = `${m}:${s}`;
+                } else {
+                    const m = parseInt(durInput);
+                    finalDuration = !isNaN(m) ? `${m}:00` : durInput;
+                }
+            }
+
+            const data = {
+                name: document.getElementById("sName").value.trim(),
+                artist: document.getElementById("sArtist").value.trim(),
+                key: document.getElementById("sKey").value,
+                tempo: document.getElementById("sTempo").value.trim(),
+                duration: finalDuration,
+                referenceLink: document.getElementById("sLink").value.trim(),
+                sections
+            };
+
+            if(!data.name) {
+                alert("Por favor ingresa el título de la canción.");
+                return;
+            }
+            
+            try {
+                const res = await fetch(songId ? `/songs/${songId}` : "/songs", { 
+                    method: songId ? "PUT" : "POST", 
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Authorization": `Bearer ${token}`
+                    }, 
+                    body: JSON.stringify(data) 
+                });
+                
+                if (res.ok) {
+                    location.href = 'overview.html';
+                } else {
+                    alert("Error al guardar la canción en el servidor.");
+                }
+            } catch (err) {
+                alert("Error de red al intentar guardar.");
+            }
+        }
+        
+        // --- PARSER INTELIGENTE BILINGÜE DE ACORDES Y LETRAS ---
+        function parseRawSong() {
+            const rawText = document.getElementById("rawSongText").value;
+            if (!rawText.trim()) return alert("Por favor pega el texto de la canción primero.");
+
+            // 1. Auto-detectar Título / Artista / Tono si vienen como metadata al inicio
+            const titleMatch = rawText.match(/^(?:title|t[ií]tulo|canci[oó]n)\s*:\s*(.+)$/im);
+            if (titleMatch && titleMatch[1]) {
+                const sNameInput = document.getElementById("sName");
+                if (!sNameInput.value) sNameInput.value = titleMatch[1].trim();
+            }
+
+            const artistMatch = rawText.match(/^(?:artist|artista|autor|banda)\s*:\s*(.+)$/im);
+            if (artistMatch && artistMatch[1]) {
+                const sArtistInput = document.getElementById("sArtist");
+                if (!sArtistInput.value) sArtistInput.value = artistMatch[1].trim();
+            }
+
+            const keyMatch = rawText.match(/^(?:key|tono|tonalidad)\s*:\s*([A-Ga-g][#b]?m?)/im);
+            if (keyMatch && keyMatch[1]) {
+                const pureKey = keyMatch[1].replace(/m$/i, '').toUpperCase();
+                const keySelect = document.getElementById("sKey");
+                if (keySelect) {
+                    for (let opt of keySelect.options) {
+                        if (opt.value.toUpperCase() === pureKey) {
+                            keySelect.value = opt.value;
+                            break;
+                        }
+                    }
+                }
+            }
+
+            // 2. Parsear secciones con motor bilingüe de musicUtils
+            const parsedSections = smartSongParser(rawText);
+
+            if (parsedSections.length > 0) {
+                document.getElementById("sectionsContainer").innerHTML = "";
+                parsedSections.forEach(sec => addSection(sec.name, sec.chords, sec.lyrics, sec.chordSheet));
+                
+                // Efecto visual de confirmación
+                const btn = document.querySelector(".glass-card button.primary");
+                if (btn) {
+                    const oldText = btn.innerText;
+                    btn.innerText = `✓ ${parsedSections.length} SECCIONES INTERPRETADAS`;
+                    btn.style.background = "#10b981";
+                    setTimeout(() => {
+                        btn.innerText = oldText;
+                        btn.style.background = "";
+                    }, 2500);
+                }
+            } else {
+                alert("No se pudo detectar ninguna estructura válida. Verifica el formato e intenta de nuevo.");
+            }
+        }
+
+        // --- PLANTILLAS PREDEFINIDAS ---
+        function loadTemplate(type) {
+            const textarea = document.getElementById("rawSongText");
+            if (type === 'worship') {
+                textarea.value = `[Intro]
+D2   F#m7   E   A/C#
+
+[Verse 1]
+D2                        F#m7
+How I live for the moments
+                E
+Where I'm still in Your presence
+            A/C#        D2
+Here with You is where I belong
+
+[Chorus]
+D2                E
+Santo, Santo, Dios Todopoderoso
+F#m7              A/C#
+Digno eres de gloria y de honor
+D2                E
+Toda la tierra te adorará
+
+[Bridge]
+F#m7          D2
+Milagroso, abres camino
+A             E
+Cumples promesas, luz en tinieblas
+F#m7         D2         A     E
+Mi Dios, así eres Tú
+
+[Outro]
+D2   F#m7   E   A`;
+            } else if (type === 'chordpro') {
+                textarea.value = `[Verse 1]
+[D2]Tu amor me rescató [F#m7]de la oscuridad
+[E]Pusiste mis pies sobre [A/C#]la roca firme
+
+[Chorus]
+[D2]Aquí estás te [E]vemos mover
+[F#m7]Te adoraré, [A/C#]te adoraré
+
+[Bridge]
+[F#m7]Aunque no pueda ver [D2]estás obrando
+[A]Aunque no pueda sentir [E]estás obrando`;
+            }
+        }
+
+        document.getElementById("sLink").addEventListener("input", async function() {
+            const url = this.value;
+            if (url.includes("youtube.com") || url.includes("youtu.be")) {
+                const durationInput = document.getElementById("sDuration");
+                durationInput.placeholder = "Calculando...";
+                try {
+                    const res = await fetch("/api/yt-info", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ url })
+                    });
+                    const data = await res.json();
+                    if (data.duration) {
+                        durationInput.value = data.duration;
+                    }
+                } catch (e) {
+                    console.error("Error fetching YT duration", e);
+                }
+                durationInput.placeholder = "Ej: 5.30";
+            }
+        });
+
+        init();
+    </script>
+</body>
+</html>

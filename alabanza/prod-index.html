@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cabina de Producción & Broadcast | CAN ALABANZA</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        :root { 
+            --prod-accent: var(--accent-purple); 
+            --prod-accent-glow: rgba(192, 132, 252, 0.35);
+        }
+
+        .prod-layout-grid {
+            display: grid;
+            grid-template-columns: 2fr 1.2fr;
+            gap: 28px;
+            align-items: start;
+        }
+
+        .prod-card { 
+            background: var(--bg-glass); 
+            backdrop-filter: blur(20px); 
+            border: 1px solid var(--border-color); 
+            border-left: 6px solid var(--accent-purple);
+            border-radius: var(--radius-pco); 
+            padding: 24px; 
+            margin-bottom: 18px; 
+            transition: var(--transition); 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            gap: 16px; 
+            flex-wrap: wrap; 
+            box-shadow: var(--shadow-glass); 
+        }
+
+        .prod-card:hover { 
+            border-color: var(--accent-purple); 
+            transform: translateX(6px); 
+            box-shadow: 0 15px 35px rgba(192, 132, 252, 0.08), var(--shadow-glass); 
+        }
+
+        .tech-matrix-card {
+            background: rgba(0,0,0,0.5);
+            border: 1px solid var(--border-color);
+            border-radius: 14px;
+            padding: 16px;
+            margin-bottom: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .stage-alert-btn {
+            background: rgba(192, 132, 252, 0.1);
+            border: 1px solid var(--accent-purple);
+            color: var(--accent-purple);
+            padding: 10px 14px;
+            border-radius: 10px;
+            font-size: 11px;
+            font-weight: 800;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+        .stage-alert-btn:hover {
+            background: var(--accent-purple);
+            color: black;
+            box-shadow: 0 0 15px var(--prod-accent-glow);
+        }
+    </style>
+    <link rel="icon" type="image/png" href="can-logo.png">
+</head>
+<body class="animate-up">
+    <script>
+        const token = localStorage.getItem("token");
+        if (!token) window.location.href = "login.html";
+
+        const savedWallpaper = localStorage.getItem("cordaz_wallpaper");
+        if (savedWallpaper) {
+            document.body.classList.add("ios-wallpaper-active");
+            document.body.style.setProperty("--ios-bg-image", `url(${savedWallpaper})`);
+        }
+
+        // Aplicar Tema y Permisos según rol (Verde para Audio, Morado para Producción)
+        let isAudioUser = false;
+        let canEditROS = false;
+        try {
+            const userObj = JSON.parse(localStorage.getItem("user") || "{}");
+            const instStr = String(userObj.instrument || '').toLowerCase();
+            const branchStr = String(userObj.techBranch || '').toLowerCase();
+            const role = userObj.role || "Viewer";
+            const min = userObj.ministry || "";
+            
+            if (instStr.includes('audio') || branchStr.includes('audio')) {
+                isAudioUser = true;
+            }
+            
+            const isFullAdmin = (role === "Full Administrador" || (userObj.username && userObj.username.toLowerCase() === "cordaz"));
+            canEditROS = isFullAdmin || (role === "Editor" && min === "Produccion");
+        } catch(e) {}
+
+        if (isAudioUser) {
+            document.body.classList.add("theme-audio");
+        } else {
+            document.body.classList.add("theme-prod");
+        }
+    </script>
+
+    <!-- Navigation Header -->
+    <div class="pco-navbar">
+        <div style="display:flex; align-items:center; gap:20px;">
+            <button class="secondary" onclick="location.href='index.html'" style="padding:10px 18px; font-weight:800;">← VOLVER AL HUB</button>
+            <span style="font-family:var(--font-title); font-weight:800; font-size:18px; letter-spacing:1px;">CAN <span style="color:var(--accent-purple); font-weight:400;">CABINA</span> • CONTROL EN VIVO</span>
+        </div>
+        <div>
+            <button class="danger" onclick="localStorage.clear(); window.location.href='login.html';" style="padding:8px 16px; font-size:11px; font-weight:800;">SALIR</button>
+        </div>
+    </div>
+
+    <!-- Main Container -->
+    <div class="container animate-fade">
+        <header style="margin-bottom:35px; border-bottom:1px solid var(--border-color); padding-bottom:20px;">
+            <h1 style="font-size:32px; font-family:var(--font-title); font-weight:900; letter-spacing:-0.5px; color:white;">Cabina de Control & Dirección Técnica</h1>
+            <p style="color:var(--text-muted); font-size:14px; margin-top:5px;">Escaletas ROS en vivo, asignación de equipo técnico de cabina y letras para proyección.</p>
+        </header>
+
+        <div class="prod-layout-grid">
+            <!-- Left Column: Active Scheduled Services -->
+            <div>
+                <h2 style="font-size:13px; font-family:var(--font-title); font-weight:900; color:var(--accent-purple); letter-spacing:2px; margin-bottom:18px; text-transform:uppercase;">SERVICIOS PROGRAMADOS EN VIVO</h2>
+                <div id="services-container">
+                    <p style="color:var(--text-muted); text-align:center; font-size:13px;">Cargando servicios...</p>
+                </div>
+            </div>
+
+            <!-- Right Column: Tech Area Status -->
+            <div>
+                <!-- Tech Area Health Matrix (Solo Esenciales de Cabina) -->
+                <div class="glass-card">
+                    <h3 style="font-size:13px; font-family:var(--font-title); font-weight:900; color:var(--accent-purple); letter-spacing:1.5px; margin-bottom:14px; text-transform:uppercase;">📡 ESTADO DE ÁREAS TÉCNICAS</h3>
+                    
+                    <div class="tech-matrix-card">
+                        <div>
+                            <div style="font-weight:800; font-size:13px; color:white;">PROPRESENTER (LETRAS)</div>
+                            <div style="font-size:11px; color:var(--text-muted);">Diapositivas y fondos proyectados</div>
+                        </div>
+                        <span class="status-pill confirmed" style="font-size:9px; border-color:var(--accent-purple); color:var(--accent-purple);">SYNC OK</span>
+                    </div>
+
+                    <div class="tech-matrix-card">
+                        <div>
+                            <div style="font-weight:800; font-size:13px; color:white;">SWITCHER (CÁMARAS)</div>
+                            <div style="font-size:11px; color:var(--text-muted);">Cámaras 1-4 & Transmisión en vivo</div>
+                        </div>
+                        <span class="status-pill confirmed" style="font-size:9px;">ON AIR</span>
+                    </div>
+
+                    <div class="tech-matrix-card">
+                        <div>
+                            <div style="font-weight:800; font-size:13px; color:white;">ARENA (PANTALLAS LED)</div>
+                            <div style="font-size:11px; color:var(--text-muted);">Resolume Arena • Salidas Central & Laterales</div>
+                        </div>
+                        <span class="status-pill confirmed" style="font-size:9px;">ACTIVO</span>
+                    </div>
+
+                    <div class="tech-matrix-card">
+                        <div>
+                            <div style="font-weight:800; font-size:13px; color:white;">ILUMINACIÓN</div>
+                            <div style="font-size:11px; color:var(--text-muted);">Consola de Iluminación & Escenas</div>
+                        </div>
+                        <span class="status-pill confirmed" style="font-size:9px; border-color:var(--accent-purple); color:var(--accent-purple);">ACTIVO</span>
+                    </div>
+
+                    <div class="tech-matrix-card">
+                        <div>
+                            <div style="font-weight:800; font-size:13px; color:white;">AUDIO</div>
+                            <div style="font-size:11px; color:var(--text-muted);">FOH & IEMs • Monitores y Sala</div>
+                        </div>
+                        <span class="status-pill confirmed" style="font-size:9px; border-color:var(--audio-accent); color:var(--audio-accent);">OPTIMO</span>
+                    </div>
+
+                    <div class="tech-matrix-card">
+                        <div>
+                            <div style="font-weight:800; font-size:13px; color:white;">VIDEO (DIRECCIÓN TÉCNICA)</div>
+                            <div style="font-size:11px; color:var(--text-muted);">Monitoreo multiview de cabina</div>
+                        </div>
+                        <span class="status-pill confirmed" style="font-size:9px;">OK</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+
+        async function loadServices() {
+            try {
+                const res = await fetch("/setlists");
+                const data = await res.json();
+                const setlists = Array.isArray(data) ? data : [];
+                const container = document.getElementById("services-container");
+                
+                const activeSets = setlists.filter(s => s && !s.archived).reverse();
+                
+                if (activeSets.length === 0) {
+                    container.innerHTML = `
+                        <div style="text-align:center; padding:50px 30px; border:2px dashed var(--border-color); border-radius:var(--radius-pco); background:var(--bg-glass);">
+                            <p style="color:var(--text-muted); font-size:14px;">No hay servicios activos programados en este momento.</p>
+                        </div>`;
+                    return;
+                }
+
+                container.innerHTML = activeSets.map(s => {
+                    const sName = (s.name || 'Servicio sin título').toUpperCase();
+                    const minColor = s.ministry === "KIDS" ? "var(--accent-blue)" : "var(--accent-red)";
+                    const rosCount = (s.runOfService && Array.isArray(s.runOfService)) ? s.runOfService.length : 0;
+                    const rosBadge = rosCount > 0 
+                        ? `<span class="status-pill confirmed" style="font-size:9px;">✓ Escaleta Lista (${rosCount} bloques)</span>` 
+                        : `<span class="status-pill pending" style="font-size:9px;">⚠️ Escaleta Pendiente</span>`;
+
+                    return `
+                    <div class="prod-card animate-fade">
+                        <div>
+                            <span class="status-pill" style="border-color:${minColor}; color:${minColor}; font-size:9px; padding:3px 8px;">${s.ministry || 'Principal'}</span>
+                            <h3 style="margin:10px 0 4px 0; font-size:20px; font-family:var(--font-title); font-weight:800; color:white;">${s.name.toUpperCase()}</h3>
+                            <p style="margin:0; color:var(--text-muted); font-size:12px;">🗓️ ${s.date} • ${s.serviceType || 'Servicio'}</p>
+                            <div style="margin-top:10px;">${rosBadge}</div>
+                        </div>
+                        <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
+                            ${canEditROS && !isAudioUser ? `<button class="secondary" onclick="location.href='prod-planner.html?id=${s._id}'" style="padding:10px 18px; font-size:11px; font-weight:800; border-radius:10px; border-color:var(--accent-purple); color:var(--accent-purple);">📋 EDITAR ESCALETA (ROS)</button>` : ''}
+                            <button class="primary" onclick="location.href='prod-live.html?id=${s._id}'" style="background:${isAudioUser ? 'var(--audio-accent)' : 'var(--accent-purple)'}; border-color:${isAudioUser ? 'var(--audio-accent)' : 'var(--accent-purple)'}; color:black; font-size:11px; padding:10px 20px; font-weight:900; box-shadow:0 0 15px ${isAudioUser ? 'rgba(0,255,170,0.3)' : 'rgba(192,132,252,0.3)'};">🔴 ENTRAR A CABINA</button>
+                        </div>
+                    </div>`;
+                }).join('');
+            } catch (err) {
+                document.getElementById("services-container").innerHTML = `<p style="color:var(--status-red); text-align:center;">Error cargando datos del servidor.</p>`;
+            }
+        }
+
+        function sendStageAlert(msg) {
+            socket.emit("stage:alert", { message: msg, timestamp: Date.now() });
+            alert(`Aviso enviado a pantalla de escenario:\n"${msg}"`);
+        }
+        
+        loadServices();
+    </script>
+</body>
+</html>

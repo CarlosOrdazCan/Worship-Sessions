@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Director de Alabanza (Live) | CAN ALABANZA</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        body {
+            background: #040407;
+            color: #ffffff;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            user-select: none;
+        }
+
+        .leader-header {
+            background: rgba(8, 8, 12, 0.85);
+            backdrop-filter: blur(20px);
+            padding: 16px 24px;
+            text-align: center;
+            border-bottom: 1px solid var(--border-color);
+            z-index: 10;
+        }
+
+        .song-display {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 30px 20px;
+            background: radial-gradient(circle at 50% 50%, rgba(255, 42, 75, 0.05) 0%, transparent 70%);
+        }
+
+        .current-song { 
+            font-size: clamp(32px, 6vw, 54px); 
+            font-family: var(--font-title);
+            font-weight: 900; 
+            margin: 0; 
+            text-transform: uppercase; 
+            letter-spacing: -0.5px;
+            text-shadow: 0 0 25px rgba(255,255,255,0.15);
+        }
+
+        .current-meta {
+            color: var(--accent-blue);
+            font-family: var(--font-title);
+            font-weight: 900;
+            font-size: 24px;
+            margin-top: 15px;
+            text-shadow: 0 0 15px rgba(56, 189, 248, 0.3);
+        }
+
+        .next-song { 
+            font-size: 15px; 
+            color: var(--text-muted); 
+            margin-top: 18px; 
+            text-transform: uppercase; 
+            font-weight: 800; 
+            letter-spacing: 1px;
+            background: rgba(0,0,0,0.5);
+            padding: 8px 18px;
+            border-radius: 20px;
+            border: 1px solid var(--border-color);
+        }
+
+        .control-console {
+            background: rgba(10, 8, 14, 0.9);
+            backdrop-filter: blur(20px);
+            border-top: 1px solid var(--border-color);
+            padding: 20px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
+            padding-bottom: max(20px, env(safe-area-inset-bottom));
+        }
+
+        .btn-giant {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border-color);
+            color: white;
+            border-radius: 18px;
+            padding: 26px 12px;
+            font-size: 26px;
+            font-family: var(--font-title);
+            font-weight: 900;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            cursor: pointer;
+            transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+            user-select: none;
+            box-shadow: var(--shadow-glass);
+        }
+        .btn-giant:active { 
+            transform: scale(0.96); 
+        }
+        
+        .btn-prev { 
+            border-color: rgba(192, 132, 252, 0.3); 
+            color: var(--accent-purple); 
+        }
+        .btn-prev:active { 
+            background: var(--accent-purple); 
+            color: #000; 
+            box-shadow: 0 0 25px rgba(192, 132, 252, 0.5);
+        }
+        
+        .btn-next { 
+            border-color: var(--accent-red); 
+            background: var(--accent-red);
+            color: white; 
+            grid-column: span 2;
+            padding: 30px 12px;
+            box-shadow: 0 0 25px var(--accent-red-glow);
+        }
+        .btn-next:active { 
+            background: #ff4765; 
+            transform: scale(0.97);
+        }
+        
+        .btn-transpose { 
+            border-color: rgba(56, 189, 248, 0.3); 
+            color: var(--accent-blue); 
+        }
+        .btn-transpose:active { 
+            background: var(--accent-blue); 
+            color: #000; 
+            box-shadow: 0 0 25px rgba(56, 189, 248, 0.5);
+        }
+
+        .btn-sub { 
+            font-size: 10px; 
+            letter-spacing: 2px; 
+            font-weight: 800;
+            opacity: 0.85; 
+        }
+    </style>
+    <link rel="icon" type="image/png" href="can-logo.png">
+</head>
+<body>
+    <script>
+        if (!localStorage.getItem("token")) window.location.href = "login.html";
+    </script>
+
+    <div class="leader-header">
+        <div class="live-badge" style="margin-bottom:10px;">ON AIR • BANDA EN VIVO</div>
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+            <button class="secondary" onclick="location.href='stage-select.html'" style="padding:8px 14px; font-size:11px; font-weight:800;">← SALIR</button>
+            <div style="font-size:13px; font-weight:900; font-family:var(--font-title); color:white; letter-spacing:0.5px;" id="setlistName">CARGANDO...</div>
+            <button class="primary" onclick="initSetlist()" style="padding:8px 14px; font-size:11px; font-weight:800;">↺ REINICIAR</button>
+        </div>
+    </div>
+
+    <div class="song-display" id="displayArea">
+        <h1 class="current-song" id="csName">--</h1>
+        <div class="current-meta" id="csMeta">--</div>
+        <div class="next-song" id="nsName">Siguiente: --</div>
+    </div>
+
+    <!-- BOTONERA TÁCTIL GIGANTE -->
+    <div class="control-console">
+        <!-- Fila de Transporte (+1 / -1 Semitono) -->
+        <div class="btn-giant btn-transpose" onclick="transpose(-1)">
+            <div>−1</div>
+            <div class="btn-sub">BAJAR TONO</div>
+        </div>
+        <div class="btn-giant btn-transpose" onclick="transpose(1)">
+            <div>+1</div>
+            <div class="btn-sub">SUBIR TONO</div>
+        </div>
+
+        <!-- Fila de Navegación -->
+        <div class="btn-giant btn-prev" onclick="prev()" style="grid-column: 1;">
+            <div>⬅</div>
+            <div class="btn-sub">TEMA ANTERIOR</div>
+        </div>
+        <div class="btn-giant btn-prev" onclick="next()" style="grid-column: 2; border-color: rgba(56, 189, 248, 0.3); color: var(--accent-blue);">
+            <div>➡</div>
+            <div class="btn-sub">TEMA SIGUIENTE</div>
+        </div>
+
+        <!-- Botón Gigante de Avance Rápido -->
+        <div class="btn-giant btn-next" onclick="next()">
+            <div>SIGUIENTE CANCIÓN ➔</div>
+            <div class="btn-sub" style="opacity:0.9;">CAMBIAR EN TODAS LAS PANTALLAS</div>
+        </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+        const urlParams = new URLSearchParams(window.location.search);
+        const setId = urlParams.get('id');
+        const token = localStorage.getItem("token");
+        
+        let loadedSetlist = [];
+        let currentState = { index: 0, transpose: 0 };
+
+        async function fetchSetlistData() {
+            try {
+                const res = await fetch("/setlists");
+                const data = await res.json();
+                const allSets = Array.isArray(data) ? data : [];
+                const setObj = allSets.find(s => s && s._id === setId);
+                
+                if(setObj) {
+                    document.getElementById("setlistName").innerText = (setObj.name || 'Servicio').toUpperCase();
+                    loadedSetlist = setObj.songs || [];
+                    initSetlist();
+                } else {
+                    document.getElementById("csName").innerText = "SERVICIO NO ENCONTRADO";
+                }
+            } catch (e) { 
+                console.error("Error al cargar setlist:", e);
+            }
+        }
+
+        function initSetlist() {
+            if(loadedSetlist.length === 0) return;
+            socket.emit("band:setlist", loadedSetlist);
+            updateLocalScreen(0, 0);
+        }
+
+        function next() { socket.emit("band:next"); }
+        function prev() { socket.emit("band:prev"); }
+        function transpose(v) { socket.emit("band:transpose", v); }
+
+        socket.on("band:update", (data) => {
+            currentState = data;
+            updateLocalScreen(data.index, data.transpose);
+        });
+
+        function updateLocalScreen(index, transValue) {
+            if(!loadedSetlist[index]) {
+                document.getElementById("csName").innerText = "FIN DEL REPERTORIO";
+                document.getElementById("csMeta").innerText = "";
+                document.getElementById("nsName").innerText = "TODAS LAS CANCIONES COMPLETADAS";
+                return;
+            }
+
+            const current = loadedSetlist[index];
+            const sName = current.songId ? current.songId.name : "Desconocido";
+            const sKey = current.setlistKey || (current.songId ? current.songId.key : "C");
+            
+            document.getElementById("csName").innerText = sName.toUpperCase();
+            
+            let transText = transValue === 0 ? "" : (transValue > 0 ? ` (+${transValue})` : ` (${transValue})`);
+            document.getElementById("csMeta").innerText = `TONO: ${sKey}${transText}`;
+
+            const nextIndex = index + 1;
+            if(loadedSetlist[nextIndex]) {
+                const nName = loadedSetlist[nextIndex].songId ? loadedSetlist[nextIndex].songId.name : "--";
+                document.getElementById("nsName").innerText = `SIGUIENTE: ${nName.toUpperCase()}`;
+            } else {
+                document.getElementById("nsName").innerText = `SIGUIENTE: FIN DEL SET`;
+            }
+        }
+
+        if(setId) fetchSetlistData();
+        else alert("Falta ID de servicio.");
+    </script>
+</body>
+</html>

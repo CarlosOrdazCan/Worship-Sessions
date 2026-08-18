@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modo Músico | CAN ALABANZA</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .player-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 20px;
+        }
+        .chords-box {
+            font-family: var(--font-chords);
+            font-size: clamp(24px, 3.5vw, 36px);
+            color: var(--accent-blue);
+            font-weight: 800;
+            word-spacing: 16px;
+            line-height: 1.8;
+            text-shadow: 0 0 15px rgba(56, 189, 248, 0.3);
+        }
+    </style>
+    <link rel="icon" type="image/png" href="can-logo.png">
+</head>
+<body class="animate-up">
+    <script>
+        if (!localStorage.getItem("token")) window.location.href = "login.html";
+
+        const savedWallpaper = localStorage.getItem("cordaz_wallpaper");
+        if (savedWallpaper) {
+            document.body.classList.add("ios-wallpaper-active");
+            document.body.style.setProperty("--ios-bg-image", `url(${savedWallpaper})`);
+        }
+    </script>
+
+    <div class="container animate-fade">
+        <header class="player-header">
+            <button class="secondary" onclick="location.href='overview.html'" style="font-weight:800;">← VOLVER AL REPERTORIO</button>
+            <div style="text-align:center;">
+                <h1 id="songTitle" style="margin:0; font-family:var(--font-title); font-size:clamp(22px, 3vw, 32px); font-weight:900; color:white;">CARGANDO...</h1>
+                <p id="songArtist" style="margin:4px 0 0 0; color:var(--text-muted); font-size:13px; text-transform:uppercase; font-weight:700;"></p>
+            </div>
+            <div id="songKey" class="status-pill confirmed" style="font-size:16px; padding:8px 20px; font-weight:900;">--</div>
+        </header>
+
+        <div id="chordsContainer"></div>
+    </div>
+
+    <script src="player.js"></script>
+</body>
+</html>

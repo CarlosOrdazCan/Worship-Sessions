@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Armar Escaleta de Producción | CAN ALABANZA</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        :root { 
+            --prod-accent: var(--accent-purple); 
+            --prod-accent-glow: rgba(192, 132, 252, 0.35);
+        }
+
+        html, body {
+            min-height: 100vh;
+            background-color: #040407;
+            background-attachment: fixed;
+            background-size: cover;
+        }
+        
+        .grid-layout { 
+            display: grid; 
+            grid-template-columns: 360px 1fr; 
+            gap: 30px; 
+            margin-top: 30px; 
+            align-items: start; 
+        }
+        
+        .info-panel { 
+            background: var(--bg-glass); 
+            backdrop-filter: blur(20px); 
+            border: 1px solid var(--border-color); 
+            border-radius: var(--radius-pco); 
+            padding: 26px; 
+            box-shadow: var(--shadow-glass); 
+        }
+        
+        .ros-panel { 
+            background: var(--bg-glass); 
+            backdrop-filter: blur(20px); 
+            border: 1px solid var(--border-color); 
+            border-radius: var(--radius-pco); 
+            padding: 30px; 
+            box-shadow: var(--shadow-glass); 
+        }
+        
+        .ros-row { 
+            display: grid; 
+            grid-template-columns: 100px 1.5fr 2fr 2fr 50px; 
+            gap: 15px; 
+            background: rgba(0,0,0,0.3); 
+            padding: 18px; 
+            border-radius: 14px; 
+            margin-bottom: 16px; 
+            align-items: start; 
+            border: 1px solid var(--border-color); 
+            transition: var(--transition); 
+        }
+        
+        .ros-row:hover { 
+            border-color: var(--accent-purple); 
+            background: rgba(192, 132, 252, 0.02); 
+            transform: translateX(3px);
+        }
+        
+        .ros-row input, .ros-row textarea { 
+            width: 100%; 
+            background: rgba(0,0,0,0.5); 
+            color: white; 
+            border: 1px solid var(--border-color); 
+            padding: 10px 12px; 
+            border-radius: 8px; 
+            outline: none; 
+            font-family: inherit; 
+            transition: var(--transition); 
+        }
+        .ros-row textarea { resize: vertical; min-height: 44px; }
+        .ros-row input:focus, .ros-row textarea:focus { 
+            border-color: var(--accent-purple); 
+            background: rgba(0,0,0,0.7); 
+            box-shadow: 0 0 10px rgba(192, 132, 252, 0.2);
+        }
+        
+        .btn-add { 
+            background: rgba(255, 255, 255, 0.02); 
+            border: 1px dashed var(--accent-purple); 
+            color: var(--accent-purple); 
+            width: 100%; 
+            padding: 14px; 
+            border-radius: 12px; 
+            font-weight: 800; 
+            cursor: pointer; 
+            transition: var(--transition); 
+            margin-top: 12px; 
+        }
+        
+        .btn-add:hover { 
+            background: rgba(192, 132, 252, 0.08); 
+            box-shadow: 0 0 15px rgba(192, 132, 252, 0.15);
+        }
+        
+        .crew-card { 
+            background: rgba(0,0,0,0.3); 
+            border: 1px solid var(--border-color); 
+            border-left: 4px solid var(--accent-purple); 
+            padding: 16px; 
+            border-radius: 12px; 
+            margin-bottom: 12px; 
+            display: flex; 
+            flex-direction: column; 
+            gap: 12px; 
+            transition: var(--transition); 
+        }
+        .crew-card:hover { 
+            border-color: var(--accent-purple); 
+            background: rgba(192, 132, 252, 0.02);
+        }
+        
+        .print-only { display: none; }
+
+        @media print {
+            @page { margin: 1cm; }
+            body { background: #000 !important; color: #fff !important; }
+            .no-print { display: none !important; }
+            .print-only { display: block !important; }
+            .ros-panel { box-shadow: none; border: 1px solid #333; }
+            .ros-row { background: #111 !important; border: 1px solid #333 !important; grid-template-columns: 100px 1.5fr 2fr 2fr !important; }
+            .ros-row input, .ros-row textarea { background: transparent !important; border: none !important; color: white !important; resize: none; overflow: visible; }
+            .info-panel { border: 1px solid #333 !important; }
+            .crew-card { padding: 10px !important; border-left: 2px solid #555 !important; }
+        }
+
+        @media (max-width: 900px) {
+            .grid-layout { grid-template-columns: 1fr; }
+            .ros-row { grid-template-columns: 1fr; }
+        }
+    </style>
+    <link rel="icon" type="image/png" href="can-logo.png">
+</head>
+<body class="theme-prod animate-up">
+    <script>
+        const token = localStorage.getItem("token");
+        if (!token) window.location.href = "login.html";
+
+        try {
+            const storedUser = JSON.parse(localStorage.getItem("user") || "{}");
+            const role = storedUser.role || "Viewer";
+            const min = storedUser.ministry || "";
+            const isFullAdmin = (role === "Full Administrador" || (storedUser.username && storedUser.username.toLowerCase() === "cordaz"));
+            const isProdEditor = isFullAdmin || (role === "Editor" && min === "Produccion");
+
+            if (!isProdEditor) {
+                alert("No tienes acceso, consúltalo con el administrador.");
+                window.location.replace("index.html");
+            }
+        } catch(e) {
+            window.location.replace("index.html");
+        }
+        
+        const savedWallpaper = localStorage.getItem("cordaz_wallpaper");
+        if (savedWallpaper) {
+            document.body.classList.add("ios-wallpaper-active");
+            document.body.style.setProperty("--ios-bg-image", "url(" + savedWallpaper + ")");
+        }
+    </script>
+
+    <!-- Main Container -->
+    <div class="container animate-fade" style="padding-bottom:60px;">
+        <header style="display:flex; justify-content:space-between; align-items:center; margin-bottom:30px; gap: 20px; flex-wrap:wrap;">
+            <div>
+                <button type="button" class="secondary no-print" onclick="location.href='prod-index.html'" style="margin-bottom:15px; font-size:11px; padding:10px 18px; font-weight:800;">← VOLVER AL HUB</button>
+                <h1 id="sTitle" style="margin:0; font-family:var(--font-title); font-weight:900; color:white; font-size:32px; letter-spacing:-0.5px;">ESCALETA DE PRODUCCIÓN</h1>
+                <p id="sDate" style="color:var(--accent-purple); font-weight:800; letter-spacing:2.5px; font-size:12px; margin-top:5px; text-transform:uppercase;">CARGANDO DETALLES...</p>
+            </div>
+            <div class="no-print" style="display:flex; gap:12px;">
+                <button type="button" onclick="window.print()" class="secondary" style="padding:14px 24px; font-weight:800; border-radius:12px;">🖨️ EXPORTAR PDF</button>
+                <button type="button" id="btnSaveROS" onclick="saveROS()" class="primary" style="background:var(--accent-purple); border-color:var(--accent-purple); color:black; padding:14px 30px; border-radius:12px; font-weight:900; box-shadow:0 0 20px rgba(192, 132, 252, 0.3);">💾 GUARDAR ESCALETA</button>
+            </div>
+        </header>
+
+        <div class="grid-layout">
+            <!-- Left Pane: Staff & Band -->
+            <div class="info-panel">
+                <h3 style="color:var(--accent-purple); font-size:13px; font-family:var(--font-title); font-weight:900; letter-spacing:1.5px; border-bottom:1px solid var(--border-color); padding-bottom:12px; margin-top:0; text-transform:uppercase;">Crew Técnico (Cabina)</h3>
+                <p class="no-print" style="font-size:11px; color:var(--text-muted); line-height:1.5; margin-top:8px;">Haz clic en los horarios de cada técnico para alternar entre <b>Sirve</b>, <b>Recibe</b> o <b>No sirve</b>.</p>
+                <div id="prodTeamList" style="margin-top:20px; display:flex; flex-direction:column; gap:12px;"></div>
+                <button type="button" id="btnAddCrew" class="btn-add no-print" onclick="openCrewModal()" style="font-size:11px; padding:12px;">+ AGREGAR OTRO TÉCNICO</button>
+
+                <h3 style="color:var(--text-pink); font-size:13px; font-family:var(--font-title); font-weight:900; letter-spacing:1.5px; border-bottom:1px solid var(--border-color); padding-bottom:12px; margin-top:40px; text-transform:uppercase;">Músicos & Banda Programados</h3>
+                <div id="teamList" style="font-size:13px; color:#cdd4df; line-height:2; margin-top:16px;"></div>
+                
+                <h3 style="color:var(--accent-blue); font-size:13px; font-family:var(--font-title); font-weight:900; letter-spacing:1.5px; border-bottom:1px solid var(--border-color); padding-bottom:12px; margin-top:36px; text-transform:uppercase;">Canciones del Setlist</h3>
+                <div id="songList" style="display:flex; flex-direction:column; gap:10px; margin-top:16px;"></div>
+            </div>
+
+            <!-- Right Pane: Run of Service Grid -->
+            <div class="ros-panel">
+                <h2 style="margin-top:0; font-family:var(--font-title); font-weight:900; color:var(--accent-purple); display:flex; justify-content:space-between; align-items:center; font-size:24px; border-bottom:1px solid var(--border-color); padding-bottom:15px; margin-bottom:20px;">
+                    RUN OF SERVICE (ROS)
+                    <span class="no-print status-pill confirmed" style="font-size:9px; font-weight:800; background:rgba(192, 132, 252, 0.1); color:var(--accent-purple); border-color:rgba(192, 132, 252, 0.3);">VISTA PRODUCCIÓN EN VIVO</span>
+                </h2>
+                
+                <div style="display:grid; grid-template-columns: 100px 1.5fr 2fr 2fr 50px; gap:15px; margin-bottom:12px; padding:0 18px;">
+                    <label style="font-size:10px; color:var(--accent-purple); font-weight:800; letter-spacing:1px; text-transform:uppercase;">HORA</label>
+                    <label style="font-size:10px; color:var(--accent-purple); font-weight:800; letter-spacing:1px; text-transform:uppercase;">ACTIVIDAD</label>
+                    <label style="font-size:10px; color:var(--accent-purple); font-weight:800; letter-spacing:1px; text-transform:uppercase;">CABINA (Audio/Luces)</label>
+                    <label style="font-size:10px; color:var(--accent-purple); font-weight:800; letter-spacing:1px; text-transform:uppercase;">VIDEO (Pantallas/Cams)</label>
+                </div>
+
+                <div id="rosContainer"></div>
+                <button type="button" id="btnAddBlock" class="btn-add no-print" onclick="addRosRow()" style="border-style:dashed;">+ AGREGAR BLOQUE DE TIEMPO</button>
+
+                <div style="margin-top: 50px; border-top: 1px solid var(--border-color); padding-top: 24px;">
+                    <h3 style="color:var(--accent-purple); font-size:14px; font-family:var(--font-title); font-weight:900; letter-spacing:1px; margin-bottom:12px; text-transform:uppercase;">📝 BITÁCORA DE VUELO (POST-MORTEM)</h3>
+                    <textarea id="postMortemNotes" rows="4" placeholder="Anota aquí incidentes técnicos, observaciones o felicitaciones para el próximo servicio..." style="width:100%; font-size:14px; line-height:1.6;"></textarea>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Glass Modal: Assign Crew Member -->
+    <div id="crewModal" class="modal-overlay no-print" style="display:none;">
+        <div class="modal-glass" style="width: 440px; border-color: var(--accent-purple);">
+            <h3 style="color:white; margin-top:0; font-family:var(--font-title); font-weight:900; font-size:20px; margin-bottom:15px;">AGREGAR TÉCNICO AL CREW</h3>
+            <label style="font-size:10px; color:var(--accent-purple); font-weight:800; letter-spacing:1px; text-transform:uppercase; display:block; margin-bottom:8px;">SELECCIONA AL INTEGRANTE</label>
+            <select id="crewSelect" style="margin-bottom:20px; width:100%; padding:10px; font-weight:800;"></select>
+            
+            <label style="font-size:10px; color:var(--accent-purple); font-weight:800; letter-spacing:1px; text-transform:uppercase; display:block; margin-bottom:8px;">ROL TÉCNICO ASIGNADO</label>
+            <select id="crewRoleSelect" style="margin-bottom:24px; width:100%; padding:10px; font-weight:800;">
+                <option value="ProPresenter">ProPresenter (Letras)</option>
+                <option value="Switcher">Switcher (Cámaras)</option>
+                <option value="Arena">Arena (Pantallas LED)</option>
+                <option value="Iluminación">Iluminación</option>
+                <option value="Audio">Audio (FOH / IEMs)</option>
+                <option value="Video">Video (Dirección)</option>
+                <option value="Cámaras">Cámaras</option>
+                <option value="Staff">Staff General</option>
+            </select>
+
+            <div style="display:flex; gap:12px; margin-top:10px;">
+                <button type="button" onclick="addCrewToMemory()" class="primary" style="flex:2; background:var(--accent-purple); border-color:var(--accent-purple); color:black; box-shadow:0 0 15px rgba(192, 132, 252, 0.2); font-weight:900;">AÑADIR AL SERVICIO</button>
+                <button type="button" onclick="closeCrewModal()" class="secondary" style="flex:1; font-weight:800;">CANCELAR</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        let setId = (urlParams.get('id') || '').trim();
+
+        let currentProdTeam = [];
+        let allDbUsers = [];
+        let availableTechs = [];
+        let currentTimeSlots = ["9:00 AM", "11:00 AM", "1:00 PM"];
+        let isSunday = true;
+
+        let canEditROS = false;
+        try {
+            const userObj = JSON.parse(localStorage.getItem("user") || "{}");
+            const role = userObj.role || "Viewer";
+            const min = userObj.ministry || "";
+            const isFullAdmin = (role === "Full Administrador" || (userObj.username && userObj.username.toLowerCase() === "cordaz"));
+            canEditROS = isFullAdmin || (role === "Editor" && min === "Produccion");
+        } catch(e) {}
+
+        const rolesOptions = ["ProPresenter", "Switcher", "Arena", "Iluminación", "Audio", "Video", "Cámaras", "Staff"];
+
+        // Funciones Declaradas para Funcionamiento Inmediato de Botones
+        function addRosRow(time = "", act = "", cab = "", vid = "") {
+            const container = document.getElementById("rosContainer");
+            if (!container) return;
+
+            if (!time) {
+                const existingRows = container.querySelectorAll(".ros-row .r-time");
+                if (existingRows.length > 0) {
+                    const lastTime = existingRows[existingRows.length - 1].value || "10:00";
+                    const parts = lastTime.split(':');
+                    if (parts.length === 2) {
+                        let h = parseInt(parts[0], 10) || 10;
+                        let m = (parseInt(parts[1], 10) || 0) + 15;
+                        if (m >= 60) {
+                            h = (h + Math.floor(m / 60)) % 24;
+                            m = m % 60;
+                        }
+                        time = (h < 10 ? '0' : '') + h + ":" + (m < 10 ? '0' : '') + m;
+                    } else {
+                        time = "10:00";
+                    }
+                } else {
+                    time = "10:00";
+                }
+            }
+
+            const roAttr = canEditROS ? "" : "readonly";
+            const delBtnHTML = canEditROS ? `<button type="button" class="no-print" onclick="this.closest('.ros-row').remove()" style="background:none; border:none; color:var(--status-red); cursor:pointer; font-size:18px; padding-top:10px; height:auto; width:auto;" title="Eliminar fila">✕</button>` : '';
+
+            const div = document.createElement("div");
+            div.className = "ros-row animate-fade";
+            div.innerHTML = `
+                <input type="text" class="r-time" value="${time}" placeholder="00:00" ${roAttr} style="text-align:center; font-weight:800; font-family:var(--font-title); color:var(--accent-purple);">
+                <input type="text" class="r-act" value="${act}" placeholder="Ej: Bienvenida / Entrada" ${roAttr}>
+                <textarea class="r-cab" rows="2" placeholder="Notas de mezcla, micrófonos, cues de luces..." ${roAttr}>${cab}</textarea>
+                <textarea class="r-vid" rows="2" placeholder="Cues de switcher, ProPresenter, cámaras..." ${roAttr}>${vid}</textarea>
+                ${delBtnHTML}
+            `;
+            container.appendChild(div);
+
+            const actInput = div.querySelector(".r-act");
+            if (actInput && !act && canEditROS) {
+                actInput.focus();
+            }
+        }
+
+        function openCrewModal() {
+            const select = document.getElementById("crewSelect");
+            
+            // Filtrar estrictamente integrantes de Producción / Cabina Técnica (excluyendo pastores y músicos que no sean de técnica)
+            const prodCandidates = allDbUsers.filter(u => {
+                if (!u) return false;
+                const min = String(u.ministry || '').toLowerCase();
+                const role = String(u.role || '').toLowerCase();
+                const inst = String(u.instrument || '').toLowerCase();
+                const branch = String(u.techBranch || '').toLowerCase();
+                const isPastor = role.includes('pastor') || inst.includes('pastor') || min.includes('pastor');
+                if (isPastor) return false;
+                
+                return min.includes('prod') || branch.length > 0 || role.includes('prod') || role.includes('tec') || inst.includes('audio') || inst.includes('video') || inst.includes('switcher') || inst.includes('cam') || inst.includes('luces') || inst.includes('propresenter');
+            });
+
+            if (prodCandidates.length > 0) {
+                select.innerHTML = prodCandidates.map(t => {
+                    const branch = t.techBranch ? " [" + t.techBranch + "]" : (t.instrument ? " [" + t.instrument + "]" : "");
+                    return "<option value='" + t._id + "|" + t.name + "'>" + (t.name || 'Técnico').toUpperCase() + branch + "</option>";
+                }).join('');
+            } else {
+                select.innerHTML = "<option value='1|Tecnico'>Técnico de Producción</option>";
+            }
+            
+            const modal = document.getElementById("crewModal");
+            modal.style.display = "flex";
+            setTimeout(() => modal.classList.add("active"), 10);
+        }
+
+        function closeCrewModal() { 
+            const modal = document.getElementById("crewModal");
+            modal.classList.remove("active");
+            setTimeout(() => modal.style.display = "none", 300);
+        }
+
+        function addCrewToMemory() {
+            const selectVal = document.getElementById("crewSelect").value.split('|');
+            const memberId = selectVal[0] || Date.now().toString();
+            const memberName = selectVal[1] || "Técnico";
+            const chosenRole = document.getElementById("crewRoleSelect").value || "ProPresenter";
+
+            const initialSlots = {};
+            currentTimeSlots.forEach(slot => {
+                initialSlots[slot] = "Sirve";
+            });
+
+            const existing = currentProdTeam.find(m => m.memberId === memberId || m.name === memberName);
+            if (existing) {
+                currentTimeSlots.forEach(slot => {
+                    if (!existing.attendanceBySlot) existing.attendanceBySlot = {};
+                    existing.attendanceBySlot[slot] = "Sirve";
+                });
+                existing.role = chosenRole;
+                existing.attendance = "Sirve";
+            } else {
+                const newMember = {
+                    memberId: memberId,
+                    name: memberName,
+                    role: chosenRole, 
+                    focus: "",
+                    ready: false,
+                    attendance: "Sirve",
+                    attendanceBySlot: initialSlots
+                };
+                currentProdTeam.push(newMember);
+            }
+            
+            renderCrew();
+            closeCrewModal();
+        }
+
+        function removeCrewMember(index) {
+            currentProdTeam.splice(index, 1);
+            renderCrew();
+        }
+
+        function renderCrew() {
+            const container = document.getElementById("prodTeamList");
+            if (!container) return;
+
+            if (currentProdTeam.length === 0) {
+                container.innerHTML = "<p style='color:var(--text-muted); font-size:12px;'>No hay técnicos asignados aún. Haz clic en '+ AGREGAR OTRO TÉCNICO' arriba para seleccionarlos manualmente.</p>";
+                return;
+            }
+
+            container.innerHTML = currentProdTeam.map((member, index) => {
+                const roleOpts = rolesOptions.map(r => "<option value='" + r + "' " + (member.role === r ? 'selected' : '') + ">" + r + "</option>").join('');
+                
+                const slotsHtml = currentTimeSlots.map(slot => {
+                    const slotStatus = (member.attendanceBySlot && member.attendanceBySlot[slot]) || member.attendance || "No sirve";
+                    
+                    let bg = "rgba(255,255,255,0.05)";
+                    let color = "var(--text-muted)";
+                    let border = "var(--border-color)";
+                    let label = slot + ": ✖";
+
+                    if (slotStatus === "Sirve") {
+                        bg = "rgba(192, 132, 252, 0.2)";
+                        color = "var(--accent-purple)";
+                        border = "var(--accent-purple)";
+                        label = slot + ": ✅ SIRVE";
+                    } else if (slotStatus === "Recibe") {
+                        bg = "rgba(56, 189, 248, 0.15)";
+                        color = "var(--accent-blue)";
+                        border = "rgba(56, 189, 248, 0.4)";
+                        label = slot + ": 🛋️ RECIBE";
+                    }
+
+                    return `
+                        <button type="button" class="no-print" onclick="toggleCrewSlot(${index}, '${slot}')" style="background:${bg}; color:${color}; border:1px solid ${border}; padding:6px 10px; border-radius:8px; font-size:10px; font-weight:800; cursor:pointer; transition:all 0.2s ease;">
+                            ${label}
+                        </button>
+                    `;
+                }).join('');
+
+                const isServingAny = Object.values(member.attendanceBySlot || {}).some(v => v === "Sirve") || member.attendance === "Sirve";
+
+                return `
+                <div class="crew-card animate-fade" style="opacity: ${isServingAny ? '1' : '0.6'}; border-left-color: ${isServingAny ? 'var(--accent-purple)' : 'var(--border-color)'};">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <div style="font-weight:800; color:white; font-family:var(--font-title); font-size:14px; letter-spacing:-0.2px;">${(member.name || 'TÉCNICO').toUpperCase()}</div>
+                        <div style="display:flex; gap:8px; align-items:center;" class="no-print">
+                            <select onchange="updateCrew(${index}, 'role', this.value)" style="padding:4px 8px; font-size:11px; font-weight:800; color:var(--accent-purple); max-width:140px;">
+                                ${roleOpts}
+                            </select>
+                            <button type="button" onclick="removeCrewMember(${index})" style="background:none; border:none; color:var(--status-red); cursor:pointer; font-size:16px; padding:0 4px;" title="Quitar del servicio">✕</button>
+                        </div>
+                    </div>
+                    
+                    <div class="no-print" style="display:flex; gap:6px; flex-wrap:wrap; margin-top:8px;">
+                        ${slotsHtml}
+                    </div>
+                    
+                    <input class="no-print" type="text" placeholder="Foco técnico o nota (Ej: Cámara principal)" value="${member.focus || ''}" onchange="updateCrew(${index}, 'focus', this.value)" style="padding:6px 10px; font-size:11px; width:100%; margin-top:6px;">
+                    
+                    <div class="print-only" style="font-size:10px; color:#ddd; margin-top:4px;">
+                        <b>${(member.role || 'PROD').toUpperCase()}</b> • ${Object.entries(member.attendanceBySlot || {}).map(([s, st]) => s + ": " + st).join(' | ')}
+                    </div>
+                </div>
+                `;
+            }).join('');
+        }
+
+        function toggleCrewSlot(index, slot) {
+            if (!currentProdTeam[index].attendanceBySlot) {
+                currentProdTeam[index].attendanceBySlot = {};
+            }
+
+            const current = currentProdTeam[index].attendanceBySlot[slot] || "No sirve";
+            let next = "Sirve";
+
+            if (isSunday) {
+                if (current === "Sirve") next = "Recibe";
+                else if (current === "Recibe") next = "No sirve";
+                else next = "Sirve";
+            } else {
+                if (current === "Sirve") next = "No sirve";
+                else next = "Sirve";
+            }
+
+            currentProdTeam[index].attendanceBySlot[slot] = next;
+            
+            const isServing = Object.values(currentProdTeam[index].attendanceBySlot).some(v => v === "Sirve");
+            currentProdTeam[index].attendance = isServing ? "Sirve" : (Object.values(currentProdTeam[index].attendanceBySlot).some(v => v === "Recibe") ? "Recibe" : "No sirve");
+
+            renderCrew();
+        }
+
+        function updateCrew(index, field, value) {
+            currentProdTeam[index][field] = value;
+        }
+
+        async function saveROS() {
+            if (!setId) {
+                alert("No se encontró el ID del servicio.");
+                return;
+            }
+
+            const rows = Array.from(document.querySelectorAll(".ros-row"));
+            const runOfService = rows.map(row => ({
+                time: row.querySelector(".r-time") ? row.querySelector(".r-time").value : "",
+                activity: row.querySelector(".r-act") ? row.querySelector(".r-act").value : "",
+                cabinaNotes: row.querySelector(".r-cab") ? row.querySelector(".r-cab").value : "",
+                videoNotes: row.querySelector(".r-vid") ? row.querySelector(".r-vid").value : ""
+            }));
+
+            const postMortemNotes = document.getElementById("postMortemNotes") ? document.getElementById("postMortemNotes").value : "";
+
+            try {
+                const res = await fetch("/setlists/" + setId, {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json", "Authorization": "Bearer " + token },
+                    body: JSON.stringify({ runOfService, prodTeam: currentProdTeam, postMortemNotes }) 
+                });
+
+                if (res.ok) { 
+                    alert("¡Escaleta y Crew de producción guardados con éxito!"); 
+                } else { 
+                    alert("Error al intentar guardar en el servidor."); 
+                }
+            } catch (err) { 
+                alert("Hubo un problema de conexión con el servidor: " + err.message); 
+            }
+        }
+
+        // Carga Principal Segura
+        async function loadSetlist() {
+            try {
+                // 1. Cargar Usuarios
+                try {
+                    const userRes = await fetch("/users", { headers: token ? { "Authorization": "Bearer " + token } : {} });
+                    if (userRes.ok) {
+                        const uData = await userRes.json();
+                        allDbUsers = Array.isArray(uData) ? uData : [];
+                    }
+                } catch(e) { console.warn("Error cargando usuarios:", e); }
+
+                availableTechs = allDbUsers.filter(u => {
+                    if (!u) return false;
+                    const min = String(u.ministry || '').toLowerCase();
+                    const role = String(u.role || '').toLowerCase();
+                    const inst = String(u.instrument || '').toLowerCase();
+                    const branch = String(u.techBranch || '').toLowerCase();
+                    return min.includes("prod") || branch.length > 0 || role.includes("tec") || role.includes("prod") || inst.includes("audio") || inst.includes("video") || inst.includes("switcher") || inst.includes("cam");
+                });
+
+                if (availableTechs.length === 0) {
+                    availableTechs = allDbUsers.filter(u => u && !String(u.role || '').toLowerCase().includes("pastor"));
+                }
+
+                // 2. Cargar Canciones
+                let allDbSongs = [];
+                try {
+                    const songsRes = await fetch("/songs", { headers: token ? { "Authorization": "Bearer " + token } : {} });
+                    if (songsRes.ok) {
+                        const songsData = await songsRes.json();
+                        allDbSongs = Array.isArray(songsData) ? songsData : [];
+                    }
+                } catch(e) { console.warn("Error cargando canciones:", e); }
+
+                // 3. Cargar Setlists
+                const setRes = await fetch("/setlists", { headers: token ? { "Authorization": "Bearer " + token } : {} });
+                const sData = await setRes.json();
+                const setlists = Array.isArray(sData) ? sData : [];
+                
+                let s = null;
+                if (setId) {
+                    s = setlists.find(x => x && (x._id === setId || String(x._id) === String(setId)));
+                }
+                if (!s && setlists.length > 0) {
+                    s = setlists.filter(x => x && !x.archived).reverse()[0] || setlists[0];
+                    if (s) setId = s._id;
+                }
+
+                if (!s) {
+                    document.getElementById("sTitle").innerText = "SERVICIO NO ENCONTRADO";
+                    document.getElementById("sDate").innerText = "Selecciona un servicio desde el hub de producción.";
+                    renderCrew();
+                    addRosRow("09:45", "Cuenta Regresiva", "", "");
+                    addRosRow("10:00", "Apertura & Alabanza", "", "");
+                    addRosRow("10:35", "Mensaje / Prédica", "", "");
+                    addRosRow("11:15", "Ministración & Cierre", "", "");
+                    return;
+                }
+
+                // Determinar slots de horario según el servicio
+                const serviceType = s.serviceType || '';
+                isSunday = serviceType.toLowerCase().includes("domingo") || (s.name || '').toLowerCase().includes("domingo");
+                if (s.timeSlots && s.timeSlots.length > 0) {
+                    currentTimeSlots = s.timeSlots;
+                } else if (isSunday) {
+                    currentTimeSlots = ["9:00 AM", "11:00 AM", "1:00 PM"];
+                } else {
+                    currentTimeSlots = ["8:00 PM"];
+                }
+
+                document.getElementById("sTitle").innerText = (s.name || 'Servicio').toUpperCase();
+                document.getElementById("sDate").innerText = (s.date || '') + " • " + (s.serviceType || 'Servicio');
+                if (document.getElementById("postMortemNotes")) {
+                    document.getElementById("postMortemNotes").value = s.postMortemNotes || "";
+                }
+
+                // Renderizar Músicos (ÚNICAMENTE los que SIRVEN en plataforma, excluyendo "Recibe" y "No sirve")
+                const musicianNames = (s.team && Array.isArray(s.team)) ? s.team.filter(t => {
+                    if (!t) return false;
+                    if (typeof t === 'object') {
+                        const att = t.attendance;
+                        if (att === 'Recibe' || att === 'No sirve' || att === 'no') return false;
+                        if (t.schedules && typeof t.schedules === 'object') {
+                            const hasAllNo = Object.values(t.schedules).every(v => v === 'no' || v === 'No sirve' || v === 'Recibe');
+                            if (hasAllNo) return false;
+                        }
+                        return true;
+                    }
+                    return true;
+                }).map(t => typeof t === 'object' ? (t.name || '') : String(t)).filter(Boolean) : [];
+
+                const musicianListHtml = musicianNames.length > 0
+                    ? musicianNames.map(name => {
+                        const uObj = allDbUsers.find(x => x && x.name === name);
+                        const inst = uObj ? (uObj.instrument || 'Músico') : 'Músico';
+                        return "<div><span style='color:white; font-weight:800;'>" + name.toUpperCase() + "</span> <span style='color:var(--text-muted); font-size:11px;'>(" + inst + ")</span></div>";
+                    }).join('')
+                    : "<i>No hay músicos programados para servir.</i>";
+                
+                document.getElementById("teamList").innerHTML = musicianListHtml;
+
+                // Renderizar Canciones
+                document.getElementById("songList").innerHTML = (s.songs && s.songs.length > 0) ? s.songs.map((item, index) => {
+                    if (!item) return '';
+                    let songObj = null;
+                    if (typeof item.songId === 'object' && item.songId !== null) {
+                        songObj = item.songId;
+                    } else {
+                        songObj = allDbSongs.find(x => x && (String(x._id) === String(item.songId) || x._id === item.songId)) || {};
+                    }
+                    const songTitle = (songObj.name || item.name || 'Canción').toUpperCase();
+                    const songKey = item.setlistKey || songObj.key || 'C';
+
+                    return `
+                    <div style="background:rgba(0,0,0,0.3); padding:10px 14px; border-radius:10px; border:1px solid var(--border-color); display:flex; justify-content:space-between; align-items:center;">
+                        <div style="font-weight:800; color:white; font-size:13px; font-family:var(--font-title);">${index + 1}. ${songTitle}</div>
+                        <span class="status-pill confirmed" style="font-size:9px; padding:2px 8px; background:rgba(192, 132, 252, 0.1); color:var(--accent-purple); border-color:rgba(192, 132, 252, 0.3); font-weight:800;">${songKey}</span>
+                    </div>`;
+                }).join('') : "<i>No hay canciones agregadas.</i>";
+
+                // Inicializar el equipo de producción ÚNICAMENTE con los técnicos guardados
+                const savedProdTeam = (s.prodTeam && Array.isArray(s.prodTeam)) ? s.prodTeam : [];
+                
+                currentProdTeam = savedProdTeam.map(saved => {
+                    if (!saved.attendanceBySlot) {
+                        saved.attendanceBySlot = {};
+                        currentTimeSlots.forEach(slot => {
+                            saved.attendanceBySlot[slot] = saved.attendance || "Sirve";
+                        });
+                    }
+                    return saved;
+                });
+
+                renderCrew();
+
+                // Cargar Run of Service ÚNICAMENTE con los bloques guardados (sin plantillas automáticas)
+                const rosContainer = document.getElementById("rosContainer");
+                rosContainer.innerHTML = "";
+                if (s.runOfService && s.runOfService.length > 0) {
+                    s.runOfService.forEach(r => addRosRow(r.time, r.activity, r.cabinaNotes, r.videoNotes));
+                }
+
+                if (!canEditROS) {
+                    const btnSave = document.getElementById("btnSaveROS");
+                    if (btnSave) btnSave.style.display = "none";
+                    const btnCrew = document.getElementById("btnAddCrew");
+                    if (btnCrew) btnCrew.style.display = "none";
+                    const btnBlock = document.getElementById("btnAddBlock");
+                    if (btnBlock) btnBlock.style.display = "none";
+                    const notes = document.getElementById("postMortemNotes");
+                    if (notes) notes.readOnly = true;
+                }
+            } catch (err) { 
+                console.error("Error al cargar setlist:", err);
+                document.getElementById("sTitle").innerText = "SERVICIO DE PRODUCCIÓN";
+                document.getElementById("sDate").innerText = "Servicio listo para planificar";
+                renderCrew();
+            }
+        }
+
+        // Ejecutar carga inicial
+        loadSetlist();
+    </script>
+</body>
+</html>

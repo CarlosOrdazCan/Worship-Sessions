@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mi Perfil | CAN ALABANZA</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .profile-layout {
+            display: grid;
+            grid-template-columns: 340px 1fr;
+            gap: 30px;
+            align-items: start;
+        }
+
+        .avatar-box {
+            position: relative;
+            display: inline-block;
+            margin-bottom: 20px;
+            width: 140px;
+            height: 140px;
+        }
+
+        .avatar-img {
+            width: 140px;
+            height: 140px;
+            border-radius: 50%;
+            object-fit: cover;
+            aspect-ratio: 1/1;
+            border: 3px solid var(--accent-red);
+            box-shadow: 0 0 25px var(--accent-red-glow);
+            transition: var(--transition);
+            display: block;
+        }
+
+        .avatar-box:hover .avatar-img {
+            transform: scale(1.03);
+            box-shadow: 0 0 35px var(--accent-red);
+        }
+
+        .camera-btn {
+            position: absolute;
+            bottom: 4px;
+            right: 4px;
+            padding: 0;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            min-width: 40px;
+            background: var(--accent-red);
+            border: 2px solid white;
+            color: white;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            cursor: pointer;
+        }
+
+        .camera-btn:hover {
+            background: #ff4765;
+            transform: scale(1.1);
+        }
+
+        .readonly-tag-box {
+            background: rgba(0,0,0,0.5);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 12px 18px;
+            margin-bottom: 16px;
+        }
+    </style>
+    <link rel="icon" type="image/png" href="can-logo.png">
+</head>
+<body class="animate-up">
+    <script>
+        const token = localStorage.getItem("token");
+        if (!token) window.location.href = "login.html";
+
+        const savedWallpaper = localStorage.getItem("cordaz_wallpaper");
+        if (savedWallpaper) {
+            document.body.classList.add("ios-wallpaper-active");
+            document.body.style.setProperty("--ios-bg-image", `url(${savedWallpaper})`);
+        }
+    </script>
+
+    <!-- Navigation Header -->
+    <div class="pco-navbar">
+        <div style="display:flex; align-items:center; gap:20px;">
+            <button class="secondary" onclick="location.href='index.html'" style="padding:10px 18px; font-weight:800;">← VOLVER AL HUB</button>
+            <span style="font-family:var(--font-title); font-weight:800; font-size:18px; letter-spacing:1px;">CAN <span style="color:var(--accent-red); font-weight:400;">ALABANZA</span> • MI PERFIL</span>
+        </div>
+        <button class="primary" onclick="saveProfileData()" style="padding:10px 22px; font-size:12px; font-weight:800;">💾 GUARDAR CAMBIOS</button>
+    </div>
+
+    <!-- Main Container -->
+    <div class="container animate-fade">
+        <header style="margin-bottom:35px; border-bottom:1px solid var(--border-color); padding-bottom:20px;">
+            <h1 style="font-size:32px; font-family:var(--font-title); font-weight:900; letter-spacing:-0.5px; color:white;">Mi Perfil</h1>
+            <p style="color:var(--text-muted); font-size:14px; margin-top:5px;">Personaliza tu información de contacto, biografía, foto y contraseña.</p>
+        </header>
+
+        <div class="profile-layout">
+            <!-- Left Card: Avatar & Fixed System Role -->
+            <div class="glass-card" style="text-align:center;">
+                <div class="avatar-box">
+                    <img id="avatarPreview" src="" alt="Avatar" class="avatar-img">
+                    <input type="file" id="photoInput" accept="image/*" style="display:none;">
+                    <button class="camera-btn" onclick="document.getElementById('photoInput').click()" title="Cambiar foto">📷</button>
+                </div>
+
+                <h2 id="display-name" style="margin-bottom:6px; font-size:22px; font-family:var(--font-title); font-weight:900; text-transform:uppercase; color:white;"></h2>
+                
+                <div style="margin-bottom:14px;">
+                    <span id="display-role" style="color:var(--accent-blue); font-size:12px; font-weight:900; letter-spacing:1px; text-transform:uppercase;"></span>
+                </div>
+                
+                <div style="display:flex; justify-content:center; gap:8px; margin-bottom:20px;">
+                    <span id="display-username" class="status-pill" style="font-size:11px; padding:4px 10px;"></span>
+                    <span id="display-affiliation" class="status-pill confirmed" style="font-size:11px; padding:4px 10px;"></span>
+                </div>
+
+                <div class="readonly-tag-box" style="text-align:left;">
+                    <span style="font-size:10px; color:var(--text-muted); font-weight:800; display:block; text-transform:uppercase; margin-bottom:4px;">🔒 Asignación del Sistema</span>
+                    <p style="font-size:12px; color:var(--text-muted); margin:0; line-height:1.4;">El usuario, instrumento y rol asignados son gestionados por el Administrador.</p>
+                </div>
+                
+                <div id="ios-wallpaper-section" style="margin-top:25px; padding-top:20px; border-top:1px solid var(--border-color); text-align:left;">
+                    <h3 style="font-size:11px; letter-spacing:1.5px; color:var(--accent-red); margin-bottom:6px; font-weight:900; font-family:var(--font-title); text-transform:uppercase;">Fondo de Pantalla (iOS Blend)</h3>
+                    <p style="font-size:12px; color:var(--text-muted); margin-bottom:12px; line-height:1.4;">Personaliza tu experiencia visual aplicando una foto de fondo translúcida.</p>
+                    <input type="file" id="wallpaperInput" accept="image/*" style="display:none;">
+                    <div style="display:flex; gap:10px;">
+                        <button class="secondary" onclick="document.getElementById('wallpaperInput').click()" style="font-size:11px; padding:8px 12px;">SELECCIONAR FOTO</button>
+                        <button id="removeWallpaperBtn" class="danger" onclick="clearWallpaper()" style="font-size:11px; padding:8px 12px; display:none;">✕ QUITAR</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Card: Editable Details -->
+            <div class="glass-card">
+                <h3 style="color:var(--accent-red); font-size:13px; letter-spacing:2px; margin-bottom:24px; font-weight:900; font-family:var(--font-title); text-transform:uppercase;">INFORMACIÓN PERSONAL</h3>
+                
+                <div class="pco-input-group">
+                    <label>Nombre Completo</label>
+                    <input id="userName" type="text" placeholder="Tu nombre completo...">
+                </div>
+                
+                <div class="pco-input-group">
+                    <label>Teléfono de Contacto (WhatsApp)</label>
+                    <input id="userPhone" type="text" placeholder="Ej: +52 55 1234 5678">
+                </div>
+
+                <div class="pco-input-group">
+                    <label>Biografía (Visible para el equipo en Directorio)</label>
+                    <textarea id="userBio" rows="4" style="resize:vertical;" placeholder="Escribe un breve resumen de tu servicio, ministerio o trayectoria..."></textarea>
+                </div>
+
+                <div class="pco-input-group">
+                    <label>Actualizar Contraseña</label>
+                    <input id="userPass" type="password" placeholder="Ingresa una nueva contraseña solo si deseas cambiarla...">
+                </div>
+
+                <!-- Avisar / Justificar Inasistencia a Servicio -->
+                <div style="margin-top:35px; padding-top:24px; border-top:1px solid var(--border-color);">
+                    <h3 style="color:var(--accent-blue); font-size:13px; letter-spacing:2px; margin-bottom:8px; font-weight:900; font-family:var(--font-title); text-transform:uppercase;">
+                        📅 AVISAR / JUSTIFICAR INASISTENCIA A UN SERVICIO
+                    </h3>
+                    <p style="font-size:12px; color:var(--text-muted); margin-bottom:14px; line-height:1.5;">
+                        Si no podrás asistir a tu servicio programado, notifícalo aquí para que el Pastor y tu Director de Alabanza/Producción estén enterados con anticipación.
+                    </p>
+
+                    <div class="pco-input-group">
+                        <label>Seleccionar Servicio</label>
+                        <select id="absenceSetlistSelect" style="width:100%; margin-bottom:12px; font-weight:800;"></select>
+                    </div>
+
+                    <div class="pco-input-group">
+                        <label>Motivo de la Inasistencia</label>
+                        <textarea id="absenceReasonInput" rows="2" placeholder="Ej: Viaje familiar fuera de la ciudad / Turno de trabajo nocturno..." style="width:100%; margin-bottom:12px;"></textarea>
+                    </div>
+
+                    <button type="button" onclick="submitAbsenceReason()" class="secondary" style="border-color:var(--accent-blue); color:var(--accent-blue); font-weight:900; font-size:11px; padding:10px 18px;">
+                        ✉️ NOTIFICAR AL PASTOR & DIRECTOR
+                    </button>
+                </div>
+
+                <!-- IEM Personal Mix Faders (Solo Músicos de Alabanza Principal) -->
+                <div id="iemMixerCard" style="margin-top:35px; padding-top:24px; border-top:1px solid var(--border-color); display:none;">
+                    <div style="margin-bottom:16px;">
+                        <h3 style="color:var(--accent-red); font-size:13px; letter-spacing:2px; font-weight:900; font-family:var(--font-title); text-transform:uppercase; margin:0;">
+                            🎧 MI MEZCLA PERSONAL IN-EAR (FADERS)
+                        </h3>
+                        <p style="font-size:12px; color:var(--text-muted); margin-top:4px;">
+                            Ajusta tus niveles de retorno para que el Ingeniero de Audio (David Montes) los monitoree y mantenga en consola.
+                        </p>
+                    </div>
+                    <div style="display:flex; gap:12px; overflow-x:auto; padding:16px 12px; background:rgba(0,0,0,0.5); border-radius:14px; border:1px solid var(--border-color);" id="userFadersContainer">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="profile.js"></script>
+</body>
+</html>

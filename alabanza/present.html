@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Presentación | C.A.N. PRO</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        body {
+            background: #020204;
+            color: white;
+            text-align: center;
+            padding: 40px 20px;
+        }
+
+        .present-container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .song-title-head {
+            font-size: clamp(32px, 5vw, 52px);
+            font-family: var(--font-title);
+            font-weight: 900;
+            text-transform: uppercase;
+            color: var(--accent-red);
+            margin-bottom: 40px;
+            text-shadow: 0 0 20px var(--accent-red-glow);
+        }
+
+        .sec-card {
+            background: var(--bg-glass);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-pco);
+            padding: 30px;
+            margin-bottom: 24px;
+            box-shadow: var(--shadow-glass);
+        }
+
+        .sec-title {
+            color: var(--accent-blue);
+            font-family: var(--font-title);
+            font-weight: 800;
+            font-size: 16px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin-bottom: 12px;
+        }
+
+        .sec-chords {
+            font-family: var(--font-chords);
+            font-size: clamp(24px, 4vw, 36px);
+            font-weight: 800;
+            color: white;
+            letter-spacing: 2px;
+            word-spacing: 12px;
+        }
+    </style>
+    <link rel="icon" type="image/png" href="can-logo.png">
+</head>
+<body>
+    <script>
+        if (!localStorage.getItem("token")) window.location.href = "login.html";
+    </script>
+
+    <div class="present-container animate-fade">
+        <button class="secondary" onclick="location.href='overview.html'" style="margin-bottom:30px; font-weight:800; font-size:12px;">← VOLVER AL REPERTORIO</button>
+        <h1 id="title" class="song-title-head">CARGANDO...</h1>
+        <div id="content"></div>
+    </div>
+
+    <script>
+        const token = localStorage.getItem("token");
+        const params = new URLSearchParams(window.location.search);
+        const id = params.get("id");
+
+        async function loadSong() {
+            try {
+                const res = await fetch("/songs", {
+                    headers: { Authorization: "Bearer " + token }
+                });
+
+                const songs = await res.json();
+                const song = songs.find(s => s._id === id);
+
+                if(!song) {
+                    document.getElementById("title").innerText = "CANCIÓN NO ENCONTRADA";
+                    return;
+                }
+
+                document.getElementById("title").innerText = song.name.toUpperCase();
+                const content = document.getElementById("content");
+                content.innerHTML = "";
+
+                song.sections.forEach(sec => {
+                    const div = document.createElement("div");
+                    div.className = "sec-card";
+                    const chordsText = Array.isArray(sec.chords) ? sec.chords.join(" - ") : (sec.chords || "");
+
+                    div.innerHTML = `
+                        <div class="sec-title">${sec.name || sec.type || 'SECCIÓN'}</div>
+                        <div class="sec-chords">${chordsText}</div>
+                        ${sec.lyrics ? `<div style="font-size:16px; margin-top:12px; color:var(--text-muted); line-height:1.6;">${sec.lyrics}</div>` : ''}
+                    `;
+
+                    content.appendChild(div);
+                });
+            } catch(e) {
+                document.getElementById("title").innerText = "ERROR AL CARGAR CANCIÓN";
+            }
+        }
+
+        loadSong();
+    </script>
+</body>
+</html>

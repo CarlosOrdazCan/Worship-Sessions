@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cabina Live | CAN ALABANZA</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        body { 
+            background: #040407; 
+            color: #ddd; 
+            overflow-x: hidden; 
+        }
+        
+        .live-header { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            padding: 16px 32px; 
+            background: rgba(8, 8, 12, 0.85); 
+            backdrop-filter: blur(24px); 
+            border-bottom: 2px solid var(--accent-purple); 
+            position: sticky; 
+            top: 0; 
+            z-index: 100; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5); 
+        }
+
+        .clock { 
+            font-size: 28px; 
+            font-family: var(--font-chords);
+            font-weight: 900; 
+            color: white; 
+            letter-spacing: 2px; 
+            text-shadow: 0 0 15px rgba(192, 132, 252, 0.5); 
+        }
+
+        .crew-status-bar { 
+            background: rgba(12, 10, 15, 0.6); 
+            backdrop-filter: blur(20px); 
+            padding: 12px 32px; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            border-bottom: 1px solid var(--border-color); 
+        }
+
+        .crew-list { 
+            display: flex; 
+            gap: 12px; 
+            flex-wrap: wrap; 
+        }
+
+        .crew-dot { 
+            display: flex; 
+            align-items: center; 
+            gap: 8px; 
+            font-size: 11px; 
+            font-weight: 800; 
+            color: var(--text-muted); 
+            background: rgba(0,0,0,0.5); 
+            padding: 6px 14px; 
+            border-radius: 20px; 
+            border: 1px solid var(--border-color); 
+        }
+        .dot-red { color: var(--accent-red); text-shadow: 0 0 8px var(--accent-red-glow); }
+        .dot-green { color: var(--audio-accent); text-shadow: 0 0 8px rgba(0,255,170,0.6); }
+        
+        .live-grid { 
+            display: grid; 
+            grid-template-columns: 1fr 1.6fr 1.2fr; 
+            gap: 24px; 
+            padding: 24px 32px; 
+            min-height: calc(100vh - 150px); 
+        }
+
+        .panel { 
+            background: var(--bg-glass); 
+            backdrop-filter: blur(24px); 
+            border: 1px solid var(--border-color); 
+            border-radius: var(--radius-pco); 
+            display: flex; 
+            flex-direction: column; 
+            overflow: hidden; 
+            box-shadow: var(--shadow-glass); 
+        }
+
+        .panel-header { 
+            background: rgba(0,0,0,0.5); 
+            padding: 16px; 
+            font-family: var(--font-title);
+            font-weight: 900; 
+            font-size: 12px; 
+            letter-spacing: 2px; 
+            color: var(--accent-purple); 
+            border-bottom: 1px solid var(--border-color); 
+            text-align: center; 
+            text-transform: uppercase;
+        }
+
+        .panel-content { 
+            padding: 20px; 
+            overflow-y: auto; 
+            flex-grow: 1; 
+        }
+
+        .patch-item { 
+            background: rgba(0,0,0,0.4); 
+            border: 1px solid var(--border-color); 
+            border-left: 4px solid var(--accent-purple); 
+            padding: 14px; 
+            margin-bottom: 12px; 
+            border-radius: 0 12px 12px 0; 
+        }
+
+        .patch-name { 
+            font-weight: 800; 
+            color: white; 
+            font-size: 14px; 
+            margin-bottom: 6px; 
+        }
+
+        .ros-block { 
+            display: grid; 
+            grid-template-columns: 75px 1fr; 
+            gap: 15px; 
+            margin-bottom: 18px; 
+            padding-bottom: 18px; 
+            border-bottom: 1px dashed var(--border-color); 
+        }
+
+        .ros-time { 
+            font-size: 16px; 
+            font-family: var(--font-chords);
+            font-weight: 900; 
+            color: var(--accent-red); 
+        }
+
+        .ros-title { 
+            font-size: 15px; 
+            font-family: var(--font-title);
+            font-weight: 800; 
+            color: white; 
+            margin-bottom: 8px; 
+        }
+
+        .ros-notes { 
+            display: grid; 
+            grid-template-columns: 1fr 1fr; 
+            gap: 10px; 
+        }
+
+        .note-box { 
+            background: rgba(0,0,0,0.4); 
+            padding: 10px; 
+            border-radius: 10px; 
+            font-size: 12px; 
+            border: 1px solid var(--border-color); 
+        }
+
+        .note-title { 
+            font-size: 10px; 
+            font-weight: 800; 
+            color: var(--text-muted); 
+            margin-bottom: 4px; 
+            display: block; 
+            text-transform: uppercase;
+        }
+
+        .song-item { margin-bottom: 24px; }
+        .song-title { 
+            font-size: 14px; 
+            font-family: var(--font-title);
+            font-weight: 900; 
+            color: white; 
+            background: rgba(0,0,0,0.5); 
+            border: 1px solid var(--border-color); 
+            padding: 12px 16px; 
+            border-radius: 10px; 
+            margin-bottom: 12px; 
+            display: flex; 
+            justify-content: space-between; 
+        }
+
+        .lyric-name { 
+            font-size: 11px; 
+            color: var(--accent-purple); 
+            font-weight: 900; 
+            font-family: var(--font-title);
+            margin-bottom: 4px; 
+            text-transform: uppercase;
+        }
+        .lyric-text { 
+            font-size: 13px; 
+            color: rgba(255,255,255,0.85); 
+            line-height: 1.6; 
+            white-space: pre-line; 
+            margin-bottom: 12px;
+        }
+
+        @media (max-width: 900px) {
+            .live-grid { grid-template-columns: 1fr; height: auto; }
+        }
+    </style>
+    <link rel="icon" type="image/png" href="can-logo.png">
+</head>
+<body>
+    <script>
+        const token = localStorage.getItem("token");
+        const urlParams = new URLSearchParams(window.location.search);
+        const setId = urlParams.get('id');
+        let currentUser = {};
+        let currentSetlist = null;
+
+        if (!token || !setId) window.location.href = "prod-index.html";
+        try { currentUser = JSON.parse(window.atob(token.split('.')[1])); } catch(e) {}
+
+        const savedWallpaper = localStorage.getItem("cordaz_wallpaper");
+        if (savedWallpaper) {
+            document.body.classList.add("ios-wallpaper-active");
+            document.body.style.setProperty("--ios-bg-image", `url(${savedWallpaper})`);
+        }
+    </script>
+
+    <!-- Header Live -->
+    <header class="live-header">
+        <div style="display:flex; align-items:center; gap:16px;">
+            <button class="secondary" onclick="location.href='prod-index.html'" style="padding:8px 14px; font-size:11px; font-weight:800;">← SALIR</button>
+            <div class="live-badge">ON AIR</div>
+        </div>
+        <div style="display:flex; flex-direction:column; align-items:center;">
+            <div class="clock" id="liveClock" style="color:var(--accent-purple);">00:00:00</div>
+            <div style="display:flex; gap:6px; margin-top:6px;">
+                <button onclick="startStopwatch()" style="background:var(--audio-accent); color:black; border:none; border-radius:6px; font-size:9px; padding:3px 8px; font-weight:900; cursor:pointer;">▶ INICIAR</button>
+                <button onclick="pauseStopwatch()" style="background:var(--status-amber); color:black; border:none; border-radius:6px; font-size:9px; padding:3px 8px; font-weight:900; cursor:pointer;">⏸ PAUSA</button>
+                <button onclick="resetStopwatch()" style="background:var(--accent-red); color:white; border:none; border-radius:6px; font-size:9px; padding:3px 8px; font-weight:900; cursor:pointer;">⏹ RESET</button>
+            </div>
+        </div>
+        <div id="sDateTitle" style="color:var(--text-muted); font-weight:800; font-size:12px; letter-spacing:1px; text-transform:uppercase;">CARGANDO...</div>
+    </header>
+
+    <!-- Crew Status Ready Checks -->
+    <div class="crew-status-bar">
+        <div class="crew-list" id="crewStatusList">
+            <span style="color:var(--text-muted); font-size:11px;">Cargando status del crew...</span>
+        </div>
+        <div id="myActionButton" style="display:flex; align-items:center;"></div> 
+    </div>
+
+    <!-- 3-Column Live Grid -->
+    <div class="live-grid">
+        <div class="panel">
+            <div class="panel-header">🎚️ PATCH LIST (FOH / MONITORES)</div>
+            <div class="panel-content" id="patchContainer"></div>
+        </div>
+        <div class="panel">
+            <div class="panel-header">⏱️ RUN OF SERVICE (ESCALETA)</div>
+            <div class="panel-content" id="rosContainer"></div>
+        </div>
+        <div class="panel">
+            <div class="panel-header">📺 LETRAS (PANTALLAS)</div>
+            <div class="panel-content" id="lyricsContainer"></div>
+        </div>
+    </div>
+
+    <script src="musicUtils.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+        socket.on('liveStructureChange', (data) => {
+            if (currentSetlist && currentSetlist.songs) {
+                const item = currentSetlist.songs.find(i => i.songId && i.songId._id === data.songId);
+                if (item) {
+                    item.songId.sections = data.sections; 
+                    renderLyrics();
+                }
+            }
+        });
+
+        let stopwatchTimer = null;
+        let stopwatchSeconds = 0;
+
+        function formatStopwatch(ts) {
+            const h = Math.floor(ts / 3600);
+            const m = Math.floor((ts % 3600) / 60);
+            const s = ts % 60;
+            return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+        }
+
+        function startStopwatch() {
+            if (!stopwatchTimer) {
+                stopwatchTimer = setInterval(() => {
+                    stopwatchSeconds++;
+                    document.getElementById("liveClock").innerText = formatStopwatch(stopwatchSeconds);
+                }, 1000);
+            }
+        }
+
+        function pauseStopwatch() {
+            if (stopwatchTimer) { clearInterval(stopwatchTimer); stopwatchTimer = null; }
+        }
+
+        function resetStopwatch() {
+            pauseStopwatch();
+            stopwatchSeconds = 0;
+            document.getElementById("liveClock").innerText = formatStopwatch(stopwatchSeconds);
+        }
+
+        async function loadLiveView() {
+            try {
+                const usersRes = await fetch("/users");
+                const uData = await usersRes.json();
+                const allUsers = Array.isArray(uData) ? uData : [];
+
+                const setRes = await fetch("/setlists");
+                const sData = await setRes.json();
+                const setlists = Array.isArray(sData) ? sData : [];
+                currentSetlist = setlists.find(x => x && x._id === setId);
+
+                if (currentSetlist) {
+                    document.getElementById("sDateTitle").innerText = `${currentSetlist.name || 'Servicio'} | ${currentSetlist.date || ''}`;
+
+                    renderCrewStatus();
+                    renderActionButton();
+
+                    // --- PATCH LIST: SOLO MÚSICOS DE ALABANZA QUE SIRVEN (EXCLUYENDO RECIBE Y NO ASISTE) ---
+                    let patchHTML = "";
+                    const worshipMembers = (currentSetlist.team || []).filter(m => {
+                        const userDb = allUsers.find(u => u._id === m.memberId || u.name === m.name);
+                        const min = (userDb && userDb.ministry) || '';
+                        const isProd = min === 'Produccion' || (userDb && userDb.techBranch);
+                        const isPastor = (userDb && userDb.role === 'Pastor') || min.toLowerCase().includes('pastor');
+                        if (isProd || isPastor) return false;
+                        
+                        // Excluir si recibe o no sirve
+                        if (m.attendance === 'Recibe' || m.attendance === 'No sirve' || m.attendance === 'no') return false;
+                        if (m.schedules && typeof m.schedules === 'object') {
+                            const hasAllNo = Object.values(m.schedules).every(v => v === 'no' || v === 'No sirve' || v === 'Recibe');
+                            if (hasAllNo) return false;
+                        }
+                        return true;
+                    });
+
+                    if (worshipMembers.length > 0) {
+                        worshipMembers.forEach(member => {
+                            const userDb = allUsers.find(u => u._id === mIdOrName(u, member));
+                            const displayName = member.name || (userDb && userDb.name) || 'Músico';
+                            const displayRole = (userDb && userDb.instrument) || member.role || 'Alabanza';
+                            let channelsList = "<div style='color:var(--text-muted); font-size:11px; margin-top:4px;'>Sin parcheo registrado</div>";
+                            
+                            if (userDb && Array.isArray(userDb.audioChannels) && userDb.audioChannels.length > 0) {
+                                channelsList = `<div style="margin-top:6px; display:grid; grid-template-columns: 1.2fr 60px 60px 60px; gap:6px; font-size:9px; color:var(--text-muted); font-weight:800; border-bottom:1px solid var(--border-color); padding-bottom:3px;">
+                                    <div>LÍNEA / FUENTE</div><div>ANÁL.</div><div style="color:var(--audio-accent);">DIG.</div><div style="color:var(--accent-blue);">IEM</div>
+                                </div>` + userDb.audioChannels.map(c => `
+                                    <div style="display:grid; grid-template-columns: 1.2fr 60px 60px 60px; gap:6px; font-size:11px; margin-top:3px;">
+                                        <div style="color:white; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${c.inputName || 'Línea'}</div>
+                                        <div style="color:#aaa; font-family:var(--font-chords);">${c.analogChannel || '-'}</div>
+                                        <div style="color:var(--audio-accent); font-family:var(--font-chords); font-weight:bold;">${c.channel || '-'}</div>
+                                        <div style="color:var(--accent-blue); font-family:var(--font-chords); font-weight:bold;">${c.auxLine || '-'}</div>
+                                    </div>
+                                `).join('');
+                            } else if (userDb && typeof userDb.audioChannels === 'string' && userDb.audioChannels !== "") {
+                                channelsList = `<div style="color:var(--audio-accent); font-family:var(--font-chords); font-size:12px; margin-top:4px;">${userDb.audioChannels}</div>`;
+                            }
+
+                            patchHTML += `
+                            <div class="patch-item animate-fade">
+                                <div class="patch-name">${displayName} <span style="color:var(--accent-purple); font-weight:800; font-size:11px;">(${displayRole})</span></div>
+                                ${channelsList}
+                            </div>`;
+                        });
+                    } else { 
+                        patchHTML = "<p style='color:var(--text-muted); font-size:12px; text-align:center;'>No hay músicos de alabanza asignados a este servicio.</p>"; 
+                    }
+                    document.getElementById("patchContainer").innerHTML = patchHTML;
+
+                    let rosHTML = "";
+                    if (currentSetlist.runOfService && currentSetlist.runOfService.length > 0) {
+                        currentSetlist.runOfService.forEach(r => {
+                            rosHTML += `
+                            <div class="ros-block animate-fade">
+                                <div class="ros-time">${r.time}</div>
+                                <div>
+                                    <div class="ros-title">${r.activity}</div>
+                                    <div class="ros-notes">
+                                        <div class="note-box"><span class="note-title">CABINA (Audio/Luces)</span>${r.cabinaNotes || '-'}</div>
+                                        <div class="note-box" style="border-color:rgba(56,189,248,0.3);"><span class="note-title" style="color:var(--accent-blue);">VIDEO (Cámaras/Letras)</span>${r.videoNotes || '-'}</div>
+                                    </div>
+                                </div>
+                            </div>`;
+                        });
+                    } else { 
+                        rosHTML = "<p style='color:var(--text-muted); font-size:12px; text-align:center;'>No hay escaleta registrada.</p>"; 
+                    }
+                    document.getElementById("rosContainer").innerHTML = rosHTML;
+
+                    initLyricsCarousel();
+                }
+            } catch (err) { 
+                console.error("Error cargando la vista", err); 
+            }
+        }
+
+        function mIdOrName(u, member) {
+            return member.memberId ? u._id : u.name;
+        }
+
+        // --- SISTEMA DE DIAPOSITIVAS Y PAGINADOR DE LETRAS CON DURACIÓN Y BPM ---
+        let currentSongIdx = 0;
+        let currentSlideIdx = 0;
+        let songSlides = [];
+
+        function initLyricsCarousel() {
+            if (!currentSetlist.songs || currentSetlist.songs.length === 0) {
+                document.getElementById("lyricsContainer").innerHTML = "<p style='color:var(--text-muted); font-size:12px; text-align:center;'>No hay canciones en este servicio.</p>";
+                return;
+            }
+
+            renderCurrentLyricSlide();
+        }
+
+        function renderCurrentLyricSlide() {
+            const container = document.getElementById("lyricsContainer");
+            const songs = currentSetlist.songs || [];
+            if (songs.length === 0) return;
+
+            if (currentSongIdx < 0) currentSongIdx = 0;
+            if (currentSongIdx >= songs.length) currentSongIdx = songs.length - 1;
+
+            const item = songs[currentSongIdx];
+            const song = item.songId;
+            if (!song) {
+                container.innerHTML = "<p style='color:var(--text-muted);'>Canción no encontrada.</p>";
+                return;
+            }
+
+            // Extraer diapositivas 100% limpias (sin acordes de ningún tipo)
+            const rawSections = (song.sections && song.sections.length > 0) ? song.sections : [];
+            const slides = [];
+            rawSections.forEach(sec => {
+                const rawSource = sec.chordSheet || sec.lyrics || '';
+                const cleanTxt = (typeof cleanPureLyrics === 'function')
+                    ? cleanPureLyrics(rawSource)
+                    : rawSource.replace(/[\[\(].*?[\]\)]/g, '').trim();
+                if (cleanTxt) {
+                    slides.push({ name: sec.name || 'Sección', text: cleanTxt });
+                }
+            });
+
+            if (slides.length === 0) {
+                const fallbackSource = song.chordSheet || song.lyrics || 'Sin letra disponible.';
+                const cleanFallback = (typeof cleanPureLyrics === 'function')
+                    ? cleanPureLyrics(fallbackSource)
+                    : fallbackSource.replace(/[\[\(].*?[\]\)]/g, '').trim();
+                slides.push({ name: 'Letra', text: cleanFallback });
+            }
+
+            if (currentSlideIdx < 0) currentSlideIdx = 0;
+            if (currentSlideIdx >= slides.length) currentSlideIdx = slides.length - 1;
+
+            const slide = slides[currentSlideIdx];
+            const songDuration = song.duration ? `⏱️ ${song.duration} min` : '⏱️ 5:00 min';
+
+            container.innerHTML = `
+                <div style="background:rgba(0,0,0,0.5); border:1px solid var(--border-color); border-radius:14px; padding:18px; display:flex; flex-direction:column; height:100%; justify-content:space-between;">
+                    <div>
+                        <!-- Header Canción -->
+                        <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:12px; border-bottom:1px solid var(--border-color); padding-bottom:10px;">
+                            <div>
+                                <span style="font-size:10px; color:var(--accent-purple); font-weight:900; letter-spacing:1px; text-transform:uppercase;">CANCIÓN ${currentSongIdx + 1} DE ${songs.length}</span>
+                                <h3 style="margin:2px 0 0 0; font-size:18px; color:white; font-family:var(--font-title); font-weight:900;">${song.name.toUpperCase()}</h3>
+                            </div>
+                            <div style="text-align:right;">
+                                <div style="font-size:11px; color:var(--accent-blue); font-weight:800;">${songDuration}</div>
+                                <div style="font-size:11px; color:var(--accent-purple); font-weight:800;">BPM: ${song.tempo || '--'}</div>
+                            </div>
+                        </div>
+
+                        <!-- Selector Rápido de Canción -->
+                        <div style="display:flex; gap:6px; overflow-x:auto; margin-bottom:16px; padding-bottom:6px;">
+                            ${songs.map((s, idx) => `
+                                <button type="button" onclick="selectSongSlide(${idx})" style="background:${idx === currentSongIdx ? 'var(--accent-purple)' : 'rgba(255,255,255,0.05)'}; color:${idx === currentSongIdx ? 'black' : 'white'}; border:1px solid ${idx === currentSongIdx ? 'var(--accent-purple)' : 'var(--border-color)'}; padding:4px 10px; border-radius:8px; font-size:10px; font-weight:800; cursor:pointer; white-space:nowrap;">
+                                    ${idx + 1}. ${(s.songId ? s.songId.name : 'Tema').substring(0, 10)}
+                                </button>
+                            `).join('')}
+                        </div>
+
+                        <!-- Badge Diapositiva Actual -->
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+                            <span class="status-pill" style="border-color:var(--accent-purple); color:var(--accent-purple); font-size:10px; padding:3px 10px; font-weight:900;">
+                                ${slide.name.toUpperCase()} (SLIDE ${currentSlideIdx + 1}/${slides.length})
+                            </span>
+                            <span style="font-size:10px; color:var(--text-muted);">Usa las flechas ← / →</span>
+                        </div>
+
+                        <!-- Texto Grande de Diapositiva -->
+                        <div style="background:rgba(0,0,0,0.7); border:1px solid rgba(192,132,252,0.2); border-radius:12px; padding:24px; font-size:18px; line-height:1.7; color:white; font-weight:700; text-align:center; min-height:160px; display:flex; align-items:center; justify-content:center; white-space:pre-line; box-shadow:0 0 20px rgba(0,0,0,0.5);">
+                            "${slide.text}"
+                        </div>
+                    </div>
+
+                    <!-- Botones de Cambio de Diapositiva -->
+                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-top:18px;">
+                        <button type="button" onclick="prevSlide(${slides.length})" class="secondary" style="padding:12px; font-weight:800; font-size:11px;" ${currentSlideIdx === 0 && currentSongIdx === 0 ? 'disabled style="opacity:0.4;"' : ''}>
+                            ← SLIDE ANTERIOR
+                        </button>
+                        <button type="button" onclick="nextSlide(${slides.length})" class="primary" style="background:var(--accent-purple); border-color:var(--accent-purple); color:black; padding:12px; font-weight:900; font-size:11px;">
+                            SIGUIENTE SLIDE →
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        function selectSongSlide(idx) {
+            currentSongIdx = idx;
+            currentSlideIdx = 0;
+            renderCurrentLyricSlide();
+        }
+
+        function prevSlide(totalSlides) {
+            if (currentSlideIdx > 0) {
+                currentSlideIdx--;
+            } else if (currentSongIdx > 0) {
+                currentSongIdx--;
+                currentSlideIdx = 0;
+            }
+            renderCurrentLyricSlide();
+        }
+
+        function nextSlide(totalSlides) {
+            if (currentSlideIdx < totalSlides - 1) {
+                currentSlideIdx++;
+            } else if (currentSongIdx < (currentSetlist.songs || []).length - 1) {
+                currentSongIdx++;
+                currentSlideIdx = 0;
+            }
+            renderCurrentLyricSlide();
+        }
+
+        // Soporte para flechas del teclado en Cabina
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight') nextSlide(999);
+            if (e.key === 'ArrowLeft') prevSlide(999);
+        });
+
+        function renderCrewStatus() {
+            const list = document.getElementById("crewStatusList");
+            const prodTeam = (currentSetlist.team || []).filter(m => m.branch && m.branch !== "Full");
+            
+            if (prodTeam.length === 0) {
+                list.innerHTML = "<span style='color:var(--text-muted); font-size:11px;'>No hay staff técnico asignado.</span>";
+                return;
+            }
+
+            list.innerHTML = prodTeam.map(m => {
+                const isReady = m.ready === true;
+                const dotClass = isReady ? "dot-green" : "dot-red";
+                const textStatus = isReady ? "READY" : "OFF";
+                return `<div class="crew-dot"><span class="${dotClass}">●</span> ${m.branch.toUpperCase()}: ${m.name} (${textStatus})</div>`;
+            }).join('');
+        }
+
+        function renderActionButton() {
+            const btnArea = document.getElementById("myActionButton");
+            const myAssignment = (currentSetlist.team || []).find(m => m.memberId === currentUser.id);
+
+            if (currentUser.role === "Full Administrador" || (currentUser.techBranch && currentUser.techBranch.includes("Full"))) {
+                btnArea.innerHTML = `<button class="secondary" onclick="resetAllReady()" style="font-size:10px; padding:6px 12px; border-color:var(--accent-red); color:var(--accent-red);">RESET READY CHECKS</button>`;
+            } else if (myAssignment) {
+                if (myAssignment.ready) {
+                    btnArea.innerHTML = `<span style="color:var(--audio-accent); font-weight:900; font-size:11px;">✓ ESTÁS LISTO</span>`;
+                } else {
+                    btnArea.innerHTML = `<button class="primary" onclick="setMyReady()" style="font-size:11px; padding:6px 14px; font-weight:900;">MARCARME COMO READY</button>`;
+                }
+            }
+        }
+
+        async function setMyReady() {
+            const myAssignment = currentSetlist.team.find(m => m.memberId === currentUser.id);
+            if (myAssignment) {
+                myAssignment.ready = true;
+                await updateSetlistTeam();
+            }
+        }
+
+        async function resetAllReady() {
+            currentSetlist.team.forEach(m => m.ready = false);
+            await updateSetlistTeam();
+        }
+
+        async function updateSetlistTeam() {
+            await fetch(`/setlists/${currentSetlist._id}`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
+                body: JSON.stringify({ team: currentSetlist.team })
+            });
+            loadLiveView();
+        }
+
+        loadLiveView();
+    </script>
+</body>
+</html>

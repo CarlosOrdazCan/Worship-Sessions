@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stage Hub | CAN ALABANZA</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .kiosk-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 75vh;
+            text-align: center;
+        }
+        
+        .mode-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 24px;
+            width: 100%;
+            max-width: 950px;
+            margin-top: 40px;
+            transition: var(--transition);
+        }
+        
+        .mode-card {
+            background: var(--bg-glass);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-pco);
+            padding: 40px 24px;
+            text-align: center;
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            box-shadow: var(--shadow-glass);
+        }
+        .mode-card:hover { 
+            transform: translateY(-8px); 
+            box-shadow: 0 20px 45px rgba(255, 42, 75, 0.1), var(--shadow-glass); 
+        }
+        
+        .mode-icon {
+            font-size: 48px;
+            margin-bottom: 18px;
+            display: inline-block;
+            transition: var(--transition);
+        }
+
+        .mode-card:hover .mode-icon {
+            transform: scale(1.15);
+        }
+
+        #activeSetlistsDropdown {
+            width: 100%;
+            max-width: 440px;
+            text-align: center;
+            padding: 16px 20px;
+            font-size: 15px;
+            font-weight: 800;
+            border-color: var(--accent-red);
+            background: rgba(0, 0, 0, 0.7);
+            margin-top: 24px;
+            border-radius: 14px;
+            box-shadow: 0 0 20px var(--accent-red-trans);
+        }
+    </style>
+    <link rel="icon" type="image/png" href="can-logo.png">
+</head>
+<body class="animate-up">
+    <script>
+        const token = localStorage.getItem("token");
+        if (!token) window.location.href = "login.html";
+        
+        const savedWallpaper = localStorage.getItem("cordaz_wallpaper");
+        if (savedWallpaper) {
+            document.body.classList.add("ios-wallpaper-active");
+            document.body.style.setProperty("--ios-bg-image", `url(${savedWallpaper})`);
+        }
+    </script>
+
+    <!-- Navigation Header -->
+    <div class="pco-navbar">
+        <div style="display:flex; align-items:center; gap:20px;">
+            <button class="secondary" onclick="location.href='index.html'" style="padding:10px 18px; font-weight:800;">← VOLVER AL HUB</button>
+            <span style="font-family:var(--font-title); font-weight:800; font-size:18px; letter-spacing:1px;">STAGE <span style="color:var(--accent-red); font-weight:400;">HUB</span></span>
+        </div>
+    </div>
+
+    <!-- Main Kiosk -->
+    <div class="container animate-fade kiosk-container">
+        <h1 style="font-size:36px; font-family:var(--font-title); font-weight:900; letter-spacing:-0.5px; color:white;">SELECCIONA TU MODO EN VIVO</h1>
+        <p style="color:var(--text-muted); font-size:14px; margin-top:8px; max-width:500px;">Elige el servicio programado y tu rol en el escenario para sincronizar la pantalla.</p>
+
+        <select id="activeSetlistsDropdown">
+            <option value="">Cargando servicios en vivo...</option>
+        </select>
+
+        <div class="mode-grid" id="modeGrid" style="opacity: 0.4; pointer-events: none;">
+            
+            <!-- Modo Músicos -->
+            <div class="mode-card" onclick="enterStage('stage-live.html')" style="border-top: 4px solid var(--accent-blue);">
+                <span class="mode-icon">🎸</span>
+                <h3 style="font-size:18px; font-family:var(--font-title); font-weight:900; margin-bottom:8px; color:white;">VISTA MÚSICOS</h3>
+                <p style="font-size:13px; color:var(--text-muted); line-height:1.5;">Atril digital con letras y cifrados en alta legibilidad, notas y transportador en vivo.</p>
+            </div>
+
+            <!-- Modo Cantantes -->
+            <div class="mode-card" onclick="enterStage('lyrics-stage.html')" style="border-top: 4px solid var(--accent-red);">
+                <span class="mode-icon">🎤</span>
+                <h3 style="font-size:18px; font-family:var(--font-title); font-weight:900; margin-bottom:8px; color:white;">VISTA CANTANTES</h3>
+                <p style="font-size:13px; color:var(--text-muted); line-height:1.5;">Confidence monitor con letras grandes en 2 columnas y aviso de canción siguiente.</p>
+            </div>
+
+            <!-- Modo Director / Líder -->
+            <div class="mode-card" onclick="enterStage('band-leader.html')" style="border-top: 4px solid var(--accent-purple);">
+                <span class="mode-icon">🕹️</span>
+                <h3 style="font-size:18px; font-family:var(--font-title); font-weight:900; margin-bottom:8px; color:white;">CONTROL LÍDER</h3>
+                <p style="font-size:13px; color:var(--text-muted); line-height:1.5;">Control táctil a distancia por WebSockets para cambiar canciones para toda la banda.</p>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        async function loadActiveSetlists() {
+            try {
+                const res = await fetch("/setlists");
+                const raw = await res.json();
+                const allSets = Array.isArray(raw) ? raw : [];
+                const myMin = localStorage.getItem("activeMinistry") || "Principal";
+                
+                const activeSets = allSets.filter(s => s.archived !== true && (s.ministry === myMin || myMin === "Hibrido"));
+                const dropdown = document.getElementById("activeSetlistsDropdown");
+                
+                if (activeSets.length === 0) {
+                    dropdown.innerHTML = `<option value="">No hay servicios activos para Alabanza ${myMin.toUpperCase()}</option>`;
+                    return;
+                }
+
+                dropdown.innerHTML = `<option value="">-- SELECCIONA EL SERVICIO ACTIVO --</option>` + 
+                    activeSets.map(s => `<option value="${s._id}">${s.date} | ${(s.name || 'Sin título').toUpperCase()}</option>`).join('');
+
+                dropdown.addEventListener('change', function() {
+                    const grid = document.getElementById("modeGrid");
+                    if (this.value) {
+                        grid.style.opacity = "1";
+                        grid.style.pointerEvents = "auto";
+                    } else {
+                        grid.style.opacity = "0.4";
+                        grid.style.pointerEvents = "none";
+                    }
+                });
+
+            } catch (e) {
+                document.getElementById("activeSetlistsDropdown").innerHTML = `<option value="">Error de conexión al cargar servicios.</option>`;
+            }
+        }
+
+        function enterStage(urlTarget) {
+            const setId = document.getElementById("activeSetlistsDropdown").value;
+            if (!setId) return alert("Por favor selecciona un servicio activo primero.");
+            window.location.href = `${urlTarget}?id=${setId}`;
+        }
+
+        window.onload = loadActiveSetlists;
+    </script>
+</body>
+</html>

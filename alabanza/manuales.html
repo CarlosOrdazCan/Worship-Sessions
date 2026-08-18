@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manuales de Usuario • CAN Alabanza & Producción</title>
+    <link rel="icon" type="image/png" href="can-logo.png">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .manual-section {
+            background: var(--bg-glass-card);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 32px;
+            margin-bottom: 30px;
+            backdrop-filter: blur(16px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+        .step-box {
+            background: rgba(0,0,0,0.3);
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 12px;
+            padding: 16px 20px;
+            margin-bottom: 16px;
+        }
+        .step-title {
+            color: var(--accent-blue);
+            font-weight: 800;
+            font-size: 14px;
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .role-tag {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 8px;
+            font-size: 11px;
+            font-weight: 900;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            margin-bottom: 12px;
+        }
+        .tag-prod { background: rgba(192, 132, 252, 0.2); color: var(--accent-purple); border: 1px solid var(--accent-purple); }
+        .tag-worship { background: rgba(255, 42, 75, 0.2); color: var(--accent-red); border: 1px solid var(--accent-red); }
+        .tag-pastor { background: rgba(245, 158, 11, 0.2); color: #f59e0b; border: 1px solid #f59e0b; }
+        .tag-viewer { background: rgba(56, 189, 248, 0.2); color: var(--accent-blue); border: 1px solid var(--accent-blue); }
+    </style>
+</head>
+<body class="animate-up">
+    <div class="pco-navbar">
+        <div style="display:flex; align-items:center; gap:16px;">
+            <button class="secondary" onclick="location.href='index.html'" style="padding:10px 18px; font-weight:800;">← VOLVER AL HUB</button>
+            <img src="can-logo.png" alt="CAN" style="width:36px; height:36px; border-radius:50%; box-shadow:0 0 14px var(--accent-red-glow);">
+            <span style="font-family:var(--font-title); font-weight:800; font-size:18px; letter-spacing:1px;">CAN <span style="color:var(--accent-red); font-weight:400;">ALABANZA</span> • MANUALES DE USUARIO</span>
+        </div>
+        <div>
+            <button type="button" onclick="window.print()" class="primary" style="padding:10px 20px; font-weight:800;">🖨️ IMPRIMIR / PDF</button>
+        </div>
+    </div>
+
+    <div class="container animate-fade" style="padding-top:20px; padding-bottom:60px;">
+        
+        <header style="margin-bottom:30px; text-align:center; padding:20px 0;">
+            <h1 style="font-size:36px; font-family:var(--font-title); font-weight:900; margin:0 0 8px 0; color:white;">
+                Guía Oficial de Uso por Roles
+            </h1>
+            <p style="color:var(--text-muted); font-size:15px; max-width:700px; margin:0 auto;">
+                Manuales operativos paso a paso para el equipo de Alabanza, Producción, Audio y Liderazgo Pastoral.
+            </p>
+        </header>
+
+        <!-- 1. Editor de Producción -->
+        <div class="manual-section" style="border-left: 5px solid var(--accent-purple);">
+            <span class="role-tag tag-prod">🎬 ROL: EDITOR DE PRODUCCIÓN</span>
+            <h2 style="font-size:24px; font-family:var(--font-title); font-weight:900; color:white; margin:0 0 12px 0;">
+                1. Manual del Editor de Producción (Daniela Alva)
+            </h2>
+            <p style="color:#cdd4df; font-size:13px; line-height:1.6; margin-bottom:20px;">
+                Responsable de armar la escaleta de culto (ROS), coordinar al crew de cabina, notas técnicas de audio/video y supervisar la ejecución en vivo.
+            </p>
+
+            <div class="step-box">
+                <div class="step-title"><span>Paso 1:</span> Ingreso al Planificador de Escaletas (ROS)</div>
+                <p style="color:#aaa; font-size:12px; margin:0; line-height:1.5;">
+                    En el Hub Principal, entra a <b>🎬 Centro de Producción & Video</b> (<code>prod-index.html</code>) y sobre el servicio deseado haz clic en el botón morado <b><code>📋 EDITAR ESCALETA (ROS)</code></b>.
+                </p>
+            </div>
+
+            <div class="step-box">
+                <div class="step-title"><span>Paso 2:</span> Asignación del Crew de Cabina y Turnos</div>
+                <p style="color:#aaa; font-size:12px; margin:0; line-height:1.5;">
+                    Haz clic en <b><code>+ AGREGAR OTRO TÉCNICO</code></b>. Selecciona al integrante de la lista y asigna su puesto (<i>ProPresenter, Switcher, Arena, Audio, Luces, Cámaras</i>). En su tarjeta, haz clic en sus horarios (<b>9:00 AM, 11:00 AM, 1:00 PM</b>) para alternar entre <b>✅ Sirve</b>, <b>🛋️ Recibe</b> o <b>✖ No sirve</b>.
+                </p>
+            </div>
+
+            <div class="step-box">
+                <div class="step-title"><span>Paso 3:</span> Creación de Bloques de Tiempo y Cues</div>
+                <p style="color:#aaa; font-size:12px; margin:0; line-height:1.5;">
+                    Presiona <b><code>+ AGREGAR BLOQUE DE TIEMPO</code></b>. Define la <b>HORA</b> (<i>09:30</i>), el <b>EVENTO</b> (<i>Bienvenida, Alabanza, Mensaje</i>), y las <b>NOTAS DE CABINA</b> (micrófonos, escenas de luces) y <b>NOTAS DE VIDEO</b> (cues de ProPresenter, Arena, cámaras).
+                </p>
+            </div>
+
+            <div class="step-box">
+                <div class="step-title"><span>Paso 4:</span> Guardar y Publicar para todo el Equipo</div>
+                <p style="color:#aaa; font-size:12px; margin:0; line-height:1.5;">
+                    Haz clic en <b><code>💾 GUARDAR ESCALETA</code></b> en la esquina superior derecha. El sistema guardará el ROS, notificará automáticamente a todo el equipo por campana y publicará la escaleta directamente en <b>Servicios Programados</b>.
+                </p>
+            </div>
+        </div>
+
+        <!-- 2. Editor de Alabanza -->
+        <div class="manual-section" style="border-left: 5px solid var(--accent-red);">
+            <span class="role-tag tag-worship">🎵 ROL: EDITOR DE ALABANZA</span>
+            <h2 style="font-size:24px; font-family:var(--font-title); font-weight:900; color:white; margin:0 0 12px 0;">
+                2. Manual del Editor de Alabanza (Worship Leaders)
+            </h2>
+            <p style="color:#cdd4df; font-size:13px; line-height:1.6; margin-bottom:20px;">
+                Responsable de agregar y cifrar canciones, armar setlists, asignar músicos y cantantes, definir tonalidades y exportar acordes.
+            </p>
+
+            <div class="step-box">
+                <div class="step-title"><span>Paso 1:</span> Creación de Canciones con Acordes Inteligentes</div>
+                <p style="color:#aaa; font-size:12px; margin:0; line-height:1.5;">
+                    En <b>Repertorio & Charts</b> presiona <b><code>+ NUEVA CANCIÓN</code></b>. Pega la letra con acordes encima de las líneas. Usa el botón <b><code>✨ INTERPRETAR ACORDES CON IA</code></b> para clasificar estrofas automáticamente. Ingresa el Tono, BPM, duración en formato <code>MM:SS</code> (ej. <i>5:30</i>) y link de YouTube. Presiona <b><code>💾 GUARDAR CANCIÓN</code></b>.
+                </p>
+            </div>
+
+            <div class="step-box">
+                <div class="step-title"><span>Paso 2:</span> Armado y Programación del Setlist</div>
+                <p style="color:#aaa; font-size:12px; margin:0; line-height:1.5;">
+                    En <b>Servicios Programados</b> presiona <b><code>+ CREAR SERVICIO / SETLIST</code></b>. Ingresa el título del culto y fecha. Agrega los temas desde el catálogo y ajusta el <b>Tono en este Culto</b> para cada canción.
+                </p>
+            </div>
+
+            <div class="step-box">
+                <div class="step-title"><span>Paso 3:</span> Convocatoria de Músicos y Horarios</div>
+                <p style="color:#aaa; font-size:12px; margin:0; line-height:1.5;">
+                    Selecciona a los músicos de la banda y marca sus turnos (<i>9am, 11am, 1pm</i>). Al presionar <b><code>💾 GUARDAR SETLIST</code></b>, se emitirá una notificación automática a toda la banda y el PDF de acordes estará listo para descargar.
+                </p>
+            </div>
+        </div>
+
+        <!-- 3. Viewer de Producción -->
+        <div class="manual-section" style="border-left: 5px solid var(--accent-purple);">
+            <span class="role-tag tag-prod">📽️ ROL: OPERADOR DE PRODUCCIÓN (VIEWER)</span>
+            <h2 style="font-size:24px; font-family:var(--font-title); font-weight:900; color:white; margin:0 0 12px 0;">
+                3. Manual de Operador de Cabina (ProPresenter, Switcher, Arena, Audio)
+            </h2>
+            <div class="step-box">
+                <div class="step-title"><span>Función 1:</span> Cabina de Control en Vivo (<code>prod-live.html</code>)</div>
+                <p style="color:#aaa; font-size:12px; margin:0; line-height:1.5;">
+                    Consulta el cronómetro en cuenta regresiva del bloque en curso, notas técnicas y usa el botón <b><code>⚡ MARCARME COMO LISTO</code></b> para confirmar tu operatividad.
+                </p>
+            </div>
+            <div class="step-box">
+                <div class="step-title"><span>Función 2:</span> ProPresenter 7 (Letras Limpias)</div>
+                <p style="color:#aaa; font-size:12px; margin:0; line-height:1.5;">
+                    Entra a <b>ProPresenter 7</b> (<code>propresenter.html</code>) para obtener las diapositivas de las canciones sin acordes formateadas por estrofas listas para proyectar.
+                </p>
+            </div>
+            <div class="step-box">
+                <div class="step-title"><span>Función 3:</span> Avisar Inasistencias al Pastor</div>
+                <p style="color:#aaa; font-size:12px; margin:0; line-height:1.5;">
+                    En <b>Servicios Programados</b>, en el culto activo presiona <b><code>⚠️ AVISAR INASISTENCIA</code></b>, escribe el motivo y presiona enviar para notificar al liderazgo pastoral.
+                </p>
+            </div>
+        </div>
+
+        <!-- 4. Viewer de Alabanza -->
+        <div class="manual-section" style="border-left: 5px solid var(--accent-blue);">
+            <span class="role-tag tag-viewer">🎸 ROL: MÚSICO & CANTANTE (VIEWER)</span>
+            <h2 style="font-size:24px; font-family:var(--font-title); font-weight:900; color:white; margin:0 0 12px 0;">
+                4. Manual de Músicos y Cantantes
+            </h2>
+            <div class="step-box">
+                <div class="step-title"><span>Función 1:</span> Atril Digital de Escenario (<code>stage-live.html</code>)</div>
+                <p style="color:#aaa; font-size:12px; margin:0; line-height:1.5;">
+                    Abre el atril digital en vivo durante ensayos o cultos. Tienes acordes sobre la letra en tiempo real, transportador de tonos instantáneo (<code>+1 / -1</code>) y modo cantante (ocultar cifrados).
+                </p>
+            </div>
+            <div class="step-box">
+                <div class="step-title"><span>Función 2:</span> Servicios Programados y Cifrados PDF</div>
+                <p style="color:#aaa; font-size:12px; margin:0; line-height:1.5;">
+                    Consulta las canciones del próximo servicio y presiona <b><code>📄 DESCARGAR PDF</code></b> para tener los charts de acordes. Si no puedes asistir, usa el botón <b><code>⚠️ AVISAR INASISTENCIA</code></b>.
+                </p>
+            </div>
+        </div>
+
+        <!-- 5. Vista Pastoral -->
+        <div class="manual-section" style="border-left: 5px solid #f59e0b;">
+            <span class="role-tag tag-pastor">👑 ROL: LIDERAZGO PASTORAL</span>
+            <h2 style="font-size:24px; font-family:var(--font-title); font-weight:900; color:white; margin:0 0 12px 0;">
+                5. Manual del Centro de Mando Pastoral Ejecutivo
+            </h2>
+            <div class="step-box">
+                <div class="step-title"><span>Módulo 1:</span> Asistencia Ministerial en Tiempo Real</div>
+                <p style="color:#aaa; font-size:12px; margin:0; line-height:1.5;">
+                    En <code>pastor-dashboard.html</code>, el pastor ve en tiempo real los integrantes que <b>Sirven</b> en plataforma/cabina, los que <b>Reciben</b> en congregación, y el panel destacado de <b>Inasistencias con Motivo</b> con la justificación que escribió cada persona.
+                </p>
+            </div>
+            <div class="step-box">
+                <div class="step-title"><span>Módulo 2:</span> Requisiciones y Cotizaciones de Equipo</div>
+                <p style="color:#aaa; font-size:12px; margin:0; line-height:1.5;">
+                    Revisión de solicitudes de compras o instrumentos con costo estimado en MXN, urgencia y dictamen pastoral (<i>Aprobar, En Revisión, No Aprobar</i>).
+                </p>
+            </div>
+            <div class="step-box">
+                <div class="step-title"><span>Módulo 3:</span> Estadísticas Musicales</div>
+                <p style="color:#aaa; font-size:12px; margin:0; line-height:1.5;">
+                    Métricas de rotación de temas para asegurar la variedad y frescura de la alabanza congregacional.
+                </p>
+            </div>
+        </div>
+
+    </div>
+</body>
+</html>

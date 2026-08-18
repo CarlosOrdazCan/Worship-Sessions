@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Stage Live Band | CAN ALABANZA</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        body {
+            background: #020204 !important;
+            color: #ffffff;
+            overflow-x: hidden;
+            padding: 0;
+            margin: 0;
+            user-select: none;
+        }
+
+        .stage-header {
+            position: sticky;
+            top: 0;
+            background: rgba(8, 6, 10, 0.95);
+            backdrop-filter: blur(25px);
+            border-bottom: 2px solid var(--border-color);
+            padding: 24px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .stage-title { 
+            font-size: clamp(28px, 4vw, 46px); 
+            font-family: var(--font-title);
+            font-weight: 900; 
+            margin: 0; 
+            letter-spacing: -0.5px; 
+            text-transform: uppercase; 
+            color: white;
+        }
+        .stage-artist { 
+            font-size: 16px; 
+            color: var(--accent-red); 
+            font-weight: 800; 
+            letter-spacing: 2px; 
+            text-transform: uppercase; 
+            margin-top: 4px; 
+        }
+
+        .stage-meta-box {
+            display: flex;
+            gap: 16px;
+            align-items: center;
+        }
+        .meta-value {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid var(--border-color);
+            padding: 12px 24px;
+            border-radius: 14px;
+            text-align: center;
+        }
+        .meta-label { 
+            font-size: 11px; 
+            color: var(--text-muted); 
+            font-weight: 800; 
+            letter-spacing: 2px; 
+            text-transform: uppercase; 
+            margin-bottom: 4px; 
+            display: block; 
+        }
+        .meta-data { 
+            font-size: 32px; 
+            font-family: var(--font-title);
+            font-weight: 900; 
+            line-height: 1; 
+            color: white; 
+        }
+
+        .stage-content {
+            padding: 40px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .stage-section {
+            margin-bottom: 40px;
+            border-left: 6px solid var(--accent-red);
+            padding-left: 24px;
+        }
+        .stage-section-name {
+            display: inline-block;
+            font-size: 14px;
+            font-family: var(--font-title);
+            font-weight: 900;
+            color: white;
+            background: var(--accent-red);
+            padding: 6px 16px;
+            border-radius: 8px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 16px;
+            box-shadow: 0 0 15px var(--accent-red-glow);
+        }
+        
+        .stage-chords {
+            font-family: var(--font-chords);
+            font-size: clamp(36px, 5vw, 65px);
+            font-weight: 800;
+            color: var(--accent-blue);
+            letter-spacing: 4px;
+            word-spacing: 20px;
+            line-height: 1.4;
+            text-shadow: 0 0 20px rgba(56, 189, 248, 0.35);
+        }
+
+        .waiting-screen {
+            height: 90vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 20px;
+        }
+        .pulse-dot {
+            width: 24px; 
+            height: 24px; 
+            background: var(--accent-red); 
+            border-radius: 50%; 
+            margin-bottom: 24px;
+            animation: livePulse 1.5s infinite;
+            box-shadow: 0 0 25px var(--accent-red);
+        }
+    </style>
+    <link rel="icon" type="image/png" href="can-logo.png">
+</head>
+<body>
+    <script>
+        if (!localStorage.getItem("token")) window.location.href = "login.html";
+    </script>
+
+    <div id="liveContainer" class="animate-fade">
+        <div class="waiting-screen">
+            <div class="pulse-dot"></div>
+            <h1 style="font-size:32px; font-family:var(--font-title); font-weight:900; letter-spacing:2px; color:white;">SINCRONIZANDO CON EL DIRECTOR...</h1>
+            <p style="color:var(--text-muted); font-size:15px; margin-top:10px;">La partitura aparecerá en cuanto el líder de banda inicie el setlist en vivo.</p>
+            <button onclick="location.href='stage-select.html'" class="secondary" style="margin-top:35px; padding:12px 24px;">← SALIR DEL ESCENARIO</button>
+        </div>
+    </div>
+
+    <!-- SOCKET.IO PARA SINCRONIZACIÓN EN TIEMPO REAL -->
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="musicUtils.js"></script>
+    <script>
+        const socket = io();
+        let state = { setlist: [], index: 0, transpose: 0 };
+        const notes = ["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"];
+
+        socket.on("band:setlist:sync", (setlist) => {
+            state.setlist = setlist || [];
+            renderStage();
+        });
+
+        socket.on("band:update", (data) => {
+            state.index = data.index || 0;
+            state.transpose = data.transpose || 0;
+            if (data.setlist) state.setlist = data.setlist;
+            renderStage();
+        });
+
+        function renderStage() {
+            const container = document.getElementById("liveContainer");
+            
+            if(!state.setlist || !state.setlist[state.index]) {
+                container.innerHTML = `
+                    <div class="waiting-screen animate-fade">
+                        <div class="pulse-dot"></div>
+                        <h1 style="font-size:32px; font-family:var(--font-title); font-weight:900; letter-spacing:2px; color:white;">FIN DEL SERVICIO / EN ESPERA</h1>
+                        <p style="color:var(--text-muted); font-size:15px; margin-top:10px;">El servicio ha concluido o no hay canciones cargadas.</p>
+                        <button onclick="location.href='stage-select.html'" class="secondary" style="margin-top:30px; padding:12px 24px;">SALIR DEL ESCENARIO</button>
+                    </div>`;
+                return;
+            }
+
+            const songItem = state.setlist[state.index];
+            const song = songItem.songId || songItem;
+
+            let baseKey = songItem.setlistKey || song.key || "C";
+            let displayKey = transposeChord(baseKey, state.transpose || 0);
+
+            let html = `
+                <div class="stage-header">
+                    <div>
+                        <h1 class="stage-title">${song.name}</h1>
+                        <div class="stage-artist">${song.artist || 'Desconocido'}</div>
+                    </div>
+                    <div class="stage-meta-box">
+                        <div class="meta-value">
+                            <span class="meta-label">TEMPO</span>
+                            <span class="meta-data" style="color:var(--accent-blue);">${song.tempo || '--'}</span>
+                        </div>
+                        <div class="meta-value" style="border-color:var(--accent-red);">
+                            <span class="meta-label" style="color:var(--accent-red);">TONO</span>
+                            <span class="meta-data" style="color:white;">${displayKey}</span>
+                        </div>
+                        <button class="danger" onclick="location.href='stage-select.html'" style="padding:14px 18px; font-size:16px; border-radius:12px;" title="Salir">✕</button>
+                    </div>
+                </div>
+                <div class="stage-content animate-fade">
+            `;
+
+            if(song.sections && song.sections.length > 0) {
+                song.sections.forEach(sec => {
+                    const chordsRaw = Array.isArray(sec.chords) ? sec.chords.join(' - ') : sec.chords;
+                    html += `
+                        <div class="stage-section">
+                            <div class="stage-section-name">${sec.name}</div>
+                            <div class="stage-chords">${transposeLine(chordsRaw, state.transpose || 0)}</div>
+                        </div>
+                    `;
+                });
+            } else {
+                html += `<div style="text-align:center; padding:50px; font-size:20px; color:var(--text-muted);">Sin acordes cargados para esta canción.</div>`;
+            }
+
+            html += `</div>`;
+            container.innerHTML = html;
+        }
+
+        function transposeChord(chord, steps) {
+            if (!chord || steps === 0) return chord;
+            const match = chord.match(/^([A-G][#b]?)(.*)$/);
+            if (!match) return chord;
+
+            let root = match[1];
+            let suffix = match[2];
+
+            const flatToSharp = { "Db":"C#", "Eb":"D#", "Gb":"F#", "Ab":"G#", "Bb":"A#" };
+            if (flatToSharp[root]) root = flatToSharp[root];
+
+            let i = notes.indexOf(root);
+            if (i === -1) return chord;
+
+            let newIndex = (i + steps) % 12;
+            if (newIndex < 0) newIndex += 12;
+
+            return notes[newIndex] + suffix;
+        }
+
+        function transposeLine(chordsLine, steps) {
+            if (!chordsLine || steps === 0) return chordsLine || "";
+            return chordsLine.split(/(\s*-\s*|\s+)/).map(part => {
+                if(part.trim() === "-" || part.trim() === "") return part;
+                return transposeChord(part, steps);
+            }).join("");
+        }
+    </script>
+</body>
+</html>

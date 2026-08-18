@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Usuarios | CAN ALABANZA</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .u-grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); 
+            gap: 24px; 
+            margin-top: 35px; 
+        }
+
+        .u-card { 
+            background: var(--bg-glass); 
+            backdrop-filter: blur(24px); 
+            border: 1px solid var(--border-color); 
+            border-radius: var(--radius-pco); 
+            padding: 30px 24px; 
+            text-align: center; 
+            position: relative; 
+            box-shadow: var(--shadow-glass); 
+            transition: var(--transition); 
+        }
+
+        .u-card:hover { 
+            transform: translateY(-5px); 
+            border-color: var(--border-red); 
+            box-shadow: 0 20px 40px rgba(255, 42, 75, 0.08), var(--shadow-glass); 
+        }
+
+        .u-photo { 
+            width: 95px; 
+            height: 95px; 
+            border-radius: 50%; 
+            object-fit: cover; 
+            aspect-ratio: 1/1;
+            border: 3px solid var(--accent-red); 
+            margin-bottom: 15px; 
+            box-shadow: 0 0 20px var(--accent-red-glow); 
+            transition: var(--transition);
+        }
+
+        .u-card:hover .u-photo {
+            transform: scale(1.05);
+        }
+        
+        .cb-grid { 
+            display: grid; 
+            grid-template-columns: 1fr 1fr; 
+            gap: 8px; 
+            margin-top: 10px; 
+            text-align: left; 
+        }
+
+        .cb-label { 
+            display: flex; 
+            align-items: center; 
+            gap: 8px; 
+            font-size: 11px; 
+            font-weight: 700;
+            color: white; 
+            cursor: pointer; 
+            background: rgba(0,0,0,0.5); 
+            padding: 10px; 
+            border-radius: 8px; 
+            border: 1px solid var(--border-color); 
+            transition: var(--transition); 
+        }
+
+        .cb-label:hover { 
+            border-color: var(--accent-purple); 
+            background: rgba(192, 132, 252, 0.1); 
+        }
+
+        .cb-label input { 
+            accent-color: var(--accent-purple); 
+            transform: scale(1.15); 
+        }
+
+        #uInstCustom {
+            display: none;
+            margin-top: 8px;
+        }
+    </style>
+    <link rel="icon" type="image/png" href="can-logo.png">
+</head>
+<body class="animate-up">
+    <script>
+        let tokenGuard = localStorage.getItem("token");
+        if (tokenGuard && tokenGuard.length > 1000) {
+            localStorage.removeItem("token");
+            window.location.href = "login.html";
+        }
+        if (!tokenGuard) { 
+            window.location.href = "login.html"; 
+        } else {
+            try {
+                const userDataGuard = JSON.parse(window.atob(tokenGuard.split('.')[1]));
+                if (userDataGuard.role !== "Full Administrador") {
+                    alert("No tienes acceso, consúltalo con el administrador.");
+                    window.location.replace("index.html");
+                }
+            } catch(e) { window.location.href = "login.html"; }
+        }
+
+        const savedWallpaper = localStorage.getItem("cordaz_wallpaper");
+        if (savedWallpaper) {
+            document.body.classList.add("ios-wallpaper-active");
+            document.body.style.setProperty("--ios-bg-image", `url(${savedWallpaper})`);
+        }
+
+        // Aplicar Tema Dinámico
+        try {
+            const storedUser = JSON.parse(localStorage.getItem("user") || "{}");
+            const activeMin = localStorage.getItem("activeMinistry") || storedUser.ministry || "Principal";
+            const instStr = String(storedUser.instrument || '').toLowerCase();
+            const roleStr = String(storedUser.role || '').toLowerCase();
+
+            const isPastor = instStr.includes("pastor") || roleStr.includes("pastor") || activeMin === "Pastoral";
+            const isAudio = instStr.includes("audio") || (activeMin === "Produccion" && (storedUser.techBranch || '').includes("Audio"));
+            const isProd = activeMin === "Produccion" && !isAudio;
+            const isKids = activeMin === "KIDS";
+
+            if (isPastor) document.body.classList.add("theme-pastoral");
+            else if (isAudio) document.body.classList.add("theme-audio");
+            else if (isProd) document.body.classList.add("theme-prod");
+            else if (isKids) document.body.classList.add("theme-kids");
+            else document.body.classList.add("theme-principal");
+        } catch(e) {}
+    </script>
+
+    <!-- Navigation Header -->
+    <div class="pco-navbar">
+        <div style="display:flex; align-items:center; gap:20px;">
+            <button class="secondary" onclick="location.href='index.html'" style="padding:10px 18px; font-weight:800;">← VOLVER AL HUB</button>
+            <span style="font-family:var(--font-title); font-weight:800; font-size:18px; letter-spacing:1px;">CAN <span style="color:var(--accent-red); font-weight:400;">ALABANZA</span> • GESTIÓN</span>
+        </div>
+        <button class="primary" onclick="openModal()" style="font-size:12px; padding:10px 20px; font-weight:800;">+ NUEVO USUARIO</button>
+    </div>
+
+    <!-- Main Container -->
+    <div class="container animate-fade">
+        <header style="border-bottom:1px solid var(--border-color); padding-bottom:20px;">
+            <h1 style="font-size:32px; font-family:var(--font-title); font-weight:900; letter-spacing:-0.5px; color:white;">Directorio y Permisos</h1>
+            <p style="color:var(--text-muted); font-size:14px; margin-top:5px;">Administración centralizada de cuentas, roles, instrumentos y áreas técnicas.</p>
+        </header>
+
+        <div class="u-grid" id="uGrid">
+            <div style="grid-column: 1/-1; text-align:center; padding:50px; color:var(--text-muted);">Cargando directorio...</div>
+        </div>
+    </div>
+
+    <!-- Glass Modal: Usuario -->
+    <div id="uModal" class="modal-overlay">
+        <div class="modal-glass" style="width: 520px; max-height: 90vh; overflow-y: auto;">
+            <h2 id="mTitle" style="color:var(--accent-red); text-align:center; font-family:var(--font-title); font-weight:900; font-size:22px; margin-bottom:20px;">PERFIL DE USUARIO</h2>
+            <input type="hidden" id="uId">
+            
+            <label>Nombre y Credenciales</label>
+            <input type="text" id="uName" placeholder="Nombre Completo" style="margin-bottom:10px;">
+            <input type="text" id="uUser" placeholder="Nombre de Usuario (Para Login)" style="margin-bottom:10px;">
+            <input type="password" id="uPass" placeholder="Contraseña (vacío para no cambiar)" style="margin-bottom:16px;">
+            
+            <label style="color:var(--accent-blue); font-weight:800; font-size:12px; letter-spacing:0.5px;">1. SELECCIONA EL ÁREA PRINCIPAL</label>
+            <select id="uCategory" onchange="handleCategoryChange()" style="margin-bottom:16px; font-weight:800; font-size:14px; border-color:var(--accent-blue);">
+                <option value="Alabanza">🎸 Alabanza (Músicos y Cantantes)</option>
+                <option value="Produccion">🎬 Producción Técnica</option>
+                <option value="Pastoral">📖 Pastoral / Liderazgo</option>
+            </select>
+
+            <!-- ==================== SECCIÓN 1: ALABANZA ==================== -->
+            <div id="catAlabanzaSection" style="background:rgba(255,42,75,0.05); border:1px solid var(--border-red); border-radius:14px; padding:16px; margin-bottom:16px;">
+                <label style="color:var(--accent-red); font-weight:800; font-size:11px;">MINISTERIO DE ALABANZA</label>
+                <select id="uAlabanzaMin" style="margin-bottom:12px;">
+                    <option value="Principal">Alabanza Principal</option>
+                    <option value="KIDS">Alabanza KIDS</option>
+                    <option value="Hibrido">Híbrido (Principal y KIDS)</option>
+                </select>
+
+                <label>INSTRUMENTO / VOZ</label>
+                <select id="uMusicInstSelect" onchange="handleMusicInstChange(this)" style="margin-bottom:8px;">
+                    <option value="Voz Principal">Voz Principal</option>
+                    <option value="Voz / Coros">Voz / Coros</option>
+                    <option value="Director de Alabanza">Director de Alabanza</option>
+                    <option value="Guitarra Eléctrica">Guitarra Eléctrica</option>
+                    <option value="Guitarra Acústica">Guitarra Acústica</option>
+                    <option value="Bajo">Bajo</option>
+                    <option value="Batería">Batería</option>
+                    <option value="Piano / Teclados">Piano / Teclados</option>
+                    <option value="Pads / Secuencias">Pads / Secuencias</option>
+                    <option value="Saxofón">Saxofón</option>
+                    <option value="Percusiones">Percusiones</option>
+                    <option value="Otro...">Otro instrumento...</option>
+                </select>
+                <input type="text" id="uMusicInstCustom" placeholder="Especificar instrumento musical..." style="display:none; margin-bottom:12px;">
+
+                <label>ROL DE ACCESO</label>
+                <select id="uAlabanzaRole">
+                    <option value="Viewer">Viewer (Solo Lectura y Atril)</option>
+                    <option value="Editor">Editor (Planificador y Repertorio)</option>
+                    <option value="Full Administrador">Full Administrador</option>
+                </select>
+            </div>
+
+            <!-- ==================== SECCIÓN 2: PRODUCCIÓN TÉCNICA ==================== -->
+            <div id="catProdSection" style="display:none; background:rgba(192,132,252,0.05); border:1px solid var(--border-purple); border-radius:14px; padding:16px; margin-bottom:16px;">
+                <label style="color:var(--accent-purple); font-weight:800; font-size:11px;">ESPECIALIDAD TÉCNICA PRINCIPAL</label>
+                <select id="uProdSpecSelect" onchange="handleProdSpecChange(this)" style="margin-bottom:8px;">
+                    <option value="Ingeniero de Audio (FOH)">Ingeniero de Audio (FOH)</option>
+                    <option value="Audio Monitores">Audio Monitores</option>
+                    <option value="Video / Transmisión">Video / Transmisión</option>
+                    <option value="Cámaras">Cámaras</option>
+                    <option value="Switcher">Switcher</option>
+                    <option value="ProPresenter (Letras)">ProPresenter (Letras)</option>
+                    <option value="Iluminación">Iluminación DMX</option>
+                    <option value="Arena / Pantallas">Arena / Pantallas</option>
+                    <option value="Staff KIDS">Staff KIDS Producción</option>
+                    <option value="Director Técnico">Director Técnico</option>
+                    <option value="Otro...">Otra área técnica...</option>
+                </select>
+                <input type="text" id="uProdSpecCustom" placeholder="Especificar función técnica..." style="display:none; margin-bottom:12px;">
+
+                <label style="font-size:10px; color:var(--accent-purple); font-weight:800; display:block; margin:8px 0 6px 0;">ÁREAS ADICIONALES (Multi-rol en cabina)</label>
+                <div class="cb-grid" style="margin-bottom:12px;">
+                    <label class="cb-label"><input type="checkbox" class="t-branch" value="Full"> Full (Director)</label>
+                    <label class="cb-label"><input type="checkbox" class="t-branch" value="Audio"> Audio (FOH)</label>
+                    <label class="cb-label"><input type="checkbox" class="t-branch" value="Video"> Video</label>
+                    <label class="cb-label"><input type="checkbox" class="t-branch" value="Switcher"> Switcher</label>
+                    <label class="cb-label"><input type="checkbox" class="t-branch" value="ProPresenter"> ProPresenter</label>
+                    <label class="cb-label"><input type="checkbox" class="t-branch" value="Arena"> Arena</label>
+                    <label class="cb-label"><input type="checkbox" class="t-branch" value="Iluminación"> Iluminación</label>
+                    <label class="cb-label"><input type="checkbox" class="t-branch" value="Contents"> Contents</label>
+                </div>
+
+                <label>ROL DE ACCESO</label>
+                <select id="uProdRole">
+                    <option value="Editor">Editor (Operador de Producción y Cabina)</option>
+                    <option value="Viewer">Viewer (Solo Monitor)</option>
+                    <option value="Full Administrador">Full Administrador</option>
+                </select>
+            </div>
+
+            <!-- ==================== SECCIÓN 3: PASTORAL ==================== -->
+            <div id="catPastoralSection" style="display:none; background:rgba(37,99,235,0.08); border:1px solid rgba(37,99,235,0.3); border-radius:14px; padding:16px; margin-bottom:16px;">
+                <div style="display:flex; align-items:center; gap:10px; margin-bottom:8px;">
+                    <span style="font-size:24px;">📖</span>
+                    <div>
+                        <h4 style="margin:0; font-family:var(--font-title); font-size:14px; color:#60a5fa; font-weight:800;">EQUIPO PASTORAL / LIDERAZGO</h4>
+                        <p style="margin:2px 0 0 0; font-size:11px; color:var(--text-muted);">Los pastores acceden con credenciales directas de Full Administrador en tema Azul Zafiro.</p>
+                    </div>
+                </div>
+                <label style="margin-top:8px;">CARGO PASTORAL</label>
+                <input type="text" id="uPastoralTitle" value="Pastor General" placeholder="Ej: Pastor General, Pastor Asociado..." style="margin-bottom:6px;">
+            </div>
+
+            <div style="display:flex; gap:12px; margin-top:20px;">
+                <button onclick="saveUser()" class="primary" style="flex:2; padding:14px; font-weight:800;">GUARDAR USUARIO</button>
+                <button onclick="closeModal()" class="secondary" style="flex:1; padding:14px;">CANCELAR</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const token = localStorage.getItem("token");
+        let users = [];
+
+        const INSTRUMENT_OPTIONS = [
+            "Voz Principal",
+            "Voz / Coros",
+            "Director de Alabanza",
+            "Guitarra Eléctrica",
+            "Guitarra Acústica",
+            "Bajo",
+            "Batería",
+            "Piano / Teclados",
+            "Pads / Secuencias",
+            "Saxofón",
+            "Percusiones",
+            "Pastor",
+            "Ingeniero de Audio (FOH)",
+            "Audio Monitores",
+            "Video / Transmisión",
+            "Cámaras",
+            "Switcher",
+            "ProPresenter (Letras)",
+            "Iluminación",
+            "Arena / Pantallas",
+            "Staff KIDS",
+            "Otro..."
+        ];
+
+        async function load() {
+            const grid = document.getElementById("uGrid");
+            grid.innerHTML = `<div style="text-align:center; grid-column:1/-1; padding:40px; color:var(--text-muted);"><span style="font-size:24px;">⏳</span><p style="margin-top:8px; font-size:13px;">Cargando usuarios...</p></div>`;
+
+            try {
+                const res = await fetch("/users");
+                if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText || 'Error del servidor'}`);
+                const data = await res.json();
+                users = Array.isArray(data) ? data : [];
+
+                if (users.length === 0) {
+                    grid.innerHTML = `<p style="color:var(--text-muted); text-align:center; grid-column:1/-1; padding:40px;">No hay usuarios registrados.</p>`;
+                    return;
+                }
+
+                grid.innerHTML = users.map(u => {
+                    if (!u) return '';
+                    const uName = u.name || u.username || 'Sin nombre';
+                    const isProd = u.ministry === "Produccion";
+                    const instStr = String(u.instrument || '').toLowerCase();
+                    const roleStr = String(u.role || '').toLowerCase();
+                    const isPastor = instStr.includes("pastor") || roleStr.includes("pastor") || String(u.ministry).toLowerCase().includes("pastor");
+                    const isAudio = instStr.includes("audio") || (isProd && (u.techBranch || '').includes("Audio"));
+                    
+                    let accentColor = "var(--accent-red)";
+                    let shadowGlow = "var(--accent-red-glow)";
+                    let badgeLabel = u.ministry || "Principal";
+
+                    if (isPastor) {
+                        accentColor = "#2563eb"; // Azul Zafiro para Pastoral
+                        shadowGlow = "rgba(37, 99, 235, 0.45)";
+                        badgeLabel = "PASTORAL";
+                    } else if (isAudio) {
+                        accentColor = "#10b981"; // Verde para Audio
+                        shadowGlow = "rgba(16, 185, 129, 0.4)";
+                        badgeLabel = isProd ? `PROD • AUDIO` : `AUDIO`;
+                    } else if (isProd) {
+                        accentColor = "var(--accent-purple)"; // Morado para Producción
+                        shadowGlow = "rgba(192, 132, 252, 0.4)";
+                        badgeLabel = u.techBranch ? `PROD • ${u.techBranch}` : "PRODUCCIÓN";
+                    } else if (u.ministry === "KIDS") {
+                        accentColor = "var(--accent-blue)"; // Azul Cyan para KIDS
+                        shadowGlow = "var(--accent-blue-trans)";
+                        badgeLabel = "KIDS";
+                    }
+
+                    return `
+                    <div class="u-card animate-fade" style="border-color:${accentColor}33;">
+                        <img class="u-photo" src="${u.photo || `https://ui-avatars.com/api/?name=${encodeURIComponent(uName)}&background=0c0a0c&color=${accentColor.replace('#','')}&size=200&bold=true`}" style="border-color:${accentColor}; box-shadow:0 0 20px ${shadowGlow};">
+                        <div style="font-family:var(--font-title); font-weight:900; font-size:18px; color:white;">${uName.toUpperCase()}</div>
+                        <div style="color:${accentColor}; font-size:11px; font-weight:800; margin:4px 0 8px 0; letter-spacing:0.5px;">@${u.username || ''} | ${u.instrument || 'Sin instrumento'}</div>
+                        <div style="font-size:11px; color:var(--text-muted); font-weight:700;">
+                            <span class="status-pill confirmed" style="font-size:9px; padding:3px 8px; border-color:${accentColor}; color:${accentColor};">${u.role || 'Miembro'}</span>
+                            <span style="margin-left:5px; color:white;">${badgeLabel}</span>
+                        </div>
+                        <div style="margin-top:20px; display:flex; gap:10px; justify-content:center;">
+                            <button class="secondary" style="font-size:11px; padding:8px 16px; border-radius:8px;" onclick="openModal('${u._id}')">EDITAR</button>
+                            <button class="danger" style="font-size:11px; padding:8px 14px; border-radius:8px;" onclick="del('${u._id}')">✕</button>
+                        </div>
+                    </div>
+                `}).join('');
+            } catch(e) {
+                console.error("Error al cargar usuarios:", e);
+                grid.innerHTML = `
+                    <div style="text-align:center; grid-column:1/-1; padding:40px;">
+                        <p style="color:var(--status-red); font-weight:800; font-size:15px; margin-bottom:8px;">⚠️ Error al cargar los usuarios</p>
+                        <p style="color:var(--text-muted); font-size:12px; margin-bottom:16px;">${e.message || 'Verifica la conexión con el servidor'}</p>
+                        <button class="secondary" onclick="load()" style="padding:10px 20px; font-size:12px; font-weight:800;">🔄 REINTENTAR</button>
+                    </div>`;
+            }
+        }
+
+        function handleCategoryChange() {
+            const cat = document.getElementById("uCategory").value;
+            document.getElementById("catAlabanzaSection").style.display = cat === "Alabanza" ? "block" : "none";
+            document.getElementById("catProdSection").style.display = cat === "Produccion" ? "block" : "none";
+            document.getElementById("catPastoralSection").style.display = cat === "Pastoral" ? "block" : "none";
+        }
+
+        function handleMusicInstChange(select) {
+            const customInput = document.getElementById("uMusicInstCustom");
+            if (select.value === "Otro...") {
+                customInput.style.display = "block";
+                customInput.focus();
+            } else {
+                customInput.style.display = "none";
+                customInput.value = "";
+            }
+        }
+
+        function handleProdSpecChange(select) {
+            const customInput = document.getElementById("uProdSpecCustom");
+            if (select.value === "Otro...") {
+                customInput.style.display = "block";
+                customInput.focus();
+            } else {
+                customInput.style.display = "none";
+                customInput.value = "";
+            }
+        }
+
+        function openModal(id = null) {
+            const u = id ? users.find(x => x._id === id) : {};
+            document.getElementById("uId").value = id || "";
+            document.getElementById("uName").value = u.name || "";
+            document.getElementById("uUser").value = u.username || "";
+            document.getElementById("uPass").value = "";
+            document.getElementById("mTitle").innerText = id ? "EDITAR USUARIO" : "NUEVO USUARIO";
+
+            // Determinar Categoría inicial
+            const isPastor = (u.instrument && u.instrument.toLowerCase().includes("pastor")) || (u.role && u.role.toLowerCase().includes("pastor")) || u.ministry === "Pastoral";
+            const isProd = u.ministry === "Produccion";
+
+            let currentCat = "Alabanza";
+            if (isPastor) currentCat = "Pastoral";
+            else if (isProd) currentCat = "Produccion";
+
+            document.getElementById("uCategory").value = currentCat;
+            handleCategoryChange();
+
+            // Configurar campos de Alabanza
+            document.getElementById("uAlabanzaMin").value = u.ministry || "Principal";
+            document.getElementById("uAlabanzaRole").value = u.role || "Viewer";
+            const musicSelect = document.getElementById("uMusicInstSelect");
+            const musicCustom = document.getElementById("uMusicInstCustom");
+            
+            const musicOptions = Array.from(musicSelect.options).map(o => o.value);
+            if (musicOptions.includes(u.instrument) && u.instrument !== "Otro...") {
+                musicSelect.value = u.instrument;
+                musicCustom.style.display = "none";
+                musicCustom.value = "";
+            } else if (u.instrument && currentCat === "Alabanza") {
+                musicSelect.value = "Otro...";
+                musicCustom.style.display = "block";
+                musicCustom.value = u.instrument;
+            } else {
+                musicSelect.value = "Voz Principal";
+                musicCustom.style.display = "none";
+                musicCustom.value = "";
+            }
+
+            // Configurar campos de Producción
+            document.getElementById("uProdRole").value = u.role || "Editor";
+            const prodSelect = document.getElementById("uProdSpecSelect");
+            const prodCustom = document.getElementById("uProdSpecCustom");
+            const prodOptions = Array.from(prodSelect.options).map(o => o.value);
+            if (prodOptions.includes(u.instrument) && u.instrument !== "Otro...") {
+                prodSelect.value = u.instrument;
+                prodCustom.style.display = "none";
+                prodCustom.value = "";
+            } else if (u.instrument && currentCat === "Produccion") {
+                prodSelect.value = "Otro...";
+                prodCustom.style.display = "block";
+                prodCustom.value = u.instrument;
+            } else {
+                prodSelect.value = "Ingeniero de Audio (FOH)";
+                prodCustom.style.display = "none";
+                prodCustom.value = "";
+            }
+
+            const savedBranches = u.techBranch ? u.techBranch.split(', ') : [];
+            document.querySelectorAll('.t-branch').forEach(cb => {
+                cb.checked = savedBranches.includes(cb.value);
+            });
+
+            // Configurar campos de Pastoral
+            document.getElementById("uPastoralTitle").value = u.instrument || "Pastor General";
+
+            const modal = document.getElementById("uModal");
+            modal.style.display = "flex";
+            setTimeout(() => modal.classList.add("active"), 10);
+        }
+        
+        function closeModal() { 
+            const modal = document.getElementById("uModal");
+            modal.classList.remove("active");
+            setTimeout(() => modal.style.display = "none", 300);
+        }
+
+        async function saveUser() {
+            const id = document.getElementById("uId").value;
+            const category = document.getElementById("uCategory").value;
+
+            let finalMinistry = "Principal";
+            let finalInstrument = "Voz Principal";
+            let finalRole = "Viewer";
+            let finalTechBranch = "";
+
+            if (category === "Alabanza") {
+                finalMinistry = document.getElementById("uAlabanzaMin").value;
+                const mSelect = document.getElementById("uMusicInstSelect").value;
+                const mCustom = document.getElementById("uMusicInstCustom").value.trim();
+                finalInstrument = (mSelect === "Otro..." && mCustom) ? mCustom : mSelect;
+                finalRole = document.getElementById("uAlabanzaRole").value;
+            } else if (category === "Produccion") {
+                finalMinistry = "Produccion";
+                const pSelect = document.getElementById("uProdSpecSelect").value;
+                const pCustom = document.getElementById("uProdSpecCustom").value.trim();
+                finalInstrument = (pSelect === "Otro..." && pCustom) ? pCustom : pSelect;
+                finalRole = document.getElementById("uProdRole").value;
+                finalTechBranch = Array.from(document.querySelectorAll('.t-branch:checked')).map(cb => cb.value).join(', ');
+            } else if (category === "Pastoral") {
+                finalMinistry = "Pastoral";
+                finalInstrument = document.getElementById("uPastoralTitle").value.trim() || "Pastor General";
+                finalRole = "Full Administrador";
+            }
+
+            const data = {
+                name: document.getElementById("uName").value.trim(),
+                username: document.getElementById("uUser").value.trim(),
+                instrument: finalInstrument,
+                role: finalRole,
+                ministry: finalMinistry,
+                techBranch: finalTechBranch
+            };
+
+            const pass = document.getElementById("uPass").value;
+            if(pass) data.password = pass;
+
+            if(!data.name || !data.username) {
+                alert("Nombre y usuario son obligatorios.");
+                return;
+            }
+
+            try {
+                const res = await fetch(id ? `/users/${id}` : "/users", {
+                    method: id ? "PUT" : "POST",
+                    headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
+                    body: JSON.stringify(data)
+                });
+                if(res.ok) {
+                    closeModal();
+                    load();
+                } else {
+                    alert("Error al guardar usuario en el servidor.");
+                }
+            } catch(e) {
+                alert("Error de conexión.");
+            }
+        }
+
+        async function del(id) { 
+            if(confirm("¿Seguro que deseas eliminar este usuario de forma permanente?")) { 
+                try {
+                    await fetch(`/users/${id}`, { method: 'DELETE', headers: {"Authorization":`Bearer ${token}`} }); 
+                    load(); 
+                } catch(e) {
+                    alert("Error al eliminar usuario.");
+                }
+            } 
+        }
+        load();
+    </script>
+</body>
+</html>

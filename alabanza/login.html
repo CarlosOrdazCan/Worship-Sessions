@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Acceso Autorizado | CAN ALABANZA</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        body {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* Fondo Animado con Respiración y Movimiento Dinámico de Color */
+        .login-bg-glow {
+            position: fixed;
+            top: -50%;
+            left: -50%;
+            width: 200vw;
+            height: 200vh;
+            background: 
+                radial-gradient(circle at 50% 50%, rgba(255, 42, 75, 0.25) 0%, rgba(255, 42, 75, 0.05) 40%, rgba(4, 4, 7, 0.95) 75%),
+                radial-gradient(circle at 20% 80%, rgba(192, 132, 252, 0.12) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(255, 42, 75, 0.18) 0%, transparent 50%);
+            z-index: -2;
+            pointer-events: none;
+            animation: pulseBackground 8s ease-in-out infinite alternate;
+        }
+
+        @keyframes pulseBackground {
+            0% {
+                transform: scale(0.95) translate(0, 0);
+                filter: brightness(0.7) blur(20px);
+                opacity: 0.7;
+            }
+            50% {
+                transform: scale(1.05) translate(2%, 2%);
+                filter: brightness(1.2) blur(10px);
+                opacity: 1;
+            }
+            100% {
+                transform: scale(1) translate(-2%, -1%);
+                filter: brightness(0.85) blur(18px);
+                opacity: 0.8;
+            }
+        }
+
+        .login-card {
+            max-width: 440px;
+            width: 100%;
+            padding: 50px 40px;
+            text-align: center;
+            border-radius: var(--radius-pco);
+            border: 1px solid var(--border-color);
+            background: var(--bg-glass-heavy);
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(25px);
+            -webkit-backdrop-filter: blur(25px);
+            position: relative;
+            z-index: 10;
+            transition: var(--transition);
+        }
+
+        .logo-title {
+            color: var(--text-main);
+            font-size: 36px;
+            font-family: var(--font-title);
+            font-weight: 900;
+            letter-spacing: 4px;
+            margin-bottom: 2px;
+            text-shadow: 0 0 25px var(--accent-red-glow);
+        }
+
+        .logo-subtitle {
+            color: var(--accent-red);
+            font-size: 11px;
+            font-weight: 800;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            margin-bottom: 35px;
+            text-shadow: 0 0 10px var(--accent-red-glow);
+        }
+
+        .login-input {
+            margin-bottom: 18px;
+        }
+
+        .login-btn {
+            width: 100%;
+            margin-top: 10px;
+            padding: 15px;
+            font-size: 14px;
+            font-weight: 800;
+        }
+
+        /* Tarjeta de Bienvenida con Avatar */
+        .welcome-avatar-img {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid var(--accent-red);
+            box-shadow: 0 0 30px var(--accent-red-glow);
+            margin: 0 auto 18px auto;
+            display: block;
+            animation: pcoSlideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        .welcome-title {
+            font-family: var(--font-title);
+            font-size: 26px;
+            font-weight: 900;
+            color: white;
+            margin-bottom: 6px;
+        }
+
+        .welcome-subtitle {
+            font-size: 13px;
+            color: var(--accent-red);
+            font-weight: 800;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            margin-bottom: 25px;
+        }
+
+        .loading-bar-container {
+            width: 100%;
+            height: 4px;
+            background: rgba(255,255,255,0.08);
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 20px;
+        }
+
+        .loading-bar-fill {
+            height: 100%;
+            background: var(--accent-red);
+            width: 0%;
+            animation: fillBar 1.6s ease-in-out forwards;
+            box-shadow: 0 0 10px var(--accent-red);
+        }
+
+        @keyframes fillBar {
+            0% { width: 0%; }
+            100% { width: 100%; }
+        }
+
+        .environment-title {
+            color: var(--text-main);
+            font-size: 13px;
+            font-family: var(--font-title);
+            font-weight: 800;
+            letter-spacing: 1.5px;
+            margin-bottom: 20px;
+        }
+
+        .env-btn-primary {
+            width: 100%;
+            background: var(--accent-red);
+            border-color: var(--accent-red);
+            margin-bottom: 14px;
+            padding: 14px;
+            font-weight: 900;
+        }
+
+        .env-btn-secondary {
+            width: 100%;
+            background: rgba(56, 189, 248, 0.1);
+            border-color: var(--accent-blue);
+            color: var(--accent-blue);
+            padding: 14px;
+            font-weight: 900;
+        }
+
+        .env-btn-secondary:hover {
+            background: var(--accent-blue);
+            border-color: var(--accent-blue);
+            color: #000000;
+            box-shadow: 0 0 20px var(--accent-blue-trans);
+        }
+    </style>
+    <link rel="icon" type="image/png" href="can-logo.png">
+</head>
+<body>
+    <div class="login-bg-glow"></div>
+
+    <div class="login-card animate-up">
+        <img src="can-logo.png" alt="CAN" style="width:76px; height:76px; border-radius:50%; margin:0 auto 16px auto; display:block; box-shadow:0 0 25px var(--accent-red-glow); border:2px solid rgba(255,255,255,0.25); object-fit:cover;">
+        <h1 class="logo-title">CAN ALABANZA</h1>
+        <p class="logo-subtitle">ACCESO AUTORIZADO</p>
+        
+        <!-- Formulario de Login -->
+        <div id="login-form">
+            <div class="login-input">
+                <input type="text" id="userInput" placeholder="Usuario" autocomplete="username">
+            </div>
+            <div class="login-input">
+                <input type="password" id="passInput" placeholder="Contraseña" autocomplete="current-password">
+            </div>
+            <button class="primary login-btn" onclick="handleLogin()">ENTRAR AL SISTEMA</button>
+        </div>
+
+        <!-- Pantalla de Bienvenida con Foto del Usuario -->
+        <div id="welcome-screen" style="display:none;" class="animate-fade">
+            <img id="welcomeUserPhoto" src="" alt="Avatar" class="welcome-avatar-img">
+            <h2 class="welcome-title" id="welcomeUserName">¡Bienvenido!</h2>
+            <p class="welcome-subtitle" id="welcomeUserRole">Iniciando sesión...</p>
+            
+            <div id="loadingIndicator">
+                <div class="loading-bar-container">
+                    <div class="loading-bar-fill"></div>
+                </div>
+                <p style="color:var(--text-muted); font-size:11px; margin-top:10px; letter-spacing:1px;">CARGANDO REPERTORIO Y PERFIL...</p>
+            </div>
+        </div>
+
+        <!-- Selector de Entorno Híbrido -->
+        <div id="hybrid-selector" style="display:none;" class="animate-fade">
+            <p class="environment-title">SELECCIONA TU ENTORNO DE SERVICIO</p>
+            <button class="env-btn-primary" onclick="selectMin('Principal')">ALABANZA PRINCIPAL</button>
+            <button class="env-btn-secondary" onclick="selectMin('KIDS')">ALABANZA KIDS</button>
+        </div>
+    </div>
+
+    <script>
+        // Enter key shortcut
+        document.addEventListener("keydown", function(e) {
+            if (e.key === "Enter" && document.getElementById("login-form").style.display !== "none") {
+                handleLogin();
+            }
+        });
+
+        async function handleLogin() {
+            const username = document.getElementById("userInput").value.trim();
+            const password = document.getElementById("passInput").value;
+
+            if (!username || !password) {
+                alert("Por favor ingresa usuario y contraseña.");
+                return;
+            }
+
+            try {
+                const res = await fetch("/login", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ username, password })
+                });
+
+                if (res.ok) {
+                    const data = await res.json();
+                    localStorage.setItem("token", data.token);
+
+                    const user = data.user;
+                    localStorage.setItem("user", JSON.stringify(user));
+                    const photoSrc = user.photo || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name || user.username)}&background=0c0a0c&color=ff2a4b&size=200&bold=true`;
+
+                    // Mostrar Pantalla de Bienvenida
+                    document.getElementById("login-form").style.display = "none";
+                    document.getElementById("welcomeUserPhoto").src = photoSrc;
+                    document.getElementById("welcomeUserName").innerText = `¡Bienvenido, ${user.name || user.username}!`;
+                    document.getElementById("welcomeUserRole").innerText = `${user.instrument || user.role} • ${user.ministry || 'Principal'}`;
+                    document.getElementById("welcome-screen").style.display = "block";
+
+                    const isPastorUser = (user.role && user.role.toLowerCase().includes("pastor")) || 
+                                         (user.ministry && user.ministry.toLowerCase().includes("pastor")) ||
+                                         (user.instrument && user.instrument.toLowerCase().includes("pastor"));
+
+                    if (isPastorUser) {
+                        localStorage.setItem("activeMinistry", "Pastoral");
+                        setTimeout(() => {
+                            window.location.href = "pastor-dashboard.html";
+                        }, 1600);
+                    } else if (user.ministry === "Hibrido") {
+                        setTimeout(() => {
+                            document.getElementById("loadingIndicator").style.display = "none";
+                            document.getElementById("hybrid-selector").style.display = "block";
+                        }, 1200);
+                    } else {
+                        localStorage.setItem("activeMinistry", user.ministry || "Principal");
+                        setTimeout(() => {
+                            window.location.href = "index.html";
+                        }, 1600);
+                    }
+                } else {
+                    alert("Credenciales incorrectas. Por favor verifica usuario y contraseña.");
+                }
+            } catch (err) {
+                alert("Error de conexión con el servidor.");
+            }
+        }
+
+        function selectMin(min) {
+            localStorage.setItem("activeMinistry", min);
+            window.location.href = "index.html";
+        }
+    </script>
+</body>
+</html>

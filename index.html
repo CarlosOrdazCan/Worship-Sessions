@@ -1,0 +1,816 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Worship Sessions - Centro de Avivamiento Naucalpan</title>
+    <!-- FontAwesome para íconos espectaculares -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <!-- Archivo de estilos CSS -->
+    <link rel="stylesheet" href="css/estilos.css">
+</head>
+<body>
+
+    <!-- CONTENEDOR GLOBAL DE NOTIFICACIONES FLOTANTES (TOAST) -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <!-- ================= PANTALLA 1: LOGIN ================= -->
+    <!-- PRE-LOGIN APP SELECTION -->
+    <div id="app-choice-screen" class="screen active">
+        <div class="choice-card">
+            <h2>Selecciona la aplicación</h2>
+            <p>¿Quieres entrar a la plataforma de Alabanza o a Worship Sessions?</p>
+            <div class="choice-buttons">
+                <button class="btn-main" id="btn-alabanza">Alabanza</button>
+                <button class="btn-main" id="btn-worship">Worship Sessions</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- LOGIN SCREEN (se mostrará después de la selección) -->
+    <div id="login-screen" class="screen" style="display:none;">
+        <div class="login-decorations">
+            <div class="glow-orb red-glow-1"></div>
+            <div class="glow-orb red-glow-2"></div>
+        </div>
+        
+        <div class="login-card">
+            <div class="login-brand">
+                <div class="brand-logo">
+                    <i class="fas fa-fire-alt"></i>
+                </div>
+                <h2>WORSHIP SESSIONS</h2>
+                <p>Centro de Avivamiento Naucalpan</p>
+                <div class="brand-divider"></div>
+            </div>
+            
+            <form onsubmit="iniciarSesion(event)">
+                <div class="form-group">
+                    <label for="login-user"><i class="fas fa-user"></i> Usuario</label>
+                    <input type="text" id="login-user" class="form-control" placeholder="Ingresa tu usuario" required autocomplete="username">
+                </div>
+                <div class="form-group">
+                    <label for="login-pass"><i class="fas fa-lock"></i> Contraseña</label>
+                    <input type="password" id="login-pass" class="form-control" placeholder="••••••••" required autocomplete="current-password">
+                </div>
+                
+                <button type="submit" class="btn-main">
+                    <span>Ingresar al Sistema</span> <i class="fas fa-arrow-right"></i>
+                </button>
+                <div id="login-error" class="error-msg">
+                    <i class="fas fa-exclamation-triangle"></i> Usuario o contraseña incorrectos.
+                </div>
+            </form>
+            
+            <div class="login-footer">
+                <p>Usa tus credenciales asignadas de Maestro, Alumno o Admin.</p>
+                <span class="version-tag">v3.0.0 Enterprise</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= PANTALLA 2: APLICACIÓN PRINCIPAL ================= -->
+    <div id="app-screen" class="screen">
+        <div class="app-layout">
+            
+            <!-- BARRA LATERAL (SIDEBAR) -->
+            <aside class="sidebar">
+                <div class="sidebar-header">
+                    <div class="brand-app">
+                        <i class="fas fa-fire-alt"></i> 
+                        <div>
+                            <span>WORSHIP</span>
+                            <small>SESSIONS</small>
+                        </div>
+                    </div>
+                    <div class="user-role-badge">
+                        <i class="fas fa-shield-alt"></i> <span id="lbl-rol-actual">ROL ACTIVO</span>
+                    </div>
+                </div>
+                
+                <div class="menu-divider"></div>
+                
+                <ul class="nav-menu" id="dynamic-menu">
+                    <!-- Los enlaces se cargan dinámicamente de acuerdo al rol -->
+                </ul>
+                
+                <div class="sidebar-footer">
+                    <button class="logout-btn" onclick="cerrarSesion()">
+                        <i class="fas fa-sign-out-alt"></i> Cerrar Sesión
+                    </button>
+                </div>
+            </aside>
+
+            <!-- CONTENIDO PRINCIPAL -->
+            <main class="main-content">
+                <header class="header">
+                    <div class="welcome-text">
+                        <h2 id="app-welcome-title">Bienvenido</h2>
+                        <p id="app-welcome-subtitle">Cargando perfil...</p>
+                    </div>
+                    <div class="user-badge">
+                        <div class="user-info-text">
+                            <span id="nav-username">Cargando...</span>
+                            <small>En línea</small>
+                        </div>
+                        <img id="nav-avatar" src="" alt="Avatar" class="avatar-img">
+                    </div>
+                </header>
+
+                <!-- ================= VISTA: ADMIN SISTEMA ================= -->
+                <div id="view-admin" class="app-view">
+                    <div class="dashboard-grid">
+                        <div class="card status-card">
+                            <div class="card-icon"><i class="fas fa-server"></i></div>
+                            <div>
+                                <h3>Personal Académico</h3>
+                                <div class="stat-val" id="admin-total-staff">0</div>
+                                <small class="text-muted">Maestros, Pastores y Staff</small>
+                            </div>
+                        </div>
+                        <div class="card status-card">
+                            <div class="card-icon red-variant"><i class="fas fa-users"></i></div>
+                            <div>
+                                <h3>Alumnos Registrados</h3>
+                                <div class="stat-val" id="admin-total-students">0</div>
+                                <small class="text-muted">Estudiantes de la Academia</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Módulo de Respaldos de Base de Datos -->
+                    <div class="panel-box backup-panel" style="margin-bottom: 2rem;">
+                        <div class="panel-header">
+                            <h3><i class="fas fa-database"></i> Mantenimiento del Sistema</h3>
+                        </div>
+                        <p class="text-muted" style="margin-bottom: 1.2rem;">Descarga una copia física de la base de datos o restaura un respaldo guardado en tu computadora.</p>
+                        <div class="backup-actions-flex">
+                            <button class="btn btn-secondary" onclick="exportarBaseDatos()">
+                                <i class="fas fa-download"></i> Respaldar Base de Datos
+                            </button>
+                            
+                            <input type="file" id="import-db-input" style="display: none;" onchange="importarBaseDatos(event)">
+                            <button class="btn btn-secondary" onclick="document.getElementById('import-db-input').click()">
+                                <i class="fas fa-upload"></i> Restaurar Respaldo
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="admin-tables-container">
+                        <!-- TABLA 1: PERSONAL Y STAFF -->
+                        <div class="panel-box">
+                            <div class="panel-header">
+                                <h3><i class="fas fa-users-cog"></i> 1. Personal Docente & Administrativo</h3>
+                                <button class="btn btn-primary" onclick="abrirModalUsuario()"><i class="fas fa-plus"></i> Nuevo Personal</button>
+                            </div>
+                            <div class="table-container">
+                                <table class="table-custom">
+                                    <thead>
+                                        <tr>
+                                            <th>Usuario / Nombre</th>
+                                            <th>Rol</th>
+                                            <th>Área Responsable</th>
+                                            <th>Acciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="admin-staff-tbody">
+                                        <!-- Cargado por JavaScript -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- TABLA 2: ESTUDIANTES / ALUMNOS -->
+                        <div class="panel-box" style="margin-top: 2rem;">
+                            <div class="panel-header">
+                                <h3><i class="fas fa-user-graduate"></i> 2. Alumnos Matriculados</h3>
+                                <button class="btn btn-primary" onclick="abrirModalUsuario()"><i class="fas fa-plus"></i> Registrar Alumno</button>
+                            </div>
+                            <div class="table-container">
+                                <table class="table-custom">
+                                    <thead>
+                                        <tr>
+                                            <th>Alumno / Usuario</th>
+                                            <th>Rol</th>
+                                            <th>Instrumento</th>
+                                            <th>Colegiatura</th>
+                                            <th>Acciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="admin-students-tbody">
+                                        <!-- Cargado por JavaScript -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ================= VISTA: PASTOR ================= -->
+                <div id="view-pastor" class="app-view">
+                    <div class="dashboard-grid">
+                        <div class="card">
+                            <div class="card-icon"><i class="fas fa-user-graduate"></i></div>
+                            <div>
+                                <h3>Alumnos Inscritos</h3>
+                                <div class="stat-val" id="pastor-total-students">0</div>
+                                <small class="text-muted">Academia Worship Sessions</small>
+                            </div>
+                        </div>
+                        <div class="card">
+                            <div class="card-icon red-variant"><i class="fas fa-calendar-check"></i></div>
+                            <div>
+                                <h3>Asistencia Promedio</h3>
+                                <div class="stat-val" id="pastor-global-attendance">0%</div>
+                                <small class="text-muted">Asistencia global histórica</small>
+                            </div>
+                        </div>
+                        <!-- NUEVA CARD FINANZAS / PAGOS -->
+                        <div class="card">
+                            <div class="card-icon red-variant"><i class="fas fa-wallet"></i></div>
+                            <div>
+                                <h3>Colegiaturas</h3>
+                                <div style="display:flex; align-items: baseline; gap:8px;">
+                                    <span class="stat-val" id="pastor-solvent-count">0</span><small class="text-muted">/ solventes</small>
+                                    <span class="stat-val" style="color:var(--primary-red); margin-left: 10px;" id="pastor-debtor-count">0</span><small class="text-muted">/ adeudos</small>
+                                </div>
+                                <div class="progress-bar-container mini" style="width: 100%; height: 4px; margin-top: 5px;">
+                                    <div class="progress-bar" id="pastor-recaudacion-progress" style="width: 0%;"></div>
+                                </div>
+                                <small class="text-muted" id="pastor-recaudacion-tag">0% Solvencia</small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="pastor-dashboard-flex" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.8rem; margin-bottom: 2rem;">
+                        <!-- DISTRIBUCIÓN POR INSTRUMENTO -->
+                        <div class="panel-box">
+                            <div class="panel-header">
+                                <h3><i class="fas fa-guitar"></i> Alumnos por Instrumento</h3>
+                            </div>
+                            <div class="pastor-chart-container" id="pastor-chart-container">
+                                <!-- Cargado por JavaScript (Gráficos CSS) -->
+                            </div>
+                        </div>
+
+                        <!-- FILTROS Y BÚSQUEDA -->
+                        <div class="panel-box">
+                            <div class="panel-header">
+                                <h3><i class="fas fa-search"></i> Buscador de Estudiantes</h3>
+                            </div>
+                            <div class="pastor-filters-grid" style="display: flex; flex-direction: column; gap: 12px;">
+                                <div class="form-group" style="margin-bottom: 0;">
+                                    <label>Nombre o @Usuario</label>
+                                    <input type="text" id="pastor-search-input" class="form-control" placeholder="Buscar por nombre o usuario..." onkeyup="filtrarPastorData()">
+                                </div>
+                                <div class="form-group" style="margin-bottom: 0;">
+                                    <label>Instrumento / Área</label>
+                                    <select id="pastor-filter-instrument" class="form-control" onchange="filtrarPastorData()">
+                                        <option value="todos">Todos los instrumentos</option>
+                                        <option value="Teclado">Teclado</option>
+                                        <option value="Batería">Batería</option>
+                                        <option value="Guitarra Eléctrica">Guitarra Eléctrica</option>
+                                        <option value="Bajo Eléctrico">Bajo Eléctrico</option>
+                                        <option value="Canto / Voces">Canto / Voces</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="panel-box">
+                        <div class="panel-header">
+                            <h3><i class="fas fa-chart-line"></i> Reporte y Supervisión Académica</h3>
+                        </div>
+                        <p class="text-muted">Vista panorámica sobre calificaciones de teoría y práctica de los alumnos reportados por los maestros.</p>
+                        <div class="table-container">
+                            <table class="table-custom">
+                                <thead>
+                                    <tr>
+                                        <th>Alumno</th>
+                                        <th>Teoría</th>
+                                        <th>Práctica / Técnica</th>
+                                        <th>Asistencia</th>
+                                        <th>Colegiatura</th>
+                                        <th>Observaciones Académicas</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="pastor-summary-tbody">
+                                    <!-- Cargado por JavaScript -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ================= VISTA: MAESTRO DE INSTRUMENTO ================= -->
+                <div id="view-maestro" class="app-view">
+                    <div class="dashboard-grid">
+                        <div class="card">
+                            <div class="card-icon"><i class="fas fa-guitar"></i></div>
+                            <div>
+                                <h3>Especialidad Activa</h3>
+                                <div class="stat-val" id="area-maestro">Cargando...</div>
+                                <small class="text-muted">Instructor de Curso</small>
+                            </div>
+                        </div>
+                        <div class="card">
+                            <div class="card-icon red-variant"><i class="fas fa-address-book"></i></div>
+                            <div>
+                                <h3>Mis Alumnos</h3>
+                                <div class="stat-val" id="maestro-students-count">0</div>
+                                <small class="text-muted">Asignados a mi especialidad</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- REJILLA MAESTRO: CARGA DE MATERIALES Y PUBLICACIÓN DE AVISOS -->
+                    <div class="maestro-panels-grid" style="display: grid; grid-template-columns: 1.2fr 1fr; gap: 1.8rem; margin-bottom: 2rem;">
+                        <!-- SUBIR MATERIAL DIDÁCTICO -->
+                        <div class="panel-box">
+                            <div class="panel-header">
+                                <h3><i class="fas fa-file-upload"></i> Subir Guías y Material</h3>
+                            </div>
+                            <form onsubmit="guardarMaterial(event)" style="display: flex; flex-direction: column; gap: 12px;">
+                                <div class="form-group" style="margin-bottom: 0;">
+                                    <label for="mat-titulo">Título del Material</label>
+                                    <input type="text" id="mat-titulo" class="form-control" placeholder="Ej. Escalas menores PDF" required>
+                                </div>
+                                <div class="form-group" style="margin-bottom: 0;">
+                                    <label for="mat-desc">Descripción Breve</label>
+                                    <input type="text" id="mat-desc" class="form-control" placeholder="Ej. Ejercicio semanal en PDF">
+                                </div>
+                                <div class="form-group" style="margin-bottom: 0;">
+                                    <label for="mat-url">Enlace del Material (YouTube, Drive...)</label>
+                                    <input type="url" id="mat-url" class="form-control" placeholder="https://drive.google.com/..." required>
+                                </div>
+                                <button type="submit" class="btn btn-primary" style="justify-content: center; width: 100%;"><i class="fas fa-cloud-upload-alt"></i> Publicar Material</button>
+                            </form>
+
+                            <div class="table-container" style="margin-top: 1.2rem;">
+                                <table class="table-custom">
+                                    <thead>
+                                        <tr>
+                                            <th>Material</th>
+                                            <th>Enlace</th>
+                                            <th></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="maestro-materials-tbody">
+                                        <!-- Cargado por JavaScript -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- PUBLICAR ANUNCIOS DE LA CLASE -->
+                        <div class="panel-box">
+                            <div class="panel-header">
+                                <h3><i class="fas fa-bullhorn"></i> Muro de Anuncios de la Especialidad</h3>
+                            </div>
+                            <form onsubmit="publicarAnuncio(event)" style="display: flex; flex-direction: column; gap: 12px;">
+                                <div class="form-group" style="margin-bottom: 0;">
+                                    <label for="bulletin-content">Escribir Aviso para tus Alumnos</label>
+                                    <textarea id="bulletin-content" class="form-control" rows="3" placeholder="Ej. Recuerden traer sus partituras y afinado su instrumento para este sábado..." required></textarea>
+                                </div>
+                                <button type="submit" class="btn btn-primary" style="justify-content: center;"><i class="fas fa-paper-plane"></i> Publicar Aviso</button>
+                            </form>
+
+                            <div class="table-container" style="margin-top: 1.2rem;">
+                                <table class="table-custom">
+                                    <thead>
+                                        <tr>
+                                            <th>Aviso publicado</th>
+                                            <th></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="maestro-bulletins-tbody">
+                                        <!-- Cargado por JavaScript -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- LISTA DE ALUMNOS -->
+                    <div class="panel-box">
+                        <div class="panel-header">
+                            <h3><i class="fas fa-tasks"></i> Lista de Alumnos e Evaluaciones</h3>
+                        </div>
+                        <div class="table-container">
+                            <table class="table-custom">
+                                <thead>
+                                    <tr>
+                                        <th>Alumno</th>
+                                        <th>Teoría</th>
+                                        <th>Técnica</th>
+                                        <th>Comentarios</th>
+                                        <th>Acciones Académicas</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="maestro-students-tbody">
+                                    <!-- Cargado por JavaScript -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ================= VISTA: ADORACION ================= -->
+                <div id="view-adoracion" class="app-view">
+                    <div class="dashboard-grid">
+                        <div class="card">
+                            <div class="card-icon"><i class="fas fa-music"></i></div>
+                            <div>
+                                <h3>Repertorio Activo</h3>
+                                <div class="stat-val">Ensamble</div>
+                                <small class="text-muted">Canciones preparadas para domingo</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ASIGNACIÓN DE INSTRUMENTISTAS DOMINGO -->
+                    <div class="panel-box" style="margin-bottom: 2rem;">
+                        <div class="panel-header">
+                            <h3><i class="fas fa-calendar-alt"></i> Asignación de Roles para Próximo Ensamble Dominical</h3>
+                        </div>
+                        <form onsubmit="guardarPlanEnsamble(event)" class="ensamble-plan-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; align-items: flex-end;">
+                            <div class="form-group" style="margin-bottom: 0;">
+                                <label>Teclado</label>
+                                <select id="ens-teclado" class="form-control"></select>
+                            </div>
+                            <div class="form-group" style="margin-bottom: 0;">
+                                <label>Batería</label>
+                                <select id="ens-bateria" class="form-control"></select>
+                            </div>
+                            <div class="form-group" style="margin-bottom: 0;">
+                                <label>Guitarra Eléctrica</label>
+                                <select id="ens-guitarra" class="form-control"></select>
+                            </div>
+                            <div class="form-group" style="margin-bottom: 0;">
+                                <label>Bajo Eléctrico</label>
+                                <select id="ens-bajo" class="form-control"></select>
+                            </div>
+                            <div class="form-group" style="margin-bottom: 0;">
+                                <label>Canto Principal / Voces</label>
+                                <select id="ens-canto" class="form-control"></select>
+                            </div>
+                            <button type="submit" class="btn btn-primary" style="height: 50px; justify-content: center;"><i class="fas fa-save"></i> Guardar Ensamble</button>
+                        </form>
+                    </div>
+
+                    <div class="panel-box">
+                        <div class="panel-header">
+                            <h3><i class="fas fa-list-ul"></i> Setlist General y Enlaces de Ensayo</h3>
+                            <button class="btn btn-primary" onclick="abrirModalCancion()"><i class="fas fa-plus"></i> Nueva Canción</button>
+                        </div>
+                        <div class="table-container">
+                            <table class="table-custom">
+                                <thead>
+                                    <tr>
+                                        <th>Canción / Autor</th>
+                                        <th>Tono</th>
+                                        <th>Recursos</th>
+                                        <th>Estado</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="adoracion-setlist-tbody">
+                                    <!-- Cargado por JavaScript -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ================= VISTA: ESTUDIANTE ================= -->
+                <div id="view-estudiante" class="app-view">
+                    
+                    <!-- NOTIFICACIÓN DE ROL DE TOCAR DOMINGO (PLANIFICADOR) -->
+                    <div id="student-worship-alert" class="worship-alert-banner" style="display: none; margin-bottom: 1.5rem;">
+                        <div class="banner-icon"><i class="fas fa-bell animate-bell"></i></div>
+                        <div class="banner-body">
+                            <h4>¡Tienes una asignación de Ensamble!</h4>
+                            <p>Estás programado para ministrar este Domingo en el puesto de: <strong id="stud-worship-role-tag">-</strong>. Prepárate estudiando el setlist activo.</p>
+                        </div>
+                    </div>
+
+                    <!-- ALERTA DE COLEGITURAS EN MORA -->
+                    <div id="student-billing-alert" class="billing-alert-banner" style="display: none; margin-bottom: 1.5rem;">
+                        <div class="banner-icon"><i class="fas fa-exclamation-circle"></i></div>
+                        <div class="banner-body">
+                            <h4>Aviso Administrativo de Colegiatura</h4>
+                            <p>Tu cuenta registra un adeudo pendiente. Por favor, acércate con el área de administración para regularizar tu colegiatura.</p>
+                        </div>
+                    </div>
+
+                    <!-- MURO DE AVISOS DEL MAESTRO -->
+                    <div id="student-announcements-wall" class="announcements-wall-container" style="margin-bottom: 1.5rem;">
+                        <!-- Anuncios del maestro cargados dinámicamente -->
+                    </div>
+
+                    <div class="dashboard-grid">
+                        <div class="card student-instrument-card">
+                            <div class="card-icon"><i class="fas fa-graduation-cap"></i></div>
+                            <div>
+                                <h3 id="student-instrument-title">Instrumento: -</h3>
+                                <div class="stat-val">Worship Sessions</div>
+                                <small class="text-muted">Estudiante de Academia</small>
+                            </div>
+                        </div>
+                        <div class="card">
+                            <div class="card-icon red-variant"><i class="fas fa-clipboard-user"></i></div>
+                            <div>
+                                <h3>Asistencia</h3>
+                                <div class="stat-val" id="stud-attendance-pct">0%</div>
+                                <small class="text-muted" id="stud-attendance-desc">Clases asistidas: 0 de 0</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="student-panel-grid">
+                        <!-- PANEL CALIFICACIONES -->
+                        <div class="panel-box">
+                            <h3><i class="fas fa-chart-line"></i> Mis Calificaciones</h3>
+                            <p class="text-muted">Revisión en tiempo real de tu avance académico teórico y práctico.</p>
+                            
+                            <div class="grade-item">
+                                <div class="grade-label">
+                                    <span>Teoría Musical</span>
+                                    <strong id="stud-val-teoria">0/100</strong>
+                                </div>
+                                <div class="progress-bar-container">
+                                    <div class="progress-bar" id="stud-progress-teoria" style="width: 0%;"></div>
+                                </div>
+                            </div>
+                            
+                            <div class="grade-item" style="margin-top: 20px;">
+                                <div class="grade-label">
+                                    <span>Técnica & Ejecución</span>
+                                    <strong id="stud-val-tecnica">0/100</strong>
+                                </div>
+                                <div class="progress-bar-container">
+                                    <div class="progress-bar" id="stud-progress-tecnica" style="width: 0%;"></div>
+                                </div>
+                            </div>
+
+                            <div class="feedback-box">
+                                <h4>Comentarios del Maestro:</h4>
+                                <p id="stud-observaciones" class="feedback-text">Cargando notas...</p>
+                            </div>
+                        </div>
+
+                        <!-- PANEL SETLIST DEL ENSAMBLE -->
+                        <div class="panel-box">
+                            <h3><i class="fas fa-compact-disc"></i> Setlist de Ensamble</h3>
+                            <p class="text-muted">Estudia el repertorio activo y descarga los cifrados oficiales.</p>
+                            <ul class="songs-list-container" id="stud-setlist-ul">
+                                <!-- Cargado por JavaScript -->
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- METRÓNOMO INTERACTIVO SINTETIZADO -->
+                    <div class="panel-box metronome-panel-box" style="margin-top: 1.5rem;">
+                        <div class="panel-header">
+                            <h3><i class="fas fa-drum"></i> Metrónomo de Práctica (Herramienta de Estudio)</h3>
+                            <div id="metro-light-dot" class="metro-light-indicator"></div>
+                        </div>
+                        <p class="text-muted">Utiliza nuestro metrónomo con tono sintetizado integrado para estudiar tus escalas, canciones y ejercicios a tempo constante.</p>
+                        <div class="metronome-interface" style="display: flex; align-items: center; gap: 30px; margin-top: 1.5rem; flex-wrap: wrap;">
+                            <div class="metro-speed-display" style="font-size: 2.2rem; font-weight: 800; min-width: 120px;">
+                                <span id="metro-bpm-val">120</span> <small style="font-size: 1rem; color: var(--text-muted);">BPM</small>
+                            </div>
+                            <div class="metro-slider-container" style="flex: 1; min-width: 200px;">
+                                <input type="range" id="metro-slider" min="40" max="240" value="120" class="metro-slider-range" oninput="cambiarBpm(this.value)" style="width: 100%;">
+                            </div>
+                            <button type="button" class="btn btn-primary" id="metro-play-btn" onclick="toggleMetronomo()" style="justify-content: center; height: 50px; width: 160px; font-size: 0.95rem;">
+                                <i class="fas fa-play"></i> Ensayar Tempo
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- PANEL MATERIALES DE CLASE -->
+                    <div class="panel-box" style="margin-top: 1.5rem;">
+                        <h3><i class="fas fa-folder-open"></i> Guías y Material Didáctico</h3>
+                        <p class="text-muted">Archivos, videos y partituras que tu profesor ha subido para tu especialidad.</p>
+                        <ul class="materials-list-container" id="stud-materials-ul">
+                            <!-- Cargado por JavaScript -->
+                        </ul>
+                    </div>
+                </div>
+
+            </main>
+        </div>
+    </div>
+
+    <!-- ================= REPRODUCTOR MULTIMEDIA ENSAYOS FLOTANTE ================= -->
+    <div id="rehearsal-player" class="rehearsal-player-bar">
+        <div class="player-info">
+            <i class="fas fa-headphones-alt player-status-icon pulse-red"></i>
+            <div>
+                <h4 id="player-song-title">Ensayando Pista</h4>
+                <p id="player-song-artist">Metrónomo y acordes activos</p>
+            </div>
+        </div>
+        <div class="player-controls">
+            <button class="player-btn" id="player-play-btn" onclick="toggleReproductor()" title="Play / Pausa">
+                <i class="fas fa-play"></i>
+            </button>
+            <div class="player-progress-container">
+                <div class="player-progress-bar" id="player-progress" style="width: 0%;"></div>
+            </div>
+            <span id="player-time" class="player-time-tag">0:00 / 3:30</span>
+        </div>
+        <button class="player-close-btn" onclick="cerrarReproductor()" title="Cerrar reproductor">&times;</button>
+    </div>
+
+    <!-- ================= DIÁLOGOS MODALES (INTERACTIVOS) ================= -->
+    
+    <!-- MODAL: CREAR/EDITAR USUARIO -->
+    <div id="modal-usuario" class="modal-overlay">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3 id="modal-user-title">Nuevo Usuario</h3>
+                <button class="modal-close-btn" onclick="cerrarModalUsuario()">&times;</button>
+            </div>
+            <form onsubmit="guardarUsuario(event)">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="user-username">Usuario (Login)</label>
+                        <input type="text" id="user-username" class="form-control" placeholder="ej. juangomez" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="user-nombre">Nombre Completo</label>
+                        <input type="text" id="user-nombre" class="form-control" placeholder="ej. Juan Gómez" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="user-pass">Contraseña</label>
+                        <input type="password" id="user-pass" class="form-control" placeholder="••••••••" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="user-rol">Rol en el Sistema</label>
+                        <select id="user-rol" class="form-control">
+                            <option value="estudiante">Estudiante</option>
+                            <option value="maestro">Maestro de Instrumento</option>
+                            <option value="adoracion">Director de Adoración / Ensamble</option>
+                            <option value="pastor">Pastor</option>
+                            <option value="admin">Administrador de Sistemas</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="user-area">Área / Especialidad</label>
+                        <select id="user-area" class="form-control">
+                            <option value="Teclado">Teclado</option>
+                            <option value="Batería">Batería</option>
+                            <option value="Guitarra Eléctrica">Guitarra Eléctrica</option>
+                            <option value="Bajo Eléctrico">Bajo Eléctrico</option>
+                            <option value="Canto / Voces">Canto / Voces</option>
+                            <option value="Ensamble">Ensamble General</option>
+                            <option value="Pastorado">Pastorado</option>
+                            <option value="Sistemas">Sistemas</option>
+                            <option value="Administración">Administración</option>
+                        </select>
+                    </div>
+                    <!-- CAMPO DINÁMICO DE PAGO -->
+                    <div class="form-group" id="user-pago-group">
+                        <label for="user-pago">Estado de Colegiatura</label>
+                        <select id="user-pago" class="form-control">
+                            <option value="solvente">Solvente (Al Corriente)</option>
+                            <option value="pendiente">Pago Pendiente</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="cerrarModalUsuario()">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: CALIFICAR ESTUDIANTE -->
+    <div id="modal-calificar" class="modal-overlay">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3 id="modal-calificar-title">Evaluar Estudiante</h3>
+                <button class="modal-close-btn" onclick="cerrarModalCalificar()">&times;</button>
+            </div>
+            <form onsubmit="guardarCalificacion(event)">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="cal-teoria">Calificación de Teoría (0 - 100)</label>
+                        <input type="number" id="cal-teoria" class="form-control" min="0" max="100" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="cal-tecnica">Calificación de Técnica / Práctica (0 - 100)</label>
+                        <input type="number" id="cal-tecnica" class="form-control" min="0" max="100" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="cal-observaciones">Observaciones y Consejos para mejorar</label>
+                        <textarea id="cal-observaciones" class="form-control" rows="4" placeholder="Escribe aquí los consejos sobre digitación, afinación, tempo..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="cerrarModalCalificar()">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Registrar Calificaciones</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: ASISTENCIA -->
+    <div id="modal-asistencia" class="modal-overlay">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3 id="modal-asistencia-title">Control de Asistencia</h3>
+                <button class="modal-close-btn" onclick="cerrarModalAsistencia()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="asist-fecha">Fecha de la Clase</label>
+                    <input type="date" id="asist-fecha" class="form-control" required>
+                </div>
+                
+                <div class="asistencia-actions-grid">
+                    <button class="btn btn-asist presente" onclick="registrarAsistencia('presente')">
+                        <i class="fas fa-check-circle"></i> Marcar PRESENTE
+                    </button>
+                    <button class="btn btn-asist ausente" onclick="registrarAsistencia('ausente')">
+                        <i class="fas fa-times-circle"></i> Marcar AUSENTE
+                    </button>
+                </div>
+                
+                <h4 style="margin-top: 1.5rem; border-bottom: 1px solid var(--border-color); padding-bottom: 5px;">Historial Reciente</h4>
+                <div class="attendance-history-list" id="asist-historial">
+                    <!-- Cargado por JavaScript -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="cerrarModalAsistencia()">Cerrar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: CREAR/EDITAR CANCIÓN -->
+    <div id="modal-cancion" class="modal-overlay">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3 id="modal-cancion-title">Nueva Canción</h3>
+                <button class="modal-close-btn" onclick="cerrarModalCancion()">&times;</button>
+            </div>
+            <form onsubmit="guardarCancion(event)">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="canc-titulo">Título de la Canción</label>
+                        <input type="text" id="canc-titulo" class="form-control" placeholder="ej. Tumbas a Jardines" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="canc-autor">Autor / Grupo</label>
+                        <input type="text" id="canc-autor" class="form-control" placeholder="ej. Elevation Worship" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="canc-tono">Tono Principal</label>
+                        <select id="canc-tono" class="form-control">
+                            <option value="A">A (La)</option>
+                            <option value="A#">A# / Bb (La sostenido)</option>
+                            <option value="B">B (Si)</option>
+                            <option value="C">C (Do)</option>
+                            <option value="C#">C# / Db (Do sostenido)</option>
+                            <option value="D">D (Re)</option>
+                            <option value="D#">D# / Eb (Re sostenido)</option>
+                            <option value="E">E (Mi)</option>
+                            <option value="F">F (Fa)</option>
+                            <option value="F#">F# / Gb (Fa sostenido)</option>
+                            <option value="G">G (Sol)</option>
+                            <option value="G#">G# / Ab (Sol sostenido)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="canc-acordes">Enlace a Cifrado / Acordes (PDF / Web)</label>
+                        <input type="url" id="canc-acordes" class="form-control" placeholder="https://ejemplo.com/cifrado">
+                    </div>
+                    <div class="form-group">
+                        <label for="canc-video">Enlace a Video / Referencia de YouTube</label>
+                        <input type="url" id="canc-video" class="form-control" placeholder="https://youtube.com/watch?v=...">
+                    </div>
+                    <div class="form-group">
+                        <label for="canc-activo">Estado en Ensamble</label>
+                        <select id="canc-activo" class="form-control">
+                            <option value="true">Activo en Setlist</option>
+                            <option value="false">Oculto (Repertorio general)</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="cerrarModalCancion()">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Guardar Canción</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Archivo lógica Javascript -->
+    <script src="js/logica.js"></script>
+</body>
+</html>

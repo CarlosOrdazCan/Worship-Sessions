@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teleprompter de Letras | C.A.N. PRO</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        body {
+            margin: 0;
+            background: #020204;
+            color: white;
+            text-align: center;
+            padding-bottom: 120px;
+        }
+
+        #lyricsContainer {
+            padding: 80px 40px;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            font-size: clamp(32px, 5vw, 54px);
+            margin-bottom: 40px;
+            font-family: var(--font-title);
+            font-weight: 900;
+            text-transform: uppercase;
+            color: var(--accent-red);
+            text-shadow: 0 0 20px var(--accent-red-glow);
+        }
+
+        .lyrics {
+            font-size: clamp(24px, 3.5vw, 36px);
+            line-height: 1.8;
+            white-space: pre-line;
+            font-weight: 600;
+            margin-bottom: 40px;
+            color: rgba(255,255,255,0.9);
+        }
+
+        .controls {
+            position: fixed;
+            bottom: 30px;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            z-index: 100;
+        }
+
+        .controls button {
+            padding: 16px 32px;
+            border-radius: 16px;
+            background: var(--bg-glass-heavy);
+            backdrop-filter: blur(20px);
+            color: white;
+            font-size: 20px;
+            cursor: pointer;
+            border: 1px solid var(--border-color);
+            box-shadow: var(--shadow-glass);
+        }
+
+        .scroll-controls {
+            position: fixed;
+            right: 30px;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            z-index: 100;
+        }
+
+        .scroll-controls button {
+            padding: 16px;
+            border-radius: 16px;
+            background: var(--bg-glass-heavy);
+            backdrop-filter: blur(20px);
+            color: white;
+            font-size: 20px;
+            cursor: pointer;
+            border: 1px solid var(--border-color);
+            box-shadow: var(--shadow-glass);
+        }
+    </style>
+    <link rel="icon" type="image/png" href="can-logo.png">
+</head>
+<body>
+    <script>
+        if (!localStorage.getItem("token")) window.location.href = "login.html";
+    </script>
+
+    <div id="lyricsContainer" class="animate-fade"></div>
+
+    <div class="controls">
+        <button class="secondary" onclick="location.href='index.html'" style="font-size:14px; font-weight:800;">← VOLVER</button>
+        <button class="secondary" onclick="prev()">⬅</button>
+        <button class="primary" onclick="next()">➡</button>
+    </div>
+
+    <div class="scroll-controls">
+        <button onclick="startScroll()" title="Iniciar Auto-Scroll" style="color:var(--audio-accent);">▶</button>
+        <button onclick="stopScroll()" title="Pausar Auto-Scroll" style="color:var(--status-amber);">⏸</button>
+    </div>
+
+    <script>
+        let setlist = JSON.parse(localStorage.getItem("liveSetlist")) || [];
+        let index = 0;
+        const notes = ["C","C#","D","D#","E","F","F#","G","G#","A","A#","B"];
+
+        function removeChords(text) {
+            if (!text) return "";
+            return text.split("\n").map(line => {
+                return line.split(" ").filter(word => {
+                    return !notes.includes(word);
+                }).join(" ");
+            }).join("\n");
+        }
+
+        function render() {
+            const song = setlist[index];
+            if(!song) {
+                document.getElementById("lyricsContainer").innerHTML = "<h2 style='color:var(--text-muted); padding:60px;'>No hay canciones cargadas en el teleprompter.</h2>";
+                return;
+            }
+
+            let html = `<h1>${song.name}</h1>`;
+            if (song.sections) {
+                song.sections.forEach(sec => {
+                    html += `
+                        <div class="lyrics">
+                            ${removeChords(sec.lyrics || sec.chords || sec.content || "")}
+                        </div>
+                    `;
+                });
+            }
+
+            document.getElementById("lyricsContainer").innerHTML = html;
+        }
+
+        function next() {
+            if(index < setlist.length - 1) {
+                index++;
+                window.scrollTo(0,0);
+                render();
+            }
+        }
+
+        function prev() {
+            if(index > 0) {
+                index--;
+                window.scrollTo(0,0);
+                render();
+            }
+        }
+
+        let scrollInterval;
+        function startScroll() {
+            if (!scrollInterval) {
+                scrollInterval = setInterval(() => {
+                    window.scrollBy(0, 1);
+                }, 30);
+            }
+        }
+
+        function stopScroll() {
+            clearInterval(scrollInterval);
+            scrollInterval = null;
+        }
+
+        document.body.addEventListener("click", (e) => {
+            if(e.target.tagName !== "BUTTON") {
+                next();
+            }
+        });
+
+        render();
+    </script>
+</body>
+</html>

@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Servicios Programados | CAN ALABANZA</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <style>
+        .page-header { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            margin-bottom: 30px; 
+            border-bottom: 1px solid var(--border-color); 
+            padding-bottom: 24px; 
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .services-grid { 
+            display: grid; 
+            grid-template-columns: 1fr; 
+            gap: 24px; 
+        }
+
+        #pdf-render-zone { display: none; background: white; color: black; padding: 40px; width: 210mm; }
+
+        .tab-btn {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid var(--border-color);
+            padding: 8px 18px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 800;
+            cursor: pointer;
+            color: var(--text-muted);
+            transition: var(--transition);
+        }
+        .tab-btn.active {
+            background: var(--accent-red);
+            border-color: var(--accent-red);
+            color: white;
+            box-shadow: 0 0 15px var(--accent-red-glow);
+        }
+    </style>
+    <link rel="icon" type="image/png" href="can-logo.png">
+</head>
+<body class="animate-up">
+    <script>
+        let token = localStorage.getItem("token");
+        if (token && token.length > 1000) {
+            localStorage.removeItem("token");
+            window.location.href = "login.html";
+        }
+        if (!token) window.location.href = "login.html";
+        
+        let currentUserRole = "Viewer";
+        let isFullAdmin = false;
+        let isProdEditor = false;
+        let isWorshipEditor = false;
+        let isProdBranch = false;
+        let storedUser = {};
+        try {
+            storedUser = JSON.parse(localStorage.getItem("user") || "{}");
+            const payload = JSON.parse(window.atob(token.split('.')[1])) || {};
+            currentUserRole = storedUser.role || payload.role || "Viewer";
+            const min = storedUser.ministry || payload.ministry || "";
+            isProdBranch = (min === "Produccion" || payload.ministry === "Produccion");
+            isFullAdmin = (currentUserRole === "Full Administrador" || (storedUser.username && storedUser.username.toLowerCase() === "cordaz"));
+            isProdEditor = isFullAdmin || (currentUserRole === "Editor" && min === "Produccion");
+            isWorshipEditor = isFullAdmin || (currentUserRole === "Editor" && min !== "Produccion" && !String(storedUser.instrument || '').toLowerCase().includes("audio"));
+        } catch(e) {}
+
+        const savedWallpaper = localStorage.getItem("cordaz_wallpaper");
+        if (savedWallpaper) {
+            document.body.classList.add("ios-wallpaper-active");
+            document.body.style.setProperty("--ios-bg-image", `url(${savedWallpaper})`);
+        }
+
+        // Aplicar Tema Dinámico
+        try {
+            const storedUser = JSON.parse(localStorage.getItem("user") || "{}");
+            const activeMin = localStorage.getItem("activeMinistry") || storedUser.ministry || "Principal";
+            const instStr = String(storedUser.instrument || '').toLowerCase();
+            const roleStr = String(storedUser.role || '').toLowerCase();
+
+            const isPastor = instStr.includes("pastor") || roleStr.includes("pastor") || activeMin === "Pastoral";
+            const isAudio = instStr.includes("audio") || (activeMin === "Produccion" && (storedUser.techBranch || '').includes("Audio"));
+            const isProd = activeMin === "Produccion" && !isAudio;
+            const isKids = activeMin === "KIDS";
+
+            if (isPastor) document.body.classList.add("theme-pastoral");
+            else if (isAudio) document.body.classList.add("theme-audio");
+            else if (isProd) document.body.classList.add("theme-prod");
+            else if (isKids) document.body.classList.add("theme-kids");
+            else document.body.classList.add("theme-principal");
+        } catch(e) {}
+    </script>
+
+    <!-- Navigation Header -->
+    <div class="pco-navbar">
+        <div style="display:flex; align-items:center; gap:20px;">
+            <button class="secondary" onclick="location.href='index.html'" style="padding:10px 20px; font-weight:800;">← VOLVER AL HUB</button>
+            <span style="font-family:var(--font-title); font-weight:800; font-size:18px; letter-spacing:1px;">CAN <span style="color:var(--accent-red); font-weight:400;">ALABANZA</span> • SERVICIOS</span>
+        </div>
+        <div id="plannerBtnZone"></div>
+    </div>
+
+    <!-- Main Container -->
+    <div class="container animate-fade">
+        <div class="page-header">
+            <div>
+                <h1 style="font-size:32px; font-family:var(--font-title); font-weight:900; letter-spacing:-0.5px; color:white;">Servicios Programados</h1>
+                <p style="color:var(--text-muted); font-size:14px; margin-top:5px;">Consulta, descarga y gestiona las escaletas musicales de las reuniones de alabanza.</p>
+            </div>
+            
+            <!-- Pestañas: Activos vs Historial -->
+            <div style="display:flex; gap:10px;">
+                <button id="tabActivos" class="tab-btn active" onclick="switchTab('active')">PROXIMOS ACTIVOS</button>
+                <button id="tabHistorial" class="tab-btn" onclick="switchTab('archived')">HISTORIAL ARCHIVADO</button>
+            </div>
+        </div>
+
+        <div class="services-grid" id="setlistsContainer">
+            <div style="text-align:center; padding:50px; color:var(--text-muted); font-size:13px;">Cargando planes del servidor...</div>
+        </div>
+    </div>
+
+    <div id="pdf-render-zone"></div>
+
+    <script>
+        let allSetlists = [];
+        let currentTab = "active";
+
+        async function loadSetlists() {
+            const container = document.getElementById("setlistsContainer");
+            container.innerHTML = `<div style="text-align:center; padding:60px; color:var(--text-muted);"><span style="font-size:24px;">⏳</span><p style="margin-top:8px; font-size:13px;">Cargando servicios...</p></div>`;
+            
+            const btnZone = document.getElementById("plannerBtnZone");
+            if (isWorshipEditor) {
+                btnZone.innerHTML = `<button class="primary" onclick="location.href='setlist.html'" style="padding:10px 20px; font-weight:800;">+ CREAR SERVICIO / SETLIST</button>`;
+            } else if (isProdBranch) {
+                btnZone.innerHTML = `<button class="primary" onclick="location.href='prod-index.html'" style="padding:10px 20px; font-weight:800; background:var(--accent-purple); border-color:var(--accent-purple); color:black;">🎬 CABINA DE PRODUCCIÓN</button>`;
+            } else {
+                btnZone.innerHTML = "";
+            }
+
+            try {
+                const res = await fetch("/setlists");
+                if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText || 'Error del servidor'}`);
+                const data = await res.json();
+                allSetlists = Array.isArray(data) ? data : [];
+                
+                // Auto-archivado inteligente: si la fecha del set es anterior a hoy, marcarlo como archivado
+                const todayStr = new Date().toISOString().split('T')[0];
+                allSetlists.forEach(async (s) => {
+                    if (s && s.date && s.date < todayStr && s.archived !== true) {
+                        s.archived = true;
+                        try {
+                            await fetch(`/setlists/${s._id}`, {
+                                method: "PUT",
+                                headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
+                                body: JSON.stringify({ archived: true })
+                            });
+                        } catch(e) {}
+                    }
+                });
+
+                renderSetlistsView();
+
+            } catch (err) {
+                console.error("Error al cargar setlists:", err);
+                container.innerHTML = `
+                    <div style="text-align:center; padding:40px; border:1px solid var(--border-color); border-radius:var(--radius-pco); background:var(--bg-glass);">
+                        <p style="color:var(--status-red); font-weight:800; font-size:15px; margin-bottom:8px;">⚠️ Error al conectar con el servidor</p>
+                        <p style="color:var(--text-muted); font-size:12px; margin-bottom:16px;">${err.message || 'Verifica la conexión con la base de datos'}</p>
+                        <button class="secondary" onclick="loadSetlists()" style="padding:10px 20px; font-size:12px; font-weight:800;">🔄 REINTENTAR</button>
+                    </div>`;
+            }
+        }
+
+        function switchTab(tab) {
+            currentTab = tab;
+            document.getElementById("tabActivos").classList.toggle("active", tab === "active");
+            document.getElementById("tabHistorial").classList.toggle("active", tab === "archived");
+            renderSetlistsView();
+        }
+
+        function renderSetlistsView() {
+            const container = document.getElementById("setlistsContainer");
+            const myMin = localStorage.getItem("activeMinistry") || "Principal";
+
+            let filteredSets = (allSetlists || []).filter(s => {
+                if (!s) return false;
+                const setMin = s.ministry || "Principal";
+                const matchesMin = (setMin === myMin || myMin === "Hibrido" || myMin === "Principal");
+                if (currentTab === "active") {
+                    return matchesMin && s.archived !== true;
+                } else {
+                    return matchesMin && s.archived === true;
+                }
+            });
+
+            if (filteredSets.length === 0) {
+                if (currentTab === 'active') {
+                    container.innerHTML = `
+                        <div style="text-align:center; padding:60px 30px; border:2px dashed var(--border-color); border-radius:var(--radius-pco); background:var(--bg-glass);">
+                            <span style="font-size:40px; display:block; margin-bottom:12px;">📅</span>
+                            <p style="color:var(--text-muted); font-size:15px; font-weight:700; margin-bottom:16px;">No hay servicios próximos en ${myMin.toUpperCase()}.</p>
+                            <button class="secondary" onclick="switchTab('archived')" style="font-size:12px; padding:10px 20px; font-weight:800;">
+                                📦 VER HISTORIAL
+                            </button>
+                        </div>`;
+                } else {
+                    container.innerHTML = `
+                        <div style="text-align:center; padding:60px 30px; border:2px dashed var(--border-color); border-radius:var(--radius-pco); background:var(--bg-glass);">
+                            <span style="font-size:40px; display:block; margin-bottom:12px;">📭</span>
+                            <p style="color:var(--text-muted); font-size:15px; font-weight:700;">No hay servicios archivados en ${myMin.toUpperCase()}.</p>
+                        </div>`;
+                }
+                return;
+            }
+
+            container.innerHTML = filteredSets.map(s => {
+                let monthStr = "MES", dayStr = "00";
+                if (s.date) {
+                    const d = new Date(s.date + 'T12:00:00');
+                    monthStr = d.toLocaleString('es-ES', { month: 'short' }).toUpperCase();
+                    dayStr = d.getDate().toString().padStart(2, '0');
+                }
+
+                const songsListHTML = (s.songs && s.songs.length > 0) ? s.songs.map((item, idx) => {
+                    const songName = item.songId ? item.songId.name : "Canción sin título";
+                    const keyVal = item.setlistKey || (item.songId ? item.songId.key : "-");
+                    return `
+                        <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 14px; background:rgba(0,0,0,0.4); border-radius:10px; margin-bottom:8px; border:1px solid var(--border-color);">
+                            <div style="display:flex; align-items:center; gap:10px;">
+                                <span style="color:var(--accent-red); font-weight:900; font-size:12px;">${idx + 1}.</span>
+                                <span style="color:white; font-weight:700; font-size:14px;">${(songName || 'Sin título').toUpperCase()}</span>
+                            </div>
+                            <span class="status-pill confirmed" style="font-size:10px; padding:3px 8px;">TONO: ${keyVal}</span>
+                        </div>
+                    `;
+                }).join('') : "<p style='color:var(--text-muted); font-size:12px;'>No hay canciones agregadas a este set.</p>";
+
+                // Botones para Editores y Full Administradores de Alabanza
+                let adminControlsHTML = "";
+                if (isWorshipEditor) {
+                    adminControlsHTML = `
+                        <button class="secondary" onclick="location.href='setlist.html?id=${s._id}'" style="padding:10px 16px; font-size:11px; font-weight:800; border-radius:10px;">✏️ MODIFICAR</button>
+                        <button class="secondary" onclick="toggleArchiveSet('${s._id}', ${s.archived === true})" style="padding:10px 16px; font-size:11px; font-weight:800; border-radius:10px;">
+                            ${s.archived === true ? '📦 DESARCHIVAR' : '📦 ARCHIVAR'}
+                        </button>
+                        ${isFullAdmin ? `<button class="danger" onclick="deleteSet('${s._id}')" style="padding:10px 16px; font-size:11px; font-weight:800; border-radius:10px;">🗑️ ELIMINAR</button>` : ''}
+                    `;
+                }
+
+                // Botones para Producción Técnica
+                let prodControlsHTML = "";
+                if (isProdEditor) {
+                    prodControlsHTML += `
+                        <button class="secondary" onclick="location.href='prod-planner.html?id=${s._id}'" style="padding:10px 16px; font-size:11px; font-weight:800; border-radius:10px; border-color:var(--accent-purple); color:var(--accent-purple);">🎬 GESTIONAR ESCALETA (ROS)</button>
+                    `;
+                }
+                if (isProdBranch || isFullAdmin) {
+                    prodControlsHTML += `
+                        <button class="secondary" onclick="location.href='lyrics-stage.html?id=${s._id}'" style="padding:10px 16px; font-size:11px; font-weight:800; border-radius:10px; border-color:var(--accent-blue); color:var(--accent-blue);">📄 LETRAS (PROPRESENTER)</button>
+                    `;
+                }
+
+                const myName = (storedUser.name || '').trim();
+                const absenceReasons = s.absenceReasons || {};
+                const myAbsenceReason = myName && absenceReasons[myName] ? absenceReasons[myName] : null;
+
+                let absenceBadgeHTML = "";
+                if (myAbsenceReason) {
+                    absenceBadgeHTML = `
+                        <div style="margin-top:14px; padding:10px 16px; background:rgba(239,68,68,0.12); border:1px solid rgba(239,68,68,0.35); border-radius:12px; font-size:12px; color:#fca5a5; display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;">
+                            <div style="display:flex; align-items:center; gap:8px;">
+                                <span style="font-size:16px;">⚠️</span>
+                                <span><b>Inasistencia reportada al Pastor:</b> "${myAbsenceReason}"</span>
+                            </div>
+                            <button type="button" class="secondary" onclick="openAbsenceModal('${s._id}', '${(s.name || 'Servicio').replace(/'/g, "\\'")}', '${myAbsenceReason.replace(/'/g, "\\'")}')" style="padding:4px 10px; font-size:11px; border-color:rgba(239,68,68,0.6); color:white; font-weight:800; border-radius:8px;">✏️ CAMBIAR MOTIVO</button>
+                        </div>
+                    `;
+                }
+
+                const absenceBtnHTML = !s.archived ? `
+                    <button class="secondary" onclick="openAbsenceModal('${s._id}', '${(s.name || 'Servicio').replace(/'/g, "\\'")}', '${(myAbsenceReason || '').replace(/'/g, "\\'")}')" style="padding:10px 16px; font-size:11px; font-weight:800; border-radius:10px; border-color:var(--accent-red); color:var(--accent-red);">
+                        ${myAbsenceReason ? '⚠️ INASISTENCIA AVISADA' : '⚠️ AVISAR INASISTENCIA'}
+                    </button>
+                ` : '';
+
+                // Escaleta ROS integrada en el servicio programado
+                const hasROS = (s.runOfService && Array.isArray(s.runOfService) && s.runOfService.length > 0);
+                let rosSectionHTML = "";
+                if (hasROS) {
+                    rosSectionHTML = `
+                        <div style="border-top:1px solid var(--border-color); padding-top:18px; margin-top:18px;">
+                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:10px;">
+                                <div style="display:flex; align-items:center; gap:8px;">
+                                    <span style="font-size:16px;">🎬</span>
+                                    <h4 style="font-size:12px; color:var(--accent-purple); font-weight:900; letter-spacing:1.5px; text-transform:uppercase; margin:0;">
+                                        ESCALETA DE PRODUCCIÓN (${s.runOfService.length} BLOQUES)
+                                    </h4>
+                                </div>
+                                <button class="secondary" onclick="location.href='prod-live.html?id=${s._id}'" style="padding:6px 14px; font-size:11px; font-weight:800; border-color:var(--accent-purple); color:var(--accent-purple); border-radius:8px;">
+                                    🔴 ENTRAR A CABINA EN VIVO
+                                </button>
+                            </div>
+                            
+                            <div style="display:flex; flex-direction:column; gap:6px; background:rgba(0,0,0,0.35); padding:12px 14px; border-radius:12px; border:1px solid rgba(192,132,252,0.25);">
+                                ${s.runOfService.map(r => `
+                                    <div style="display:grid; grid-template-columns: 65px 1.4fr 1fr 1fr; gap:10px; font-size:11px; padding:6px 4px; border-bottom:1px solid rgba(255,255,255,0.04); align-items:center;">
+                                        <span style="color:var(--accent-purple); font-weight:900; font-family:var(--font-title);">${r.time || '--:--'}</span>
+                                        <span style="font-weight:700; color:white;">${r.activity || '-'}</span>
+                                        <span style="color:#a7f3d0; font-size:10px; line-height:1.3;">${r.cabinaNotes ? '🎛️ ' + r.cabinaNotes : '-'}</span>
+                                        <span style="color:#93c5fd; font-size:10px; line-height:1.3;">${r.videoNotes ? '📽️ ' + r.videoNotes : '-'}</span>
+                                    </div>
+                                `).join('')}
+                            </div>
+
+                            ${(s.prodTeam && s.prodTeam.length > 0) ? `
+                                <div style="margin-top:12px; display:flex; gap:8px; align-items:center; flex-wrap:wrap; font-size:11px;">
+                                    <span style="color:var(--text-muted); font-weight:800; font-size:10px; letter-spacing:1px;">CREW CABINA:</span>
+                                    ${s.prodTeam.map(p => `
+                                        <span style="background:rgba(192,132,252,0.12); border:1px solid rgba(192,132,252,0.3); color:var(--accent-purple); padding:3px 8px; border-radius:6px; font-weight:800; font-size:10px;">
+                                            ${(p.name || '').toUpperCase()} <span style="opacity:0.7;">(${p.role || 'Staff'})</span>
+                                        </span>
+                                    `).join('')}
+                                </div>
+                            ` : ''}
+                        </div>
+                    `;
+                }
+
+                return `
+                    <div class="glass-card animate-fade" style="padding:32px; border-left:5px solid var(--accent-red);">
+                        <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:20px; flex-wrap:wrap; gap:16px;">
+                            <div style="display:flex; gap:20px; align-items:center;">
+                                <div style="background:var(--accent-red); color:white; border-radius:14px; padding:12px 18px; text-align:center; min-width:65px; box-shadow:0 0 15px var(--accent-red-glow);">
+                                    <div style="font-size:11px; font-weight:900; letter-spacing:1px;">${monthStr}</div>
+                                    <div style="font-size:24px; font-weight:900; line-height:1; font-family:var(--font-title);">${dayStr}</div>
+                                </div>
+                                <div>
+                                    <h2 style="font-size:22px; font-family:var(--font-title); font-weight:900; margin:0 0 4px 0; color:white;">${(s.name || 'Sin título').toUpperCase()}</h2>
+                                    <p style="color:var(--text-muted); font-size:13px; margin:0;">
+                                        🗓️ ${s.serviceType || 'Servicio General'} • Ministerio: <span style="color:var(--accent-red); font-weight:800;">${s.ministry || 'Principal'}</span>
+                                    </p>
+                                </div>
+                            </div>
+                            
+                            <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                                <button class="primary" onclick="downloadPDF('${s._id}')" style="padding:10px 18px; font-size:11px; font-weight:800; border-radius:10px;">📄 DESCARGAR PDF</button>
+                                <button class="secondary" onclick="location.href='stage-live.html?id=${s._id}'" style="padding:10px 16px; font-size:11px; font-weight:800; border-radius:10px; border-color:var(--accent-blue); color:var(--accent-blue);">📊 VER CHARTS</button>
+                                ${absenceBtnHTML}
+                                ${prodControlsHTML}
+                                ${adminControlsHTML}
+                            </div>
+                        </div>
+
+                        ${absenceBadgeHTML}
+
+                        <div style="border-top:1px solid var(--border-color); padding-top:20px; margin-top:14px;">
+                            <h4 style="font-size:12px; color:var(--text-pink); font-weight:800; letter-spacing:1.5px; text-transform:uppercase; margin-bottom:12px;">REPERTORIO (${(s.songs || []).length} TEMAS)</h4>
+                            ${songsListHTML}
+                        </div>
+
+                        ${rosSectionHTML}
+                    </div>
+                `;
+            }).join('');
+        }
+
+        async function toggleArchiveSet(id, isCurrentlyArchived) {
+            try {
+                const res = await fetch(`/setlists/${id}`, {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
+                    body: JSON.stringify({ archived: !isCurrentlyArchived })
+                });
+                if (res.ok) {
+                    loadSetlists();
+                } else {
+                    alert("Error al archivar el servicio.");
+                }
+            } catch(e) {
+                alert("Error de conexión con el servidor.");
+            }
+        }
+
+        async function deleteSet(id) {
+            if (!confirm("¿Estás seguro de que deseas eliminar este setlist por completo?")) return;
+            try {
+                const res = await fetch(`/setlists/${id}`, {
+                    method: "DELETE",
+                    headers: { "Authorization": `Bearer ${token}` }
+                });
+                if (res.ok) {
+                    loadSetlists();
+                } else {
+                    alert("No se pudo eliminar el servicio.");
+                }
+            } catch(e) {
+                alert("Error de red.");
+            }
+        }
+
+        function downloadPDF(setId) {
+            const s = allSetlists.find(x => x._id === setId);
+            if (!s) return;
+
+            const zone = document.getElementById("pdf-render-zone");
+            zone.style.display = "block";
+            
+            zone.innerHTML = `
+                <div style="font-family: Arial, sans-serif; color: #111; padding: 20px;">
+                    <div style="border-bottom: 3px solid #ff2a4b; padding-bottom: 12px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: flex-end;">
+                        <div>
+                            <h1 style="font-size: 26px; margin: 0; font-weight: 900; color: #000;">CAN ALABANZA</h1>
+                            <p style="font-size: 13px; color: #666; margin: 4px 0 0 0;">ESCALETA DE SERVICIO MUSICAL</p>
+                        </div>
+                        <div style="text-align: right;">
+                            <div style="font-size: 18px; font-weight: bold; color: #ff2a4b;">${s.date}</div>
+                            <div style="font-size: 12px; color: #444;">${s.name.toUpperCase()}</div>
+                        </div>
+                    </div>
+
+                    <h3 style="font-size: 14px; color: #ff2a4b; margin-top: 20px; border-bottom: 1px solid #ccc; padding-bottom: 5px;">REPERTORIO Y CIFRADOS</h3>
+                    <table style="width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 13px;">
+                        <thead>
+                            <tr style="background: #f4f4f4; text-align: left;">
+                                <th style="padding: 8px; border: 1px solid #ddd;">#</th>
+                                <th style="padding: 8px; border: 1px solid #ddd;">CANCIÓN</th>
+                                <th style="padding: 8px; border: 1px solid #ddd;">ARTISTA</th>
+                                <th style="padding: 8px; border: 1px solid #ddd;">TONO</th>
+                                <th style="padding: 8px; border: 1px solid #ddd;">BPM</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${(s.songs || []).map((item, i) => `
+                                <tr>
+                                    <td style="padding: 8px; border: 1px solid #ddd; font-weight: bold;">${i + 1}</td>
+                                    <td style="padding: 8px; border: 1px solid #ddd; font-weight: bold;">${item.songId ? item.songId.name.toUpperCase() : 'Desconocido'}</td>
+                                    <td style="padding: 8px; border: 1px solid #ddd;">${item.songId ? (item.songId.artist || '-') : '-'}</td>
+                                    <td style="padding: 8px; border: 1px solid #ddd; font-weight: bold; color: #ff2a4b;">${item.setlistKey || (item.songId ? item.songId.key : '-')}</td>
+                                    <td style="padding: 8px; border: 1px solid #ddd;">${item.songId ? (item.songId.tempo || '-') : '-'}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+
+                    <div style="margin-top: 40px; text-align: center; font-size: 10px; color: #888; border-top: 1px solid #eee; padding-top: 10px;">
+                        CAN ALABANZA • Generado automáticamente el ${new Date().toLocaleDateString('es-ES')}
+                    </div>
+                </div>
+            `;
+
+            const opt = {
+                margin: 10,
+                filename: `CAN_Alabanza_${s.name.replace(/\s+/g, '_')}_${s.date}.pdf`,
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2 },
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            };
+
+            html2pdf().set(opt).from(zone).save().then(() => {
+                zone.style.display = "none";
+            });
+        }
+
+        let currentAbsenceSetId = null;
+        function openAbsenceModal(setId, setName, currentReason) {
+            currentAbsenceSetId = setId;
+            const nameEl = document.getElementById("absenceModalServiceName");
+            if (nameEl) nameEl.innerText = setName;
+            const reasonInput = document.getElementById("absenceModalReason");
+            if (reasonInput) reasonInput.value = currentReason || "";
+            const modal = document.getElementById("absenceModal");
+            if (modal) {
+                modal.style.display = "flex";
+                setTimeout(() => modal.classList.add("active"), 10);
+                if (reasonInput) reasonInput.focus();
+            }
+        }
+
+        function closeAbsenceModal() {
+            const modal = document.getElementById("absenceModal");
+            if (modal) {
+                modal.classList.remove("active");
+                setTimeout(() => modal.style.display = "none", 300);
+            }
+        }
+
+        async function submitSetlistAbsence() {
+            if (!currentAbsenceSetId) return;
+            const reasonInput = document.getElementById("absenceModalReason");
+            const reason = reasonInput ? reasonInput.value.trim() : "";
+            if (!reason) {
+                alert("Por favor escribe el motivo de tu inasistencia.");
+                return;
+            }
+            const storedUser = JSON.parse(localStorage.getItem("user") || "{}");
+            const memberName = (storedUser.name || "").trim();
+            if (!memberName) {
+                alert("No se identificó tu usuario.");
+                return;
+            }
+
+            try {
+                const res = await fetch(`/setlists/${currentAbsenceSetId}/absence`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
+                    body: JSON.stringify({ memberName, reason })
+                });
+                if (res.ok) {
+                    alert("✅ Notificación de inasistencia enviada correctamente al Pastor.");
+                    closeAbsenceModal();
+                    loadSetlists();
+                } else {
+                    const err = await res.json();
+                    alert("Error: " + (err.error || "No se pudo registrar la inasistencia."));
+                }
+            } catch(e) {
+                alert("Error de conexión: " + e.message);
+            }
+        }
+
+        loadSetlists();
+    </script>
+
+    <!-- Modal: Notificar Inasistencia al Pastor -->
+    <div id="absenceModal" class="modal-overlay" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.85); backdrop-filter:blur(12px); z-index:9999; justify-content:center; align-items:center; padding:20px;">
+        <div class="glass-card animate-scale" style="width:480px; max-width:100%; border-color:var(--accent-red); box-shadow:0 0 35px rgba(255,42,75,0.3); padding:28px;">
+            <div style="display:flex; align-items:center; gap:10px; margin-bottom:8px;">
+                <span style="font-size:24px;">⚠️</span>
+                <h3 style="color:white; margin:0; font-family:var(--font-title); font-weight:900; font-size:18px; letter-spacing:0.5px;">
+                    AVISAR INASISTENCIA AL SERVICIO
+                </h3>
+            </div>
+            <p id="absenceModalServiceName" style="color:var(--accent-red); font-size:12px; font-weight:800; text-transform:uppercase; margin:4px 0 16px 0; letter-spacing:1px;"></p>
+            
+            <label style="font-size:11px; color:var(--text-muted); font-weight:800; letter-spacing:1px; text-transform:uppercase; display:block; margin-bottom:8px;">
+                MOTIVO DE TU INASISTENCIA (Se notificará directamente al Pastor)
+            </label>
+            <textarea id="absenceModalReason" rows="3" placeholder="Ej: Compromiso familiar / Turno de trabajo / Motivo de salud..." style="width:100%; box-sizing:border-box; margin-bottom:20px; font-size:13px; line-height:1.5; padding:12px; border-radius:10px; background:rgba(0,0,0,0.4); color:white; border:1px solid var(--border-color);"></textarea>
+            
+            <div style="display:flex; gap:12px;">
+                <button type="button" onclick="submitSetlistAbsence()" class="primary" style="flex:2; background:var(--accent-red); border-color:var(--accent-red); color:white; font-weight:900; box-shadow:0 0 15px var(--accent-red-glow); padding:12px; border-radius:10px;">
+                    ENVIAR AVISO AL PASTOR
+                </button>
+                <button type="button" onclick="closeAbsenceModal()" class="secondary" style="flex:1; font-weight:800; padding:12px; border-radius:10px;">
+                    CANCELAR
+                </button>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

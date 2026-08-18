@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Letras para ProPresenter | CAN ALABANZA</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        body {
+            background-color: var(--bg-main);
+            color: var(--text-main);
+            min-height: 100vh;
+            padding-bottom: 60px;
+        }
+
+        .lyrics-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 16px;
+            margin-bottom: 24px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .slides-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+            gap: 20px;
+        }
+
+        .slide-card {
+            background: var(--bg-glass-heavy);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-pco);
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            position: relative;
+            transition: var(--transition);
+        }
+
+        .slide-card:hover {
+            border-color: var(--accent-purple);
+            box-shadow: 0 10px 30px var(--accent-purple-glow);
+        }
+
+        .slide-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 14px;
+        }
+
+        .slide-tag {
+            font-size: 11px;
+            letter-spacing: 2px;
+            font-weight: 900;
+            text-transform: uppercase;
+            font-family: var(--font-title);
+            color: var(--accent-purple);
+            background: rgba(192, 132, 252, 0.15);
+            border: 1px solid rgba(192, 132, 252, 0.3);
+            padding: 4px 12px;
+            border-radius: 20px;
+        }
+
+        .slide-body {
+            font-size: 17px;
+            line-height: 1.6;
+            color: white;
+            white-space: pre-wrap;
+            font-weight: 600;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 16px;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            margin-bottom: 14px;
+            min-height: 90px;
+            user-select: text;
+        }
+
+        .song-selector-pill {
+            padding: 10px 18px;
+            border-radius: 12px;
+            font-size: 13px;
+            font-weight: 800;
+            border: 1px solid var(--border-color);
+            background: rgba(0, 0, 0, 0.5);
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .song-selector-pill.active {
+            border-color: var(--accent-purple);
+            color: white;
+            background: rgba(192, 132, 252, 0.2);
+            box-shadow: 0 0 15px var(--accent-purple-glow);
+        }
+    </style>
+    <link rel="icon" type="image/png" href="can-logo.png">
+</head>
+<body class="animate-up">
+    <script>
+        let token = localStorage.getItem("token");
+        if (!token) window.location.href = "login.html";
+
+        const savedWallpaper = localStorage.getItem("cordaz_wallpaper");
+        if (savedWallpaper) {
+            document.body.classList.add("ios-wallpaper-active");
+            document.body.style.setProperty("--ios-bg-image", `url(${savedWallpaper})`);
+        }
+
+        // Tema Producción / Letras por Defecto
+        try {
+            const storedUser = JSON.parse(localStorage.getItem("user") || "{}");
+            const activeMin = localStorage.getItem("activeMinistry") || storedUser.ministry || "Principal";
+            const instStr = String(storedUser.instrument || '').toLowerCase();
+            const roleStr = String(storedUser.role || '').toLowerCase();
+
+            const isPastor = instStr.includes("pastor") || roleStr.includes("pastor") || activeMin === "Pastoral";
+            const isAudio = instStr.includes("audio") || (activeMin === "Produccion" && (storedUser.techBranch || '').includes("Audio"));
+            const isProd = activeMin === "Produccion" && !isAudio;
+            const isKids = activeMin === "KIDS";
+
+            if (isPastor) document.body.classList.add("theme-pastoral");
+            else if (isAudio) document.body.classList.add("theme-audio");
+            else if (isProd) document.body.classList.add("theme-prod");
+            else if (isKids) document.body.classList.add("theme-kids");
+            else document.body.classList.add("theme-principal");
+        } catch(e) {}
+    </script>
+
+    <!-- Navigation Header -->
+    <div class="pco-navbar">
+        <div style="display:flex; align-items:center; gap:20px;">
+            <button class="secondary" onclick="location.href='setlists.html'" style="padding:10px 18px; font-weight:800;">← VOLVER A SERVICIOS</button>
+            <span style="font-family:var(--font-title); font-weight:800; font-size:18px; letter-spacing:1px;">CAN <span style="color:var(--accent-purple); font-weight:400;">PRODUCCIÓN</span> • LETRAS PROPRESENTER</span>
+        </div>
+        <div style="display:flex; gap:10px;">
+            <button class="primary" onclick="copyFullSongProPresenter()" style="background:var(--accent-purple); border-color:var(--accent-purple); color:black; font-weight:900; padding:10px 20px; font-size:12px; box-shadow:0 0 20px var(--accent-purple-glow);">
+                📋 COPIAR TODAS LAS LETRAS LIMPIAS (PROPRESENTER)
+            </button>
+        </div>
+    </div>
+
+    <!-- Main Container -->
+    <div class="container animate-fade">
+        <!-- Header Info Canción -->
+        <div class="lyrics-header">
+            <div>
+                <h1 id="songTitleDisplay" style="font-size:30px; font-family:var(--font-title); font-weight:900; letter-spacing:-0.5px; color:white; margin:0;">Cargando canción...</h1>
+                <p id="songMetaDisplay" style="color:var(--text-muted); font-size:13px; margin:4px 0 0 0;">Copia y pega fácilmente las diapositivas formateadas para proyectar en ProPresenter.</p>
+            </div>
+            <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+                <span id="songDurationDisplay" class="status-pill confirmed" style="font-size:11px; padding:6px 14px; font-weight:900; border-color:var(--accent-blue); color:var(--accent-blue);">⏱️ DURACIÓN: -</span>
+                <span id="songKeyDisplay" class="status-pill confirmed" style="font-size:11px; padding:6px 14px; font-weight:900; border-color:var(--accent-purple); color:var(--accent-purple);">TONO: -</span>
+                <span id="songTempoDisplay" class="status-pill" style="font-size:11px; padding:6px 14px; font-weight:900;">BPM: -</span>
+            </div>
+        </div>
+
+        <!-- Selector de Canciones del Setlist -->
+        <div style="margin-bottom:24px;">
+            <h4 style="font-size:11px; color:var(--text-muted); font-weight:800; letter-spacing:1.5px; text-transform:uppercase; margin-bottom:10px;">SELECCIONAR CANCIÓN DEL SETLIST</h4>
+            <div id="songPickerBar" style="display:flex; gap:10px; overflow-x:auto; padding-bottom:8px;"></div>
+        </div>
+
+        <!-- Grid de Diapositivas Formateadas -->
+        <div class="slides-grid" id="slidesGrid">
+            <div style="text-align:center; grid-column:1/-1; padding:60px; color:var(--text-muted);">
+                <span style="font-size:32px;">⏳</span>
+                <p style="margin-top:10px;">Cargando diapositivas de letras...</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="musicUtils.js"></script>
+    <script>
+        const setId = new URLSearchParams(window.location.search).get("id");
+        let activeSetSongs = [];
+        let currentSongIndex = 0;
+
+        // Limpia cualquier residuo de acordes o etiquetas para ProPresenter puro
+        function cleanLyricsForProPresenter(rawText) {
+            if (!rawText) return "";
+            if (typeof cleanPureLyrics === 'function') {
+                return cleanPureLyrics(rawText);
+            }
+            return rawText
+                .split('\n')
+                .filter(line => !isLineOfChords(line)) // Elimina líneas que solo son acordes
+                .map(line => line.replace(/\[[^\]]+\]/g, '').trim()) // Elimina acordes inline tipo [D2]
+                .filter(line => line.length > 0)
+                .join('\n');
+        }
+
+        async function initLyrics() {
+            try {
+                if (setId) {
+                    const res = await fetch("/setlists");
+                    const data = await res.json();
+                    const s = (Array.isArray(data) ? data : []).find(x => x && x._id === setId);
+                    if (s && s.songs && s.songs.length > 0) {
+                        activeSetSongs = s.songs;
+                        renderSongPicker();
+                        loadSong(0);
+                        return;
+                    }
+                }
+
+                // Si no hay set ID, cargar catálogo general
+                const resSongs = await fetch("/songs");
+                const songs = await resSongs.json();
+                if (Array.isArray(songs) && songs.length > 0) {
+                    activeSetSongs = songs.map(song => ({ songId: song, setlistKey: song.key, tempo: song.tempo }));
+                    renderSongPicker();
+                    loadSong(0);
+                } else {
+                    document.getElementById("slidesGrid").innerHTML = "<p style='color:var(--text-muted); text-align:center; grid-column:1/-1;'>No hay canciones disponibles.</p>";
+                }
+            } catch(e) {
+                console.error("Error al cargar letras:", e);
+                document.getElementById("slidesGrid").innerHTML = `<p style='color:var(--status-red); text-align:center; grid-column:1/-1;'>⚠️ Error: ${e.message}</p>`;
+            }
+        }
+
+        function renderSongPicker() {
+            const container = document.getElementById("songPickerBar");
+            container.innerHTML = activeSetSongs.map((item, idx) => {
+                const s = item.songId || item;
+                const name = s.name || "Canción";
+                return `
+                    <button class="song-selector-pill ${idx === currentSongIndex ? 'active' : ''}" onclick="loadSong(${idx})">
+                        ${idx + 1}. ${name.toUpperCase()}
+                    </button>
+                `;
+            }).join('');
+        }
+
+        function loadSong(index) {
+            currentSongIndex = index;
+            renderSongPicker();
+
+            const item = activeSetSongs[index];
+            const song = item.songId || item;
+
+            const durationStr = song.duration ? `${song.duration} min` : '5:00 min';
+
+            document.getElementById("songTitleDisplay").innerText = (song.name || "Sin título").toUpperCase();
+            document.getElementById("songMetaDisplay").innerText = `Artista: ${song.artist || 'Desconocido'} • Tono: ${item.setlistKey || song.key || 'C'}`;
+            document.getElementById("songDurationDisplay").innerText = `⏱️ ${durationStr}`;
+            document.getElementById("songKeyDisplay").innerText = `TONO: ${item.setlistKey || song.key || 'C'}`;
+            document.getElementById("songTempoDisplay").innerText = `BPM: ${item.tempo || song.tempo || '68'}`;
+
+            const container = document.getElementById("slidesGrid");
+            const sections = (song.sections && song.sections.length > 0) ? song.sections : [];
+
+            if (sections.length === 0) {
+                container.innerHTML = `<p style='color:var(--text-muted); text-align:center; grid-column:1/-1; padding:40px;'>Esta canción no tiene secciones de letra registradas.</p>`;
+                return;
+            }
+
+            container.innerHTML = sections.map((sec, secIdx) => {
+                const cleanText = cleanLyricsForProPresenter(sec.lyrics || sec.chordSheet || "");
+                const isInstrumental = cleanText.length === 0;
+
+                return `
+                    <div class="slide-card animate-fade">
+                        <div class="slide-header">
+                            <span class="slide-tag">${(sec.name || 'SECCIÓN').toUpperCase()}</span>
+                            <span style="font-size:11px; color:var(--text-muted); font-weight:800;">SLIDE #${secIdx + 1}</span>
+                        </div>
+                        
+                        <div class="slide-body" id="slideText_${secIdx}">
+                            ${isInstrumental ? '<span style="color:var(--text-muted); font-style:italic;">[SECCIÓN INSTRUMENTAL / SIN LETRA]</span>' : cleanText}
+                        </div>
+
+                        <div style="display:flex; justify-content:flex-end; margin-top:8px;">
+                            ${!isInstrumental ? `
+                                <button class="secondary" onclick="copySlideText(${secIdx})" style="font-size:11px; font-weight:800; padding:8px 16px; border-color:var(--accent-purple); color:var(--accent-purple);">
+                                    📋 COPIAR ESTA SECCIÓN
+                                </button>
+                            ` : `
+                                <button class="secondary" disabled style="font-size:11px; opacity:0.5; padding:8px 16px;">INSTRUMENTAL</button>
+                            `}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function copySlideText(index) {
+            const item = activeSetSongs[currentSongIndex];
+            const song = item.songId || item;
+            const sec = song.sections[index];
+            const cleanText = cleanLyricsForProPresenter(sec.lyrics || sec.chordSheet || "");
+
+            navigator.clipboard.writeText(cleanText).then(() => {
+                alert(`✅ Letra de "${sec.name}" copiada al portapapeles.`);
+            });
+        }
+
+        function copyFullSongProPresenter() {
+            const item = activeSetSongs[currentSongIndex];
+            const song = item.songId || item;
+            const sections = song.sections || [];
+
+            const formattedFullText = sections.map(sec => {
+                const cleanText = cleanLyricsForProPresenter(sec.lyrics || sec.chordSheet || "");
+                if (!cleanText) return null;
+                return `[${(sec.name || 'SECCIÓN').toUpperCase()}]\n${cleanText}`;
+            }).filter(Boolean).join('\n\n');
+
+            if (!formattedFullText) {
+                alert("No hay letras disponibles para copiar.");
+                return;
+            }
+
+            navigator.clipboard.writeText(formattedFullText).then(() => {
+                alert(`🎉 ¡Todas las letras limpias de "${song.name}" copiadas con formato ProPresenter!`);
+            });
+        }
+
+        initLyrics();
+    </script>
+</body>
+</html>

@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Repertorio & Charts | CAN ALABANZA</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+        }
+        
+        .header-bar { 
+            flex-shrink: 0; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            padding: 16px 40px; 
+            background: rgba(8, 8, 12, 0.7); 
+            backdrop-filter: blur(20px) saturate(160%);
+            -webkit-backdrop-filter: blur(20px) saturate(160%);
+            border-bottom: 1px solid var(--border-color);
+            z-index: 50; 
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.4);
+        }
+        
+        .main-layout {
+            flex-grow: 1;
+            display: flex;
+            overflow: hidden;
+            width: 100%;
+        }
+        
+        .list-panel { 
+            width: 360px; 
+            flex-shrink: 0; 
+            background: rgba(10, 8, 12, 0.4); 
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border-right: 1px solid var(--border-color); 
+            display: flex; 
+            flex-direction: column; 
+            border-radius: 0;
+            box-shadow: none;
+        }
+
+        .search-area {
+            padding: 24px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .song-list {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding: 20px;
+        }
+
+        .song-item { 
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--border-color);
+            padding: 18px 20px; 
+            border-radius: 14px; 
+            margin-bottom: 12px; 
+            cursor: pointer; 
+            transition: var(--transition); 
+        }
+
+        .song-item:hover, .song-item.active { 
+            border-color: var(--accent-red); 
+            background: rgba(255, 42, 75, 0.04); 
+            transform: translateX(4px);
+        }
+
+        .song-item.active {
+            box-shadow: 0 8px 24px rgba(255, 42, 75, 0.06);
+        }
+        
+        .viewer-panel { 
+            flex-grow: 1; 
+            padding: 50px; 
+            overflow-y: auto; 
+            background: transparent;
+            position: relative; 
+            border-radius: 0;
+            border: none;
+            box-shadow: none;
+        }
+
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: var(--text-muted);
+            font-size: 16px;
+            text-align: center;
+        }
+
+        .mixer-controls {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: var(--bg-glass);
+            border: 1px solid var(--border-color);
+            padding: 16px 24px;
+            border-radius: var(--radius-pco);
+            margin-bottom: 30px;
+            box-shadow: var(--shadow-glass);
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+    </style>
+    <link rel="icon" type="image/png" href="can-logo.png">
+</head>
+<body class="animate-fade">
+    <script>
+        let token = localStorage.getItem("token");
+        if (token && token.length > 1000) {
+            localStorage.removeItem("token");
+            window.location.href = "login.html";
+        }
+        if (!token) window.location.href = "login.html";
+
+        const savedWallpaper = localStorage.getItem("cordaz_wallpaper");
+        if (savedWallpaper) {
+            document.body.classList.add("ios-wallpaper-active");
+            document.body.style.setProperty("--ios-bg-image", `url(${savedWallpaper})`);
+        }
+
+        // Aplicar Tema Dinámico
+        try {
+            const storedUser = JSON.parse(localStorage.getItem("user") || "{}");
+            const activeMin = localStorage.getItem("activeMinistry") || storedUser.ministry || "Principal";
+            const instStr = String(storedUser.instrument || '').toLowerCase();
+            const roleStr = String(storedUser.role || '').toLowerCase();
+
+            const isPastor = instStr.includes("pastor") || roleStr.includes("pastor") || activeMin === "Pastoral";
+            const isAudio = instStr.includes("audio") || (activeMin === "Produccion" && (storedUser.techBranch || '').includes("Audio"));
+            const isProd = activeMin === "Produccion" && !isAudio;
+            const isKids = activeMin === "KIDS";
+
+            if (isPastor) document.body.classList.add("theme-pastoral");
+            else if (isAudio) document.body.classList.add("theme-audio");
+            else if (isProd) document.body.classList.add("theme-prod");
+            else if (isKids) document.body.classList.add("theme-kids");
+            else document.body.classList.add("theme-principal");
+        } catch(e) {}
+    </script>
+
+    <!-- Header Navigation -->
+    <header class="header-bar">
+        <div style="display:flex; align-items:center; gap:20px;">
+            <button class="secondary" onclick="location.href='index.html'" style="padding:10px 18px; font-weight:800;">← VOLVER AL HUB</button>
+            <h2 style="margin:0; font-family:var(--font-title); font-size:20px; font-weight:900; letter-spacing:1px;">CAN <span style="color:var(--accent-red); font-weight:400;">ALABANZA</span> • REPERTORIO</h2>
+        </div>
+        <div style="display:flex; gap:12px;">
+            <button class="primary" id="btnNewSong" onclick="location.href='add-song.html'" style="padding:10px 20px; font-size:12px; font-weight:800;">+ NUEVA CANCIÓN</button>
+        </div>
+    </header>
+
+    <div class="main-layout">
+        <!-- Panel Izquierdo: Lista de Canciones -->
+        <aside class="list-panel">
+            <div class="search-area">
+                <input type="text" id="search" placeholder="🔍 Buscar por nombre o artista..." oninput="filterSongs()" style="background:rgba(0,0,0,0.5);">
+            </div>
+            <div class="song-list" id="songsList">
+                <div class="empty-state" style="padding:40px 20px;">Cargando repertorio...</div>
+            </div>
+        </aside>
+
+        <!-- Panel Derecho: Visor de Cifrado (ChartBuilder) -->
+        <main class="viewer-panel" id="viewerPanel">
+            <div class="empty-state">
+                <span style="font-size:48px; margin-bottom:16px;">🎸</span>
+                <p style="font-weight:800; font-size:18px; color:white;">SELECCIONA UNA CANCIÓN</p>
+                <p style="font-size:13px; margin-top:4px;">Explora el catálogo completo con acordes, letras y transposición en vivo.</p>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modal para Editar Canción -->
+    <div id="songModal" class="modal-overlay">
+        <div class="modal-content" style="max-width:750px;">
+            <h2 id="modalTitle" style="font-family:var(--font-title); font-weight:900; font-size:22px; margin-bottom:20px; color:var(--accent-red);">EDITAR CANCIÓN</h2>
+            <input type="hidden" id="sId">
+            <div class="pco-input-group"><label>TÍTULO</label><input type="text" id="sName"></div>
+            <div class="pco-input-group"><label>ARTISTA</label><input type="text" id="sArtist"></div>
+            
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:15px;">
+                <div class="pco-input-group">
+                    <label>TONO ORIGINAL</label>
+                    <select id="sKey">
+                        <option value="C">C</option><option value="C#">C#</option><option value="Db">Db</option>
+                        <option value="D">D</option><option value="D#">D#</option><option value="Eb">Eb</option>
+                        <option value="E">E</option><option value="F">F</option><option value="F#">F#</option>
+                        <option value="Gb">Gb</option><option value="G">G</option><option value="G#">G#</option>
+                        <option value="Ab">Ab</option><option value="A">A</option><option value="A#">A#</option>
+                        <option value="Bb">Bb</option><option value="B">B</option>
+                    </select>
+                </div>
+                <div class="pco-input-group"><label>BPM (TEMPO)</label><input type="text" id="sTempo"></div>
+            </div>
+
+            <div class="pco-input-group"><label>LINK DE REFERENCIA</label><input type="text" id="sLink"></div>
+            
+            <h3 style="font-family:var(--font-title); font-size:14px; margin:20px 0 10px 0; color:var(--accent-blue); text-transform:uppercase; letter-spacing:1px;">ESTRUCTURA DE ACORDES</h3>
+            <div id="sectionsEditor" style="max-height:220px; overflow-y:auto; padding-right:10px; margin-bottom:20px;"></div>
+            
+            <button class="secondary" onclick="addSectionEditor()" style="width:100%; margin-bottom:20px; padding:10px; font-size:11px;">+ AGREGAR SECCIÓN</button>
+
+            <div style="display:flex; justify-content:flex-end; gap:12px;">
+                <button class="secondary" onclick="closeSongModal()">CANCELAR</button>
+                <button class="primary" onclick="saveSongModal()">GUARDAR CAMBIOS</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="musicUtils.js"></script>
+    <script src="overview.js"></script>
+</body>
+</html>
