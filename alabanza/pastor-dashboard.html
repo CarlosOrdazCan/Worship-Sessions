@@ -490,12 +490,16 @@
                 const totalUsers = allGlobalUsers.length;
                 document.getElementById("kpiTotalUsers").innerText = totalUsers;
 
-                const principalUsers = allGlobalUsers.filter(u => (u.ministry || '').toLowerCase().includes('principal') || (!u.ministry && !u.techBranch));
+                const principalUsers = allGlobalUsers.filter(u => (u.ministry || '').toLowerCase().includes('principal') || (!u.ministry && !u.techBranch && !(u.instrument || '').toLowerCase().includes('audio')));
                 const kidsUsers = allGlobalUsers.filter(u => (u.ministry || '').toLowerCase().includes('kids'));
-                const audioUsers = allGlobalUsers.filter(u => (u.ministry || '').toLowerCase().includes('audio') || (u.instrument || '').toLowerCase().includes('audio'));
-                const prodUsers = allGlobalUsers.filter(u => (u.ministry || '').toLowerCase().includes('prod') || u.techBranch);
+                const prodAudioUsers = allGlobalUsers.filter(u => 
+                    (u.ministry || '').toLowerCase().includes('prod') || 
+                    (u.ministry || '').toLowerCase().includes('audio') || 
+                    (u.instrument || '').toLowerCase().includes('audio') || 
+                    u.techBranch
+                );
 
-                document.getElementById("kpiUsersDetail").innerText = principalUsers.length + " Alabanza, " + kidsUsers.length + " Kids, " + prodUsers.length + " Producción";
+                document.getElementById("kpiUsersDetail").innerText = principalUsers.length + " Alabanza, " + kidsUsers.length + " Kids, " + prodAudioUsers.length + " Producción & Audio";
 
                 document.getElementById("statusPrincipal").innerText = principalUsers.length + " Músicos Activos";
                 document.getElementById("statusKids").innerText = kidsUsers.length + " Músicos Kids";
@@ -504,8 +508,7 @@
                 const distContainer = document.getElementById("teamDistribution");
                 distContainer.innerHTML = [
                     { name: 'Alabanza Principal', count: principalUsers.length, color: 'var(--accent-red)' },
-                    { name: 'Producción & Cabina', count: prodUsers.length, color: 'var(--accent-purple)' },
-                    { name: 'Audio (FOH / IEMs)', count: audioUsers.length, color: 'var(--audio-accent)' },
+                    { name: 'Producción & Audio', count: prodAudioUsers.length, color: 'var(--accent-purple)' },
                     { name: 'Alabanza Kids', count: kidsUsers.length, color: 'var(--accent-blue)' }
                 ].map(d => {
                     const pct = totalUsers > 0 ? Math.round((d.count / totalUsers) * 100) : 0;
