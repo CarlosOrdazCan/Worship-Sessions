@@ -172,9 +172,6 @@
 
     <script src="musicUtils.js?v=20260818_final"></script>
     <script>
-        const token = localStorage.getItem("token");
-        if (!token) window.location.href = "login.html";
-
         const urlParams = new URLSearchParams(window.location.search);
         let songId = urlParams.get('id');
 
