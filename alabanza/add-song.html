@@ -170,7 +170,7 @@
         <div id="sectionsContainer" style="display:flex; flex-direction:column; gap:16px;"></div>
     </div>
 
-    <script src="musicUtils.js"></script>
+    <script src="musicUtils.js?v=20260818_final"></script>
     <script>
         const token = localStorage.getItem("token");
         if (!token) window.location.href = "login.html";
@@ -240,43 +240,50 @@
         }
 
         function addSection(name = "Verso 1", chords = "", lyrics = "", chordSheet = "") {
-            if (typeof name !== 'string') name = "Verso 1";
-            if (typeof chords !== 'string') chords = "";
-            if (typeof lyrics !== 'string') lyrics = "";
-            if (typeof chordSheet !== 'string') chordSheet = "";
+            try {
+                if (typeof name !== 'string' || !name) name = "Verso 1";
+                if (typeof chords !== 'string') chords = "";
+                if (typeof lyrics !== 'string') lyrics = "";
+                if (typeof chordSheet !== 'string') chordSheet = "";
 
-            const div = document.createElement("div");
-            div.className = "section-card animate-fade";
+                const container = document.getElementById("sectionsContainer");
+                if (!container) return;
 
-            const isStandard = SECTION_OPTIONS.includes(name) && name !== "Otro...";
-            const selectedVal = isStandard ? name : "Otro...";
-            const customVal = isStandard ? "" : name;
+                const div = document.createElement("div");
+                div.className = "section-card animate-fade";
 
-            const optionsHTML = SECTION_OPTIONS.map(opt => `
-                <option value="${opt}" ${opt === selectedVal ? 'selected' : ''}>${opt}</option>
-            `).join('');
+                const isStandard = SECTION_OPTIONS.includes(name) && name !== "Otro...";
+                const selectedVal = isStandard ? name : "Otro...";
+                const customVal = isStandard ? "" : name;
 
-            div.innerHTML = `
-                <div style="display:grid; grid-template-columns: 1.2fr 2fr 40px; gap:15px; margin-bottom:14px; align-items:start;">
-                    <div>
-                        <label>TIPO DE SECCIÓN</label>
-                        <select class="sec-select" onchange="handleSectionSelectChange(this)">
-                            ${optionsHTML}
-                        </select>
-                        <input type="text" class="sec-custom-name" placeholder="Especificar nombre..." value="${customVal}" style="${selectedVal === 'Otro...' ? 'display:block;' : 'display:none;'}">
+                const optionsHTML = SECTION_OPTIONS.map(opt => `
+                    <option value="${opt}" ${opt === selectedVal ? 'selected' : ''}>${opt}</option>
+                `).join('');
+
+                div.innerHTML = `
+                    <div style="display:grid; grid-template-columns: 1.2fr 2fr 40px; gap:15px; margin-bottom:14px; align-items:start;">
+                        <div>
+                            <label>TIPO DE SECCIÓN</label>
+                            <select class="sec-select" onchange="handleSectionSelectChange(this)">
+                                ${optionsHTML}
+                            </select>
+                            <input type="text" class="sec-custom-name" placeholder="Especificar nombre..." value="${customVal}" style="${selectedVal === 'Otro...' ? 'display:block;' : 'display:none;'}">
+                        </div>
+                        <div>
+                            <label>ACORDES GENERALES (Guía rápida)</label>
+                            <input class="sec-chords" value="${chords}" style="font-family:var(--font-chords); font-size:15px; color:var(--accent-blue); font-weight:bold;" placeholder="Ej: D2 - F#m7 - A5">
+                        </div>
+                        <button type="button" class="danger" onclick="this.closest('.section-card').remove()" style="padding:12px; height:46px; border-radius:10px; margin-top:20px;" title="Eliminar sección">✕</button>
                     </div>
                     <div>
-                        <label>ACORDES GENERALES (Guía rápida)</label>
-                        <input class="sec-chords" value="${chords}" style="font-family:var(--font-chords); font-size:15px; color:var(--accent-blue); font-weight:bold;" placeholder="Ej: D2 - F#m7 - A5">
+                        <label>LETRA / PARTITURA CON ACORDES ALINEADOS (Chart)</label>
+                        <textarea class="sec-lyrics" rows="4" style="font-family:var(--font-chords); font-size:13px; line-height:1.6; resize:vertical; white-space:pre;" placeholder="Pega aquí la letra con los acordes encima exactamente donde se tocan...">${chordSheet || lyrics || ''}</textarea>
                     </div>
-                    <button class="danger" onclick="this.parentElement.parentElement.remove()" style="padding:12px; height:46px; border-radius:10px; margin-top:20px;" title="Eliminar sección">✕</button>
-                </div>
-                <div>
-                    <label>LETRA / PARTITURA CON ACORDES ALINEADOS (Chart)</label>
-                    <textarea class="sec-lyrics" rows="4" style="font-family:var(--font-chords); font-size:13px; line-height:1.6; resize:vertical; white-space:pre;" placeholder="Pega aquí la letra con los acordes encima exactamente donde se tocan...">${chordSheet || lyrics || ''}</textarea>
-                </div>
-            `;
-            document.getElementById("sectionsContainer").appendChild(div);
+                `;
+                container.appendChild(div);
+            } catch (err) {
+                console.error("Error en addSection:", err);
+            }
         }
 
         function handleSectionSelectChange(select) {
@@ -366,56 +373,65 @@
         
         // --- PARSER INTELIGENTE BILINGÜE DE ACORDES Y LETRAS ---
         function parseRawSong() {
-            const rawText = document.getElementById("rawSongText").value;
-            if (!rawText.trim()) return alert("Por favor pega el texto de la canción primero.");
+            try {
+                const rawText = document.getElementById("rawSongText").value;
+                if (!rawText.trim()) return alert("Por favor pega el texto de la canción primero.");
 
-            // 1. Auto-detectar Título / Artista / Tono si vienen como metadata al inicio
-            const titleMatch = rawText.match(/^(?:title|t[ií]tulo|canci[oó]n)\s*:\s*(.+)$/im);
-            if (titleMatch && titleMatch[1]) {
-                const sNameInput = document.getElementById("sName");
-                if (!sNameInput.value) sNameInput.value = titleMatch[1].trim();
-            }
+                // 1. Auto-detectar Título / Artista / Tono si vienen como metadata al inicio
+                const titleMatch = rawText.match(/^(?:title|t[ií]tulo|canci[oó]n)\s*:\s*(.+)$/im);
+                if (titleMatch && titleMatch[1]) {
+                    const sNameInput = document.getElementById("sName");
+                    if (sNameInput && !sNameInput.value) sNameInput.value = titleMatch[1].trim();
+                }
 
-            const artistMatch = rawText.match(/^(?:artist|artista|autor|banda)\s*:\s*(.+)$/im);
-            if (artistMatch && artistMatch[1]) {
-                const sArtistInput = document.getElementById("sArtist");
-                if (!sArtistInput.value) sArtistInput.value = artistMatch[1].trim();
-            }
+                const artistMatch = rawText.match(/^(?:artist|artista|autor|banda)\s*:\s*(.+)$/im);
+                if (artistMatch && artistMatch[1]) {
+                    const sArtistInput = document.getElementById("sArtist");
+                    if (sArtistInput && !sArtistInput.value) sArtistInput.value = artistMatch[1].trim();
+                }
 
-            const keyMatch = rawText.match(/^(?:key|tono|tonalidad)\s*:\s*([A-Ga-g][#b]?m?)/im);
-            if (keyMatch && keyMatch[1]) {
-                const pureKey = keyMatch[1].replace(/m$/i, '').toUpperCase();
-                const keySelect = document.getElementById("sKey");
-                if (keySelect) {
-                    for (let opt of keySelect.options) {
-                        if (opt.value.toUpperCase() === pureKey) {
-                            keySelect.value = opt.value;
-                            break;
+                const keyMatch = rawText.match(/^(?:key|tono|tonalidad)\s*:\s*([A-Ga-g][#b]?m?)/im);
+                if (keyMatch && keyMatch[1]) {
+                    const pureKey = keyMatch[1].replace(/m$/i, '').toUpperCase();
+                    const keySelect = document.getElementById("sKey");
+                    if (keySelect) {
+                        for (let opt of keySelect.options) {
+                            if (opt.value.toUpperCase() === pureKey) {
+                                keySelect.value = opt.value;
+                                break;
+                            }
                         }
                     }
                 }
-            }
 
-            // 2. Parsear secciones con motor bilingüe de musicUtils
-            const parsedSections = smartSongParser(rawText);
+                // 2. Parsear secciones con motor bilingüe de musicUtils
+                const parsedSections = typeof smartSongParser === 'function' ? smartSongParser(rawText) : [];
 
-            if (parsedSections.length > 0) {
-                document.getElementById("sectionsContainer").innerHTML = "";
-                parsedSections.forEach(sec => addSection(sec.name, sec.chords, sec.lyrics, sec.chordSheet));
-                
-                // Efecto visual de confirmación
-                const btn = document.querySelector(".glass-card button.primary");
-                if (btn) {
-                    const oldText = btn.innerText;
-                    btn.innerText = `✓ ${parsedSections.length} SECCIONES INTERPRETADAS`;
-                    btn.style.background = "#10b981";
-                    setTimeout(() => {
-                        btn.innerText = oldText;
-                        btn.style.background = "";
-                    }, 2500);
+                const container = document.getElementById("sectionsContainer");
+                if (parsedSections.length > 0) {
+                    container.innerHTML = "";
+                    parsedSections.forEach(sec => addSection(sec.name, sec.chords, sec.lyrics, sec.chordSheet));
+                    
+                    // Efecto visual de confirmación
+                    const btn = document.querySelector("button[onclick='parseRawSong()']");
+                    if (btn) {
+                        const oldText = btn.innerText;
+                        btn.innerText = `✓ ${parsedSections.length} SECCIONES INTERPRETADAS`;
+                        btn.style.background = "#10b981";
+                        setTimeout(() => {
+                            btn.innerText = oldText;
+                            btn.style.background = "";
+                        }, 2500);
+                    }
+                } else {
+                    // Fallback seguro si el texto no tiene saltos de sección
+                    container.innerHTML = "";
+                    addSection("Verso 1", "", rawText, rawText);
+                    alert("Se importó la canción en una sección. Puedes usar '+ AGREGAR SECCIÓN' para dividirla.");
                 }
-            } else {
-                alert("No se pudo detectar ninguna estructura válida. Verifica el formato e intenta de nuevo.");
+            } catch (err) {
+                console.error("Error en parseRawSong:", err);
+                alert("Error al interpretar: " + err.message);
             }
         }
 
