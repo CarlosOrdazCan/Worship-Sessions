@@ -14,16 +14,50 @@
     <!-- CONTENEDOR GLOBAL DE NOTIFICACIONES FLOTANTES (TOAST) -->
     <div id="toast-container" class="toast-container"></div>
 
-    <!-- ================= PANTALLA 1: LOGIN ================= -->
-    <!-- PRE-LOGIN APP SELECTION -->
+    <!-- ================= PANTALLA 0: SELECCIÓN DE APP ================= -->
     <div id="app-choice-screen" class="screen active">
+        <!-- Decoración de fondo -->
+        <div class="choice-bg-orb choice-orb-1"></div>
+        <div class="choice-bg-orb choice-orb-2"></div>
+
         <div class="choice-card">
-            <h2>Selecciona la aplicación</h2>
-            <p>¿Quieres entrar a la plataforma de Alabanza o a Worship Sessions?</p>
-            <div class="choice-buttons">
-                <button class="btn-main" id="btn-alabanza">Alabanza</button>
-                <button class="btn-main" id="btn-worship">Worship Sessions</button>
+            <!-- Logo / ícono -->
+            <div class="choice-logo">
+                <i class="fas fa-fire-alt"></i>
             </div>
+
+            <h1 class="choice-title">Centro de Avivamiento Naucalpan</h1>
+            <p class="choice-subtitle">Selecciona la plataforma a la que deseas acceder</p>
+
+            <div class="choice-buttons">
+                <!-- Alabanza: redirige directamente -->
+                <button
+                    class="choice-btn choice-btn-alabanza"
+                    id="btn-alabanza"
+                    onclick="window.location.href='./alabanza/index.html'">
+                    <span class="choice-btn-icon"><i class="fas fa-music"></i></span>
+                    <span class="choice-btn-text">
+                        <strong>Alabanza</strong>
+                        <small>Plataforma de canciones y letras</small>
+                    </span>
+                    <i class="fas fa-chevron-right choice-btn-arrow"></i>
+                </button>
+
+                <!-- Worship Sessions: muestra el login -->
+                <button
+                    class="choice-btn choice-btn-worship"
+                    id="btn-worship"
+                    onclick="document.getElementById('app-choice-screen').classList.remove('active');document.getElementById('app-choice-screen').style.display='none';var ls=document.getElementById('login-screen');ls.style.display='flex';ls.classList.add('active');">
+                    <span class="choice-btn-icon"><i class="fas fa-calendar-alt"></i></span>
+                    <span class="choice-btn-text">
+                        <strong>Worship Sessions</strong>
+                        <small>Planeación y gestión de servicios</small>
+                    </span>
+                    <i class="fas fa-chevron-right choice-btn-arrow"></i>
+                </button>
+            </div>
+
+            <p class="choice-footer">v3.0.0 Enterprise &nbsp;&middot;&nbsp; CAN</p>
         </div>
     </div>
 
