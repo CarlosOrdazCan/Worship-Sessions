@@ -310,26 +310,6 @@
                     </div>
                 </div>
 
-                <!-- SECCIÓN DE REQUISICIONES DE EQUIPO (PASTORAL REVIEW) -->
-                <div class="glass-card" style="border-left:6px solid #f59e0b;">
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:10px;">
-                        <h3 style="font-size:15px; font-family:var(--font-title); font-weight:900; color:white; letter-spacing:1px; margin:0; text-transform:uppercase;">
-                            📋 REQUISICIONES & COTIZACIONES DE EQUIPO
-                        </h3>
-                        <span class="status-pill" style="background:rgba(245,158,11,0.15); color:#f59e0b; border-color:rgba(245,158,11,0.3); font-size:9px; font-weight:800;">
-                            SOLICITUDES DE ALABANZA & AUDIO
-                        </span>
-                    </div>
-
-                    <!-- Banner de Aviso No Oficial -->
-                    <div style="background:rgba(245, 158, 11, 0.08); border:1px dashed rgba(245, 158, 11, 0.4); border-radius:10px; padding:12px 16px; margin-bottom:18px; font-size:11px; color:#fbbf24; line-height:1.5;">
-                        <b>⚠️ NOTA INFORMATIVA:</b> Esta aprobación pastoral representa un <b>visto bueno de prioridad ministerial</b> para que el equipo de Alabanza conozca el criterio pastoral. Para que la compra sea <b>OFICIAL</b>, deberá tramitarse y aprobarse a través del área de Administración General.
-                    </div>
-
-                    <div id="pastorReqsList" style="display:flex; flex-direction:column; gap:14px;">
-                        <p style="color:var(--text-muted); font-size:12px;">Cargando requisiciones...</p>
-                    </div>
-                </div>
             </div>
 
             <!-- Columna Derecha: Estatus de los 4 Frentes & Acciones Rápidas -->
@@ -842,6 +822,7 @@
                 document.getElementById("kpiPendingReqs").innerText = pending.length;
 
                 const container = document.getElementById("pastorReqsList");
+                if (!container) return;
                 if (allRequisitions.length === 0) {
                     container.innerHTML = "<p style='color:var(--text-muted); font-size:12px;'>No hay requisiciones de equipo registradas.</p>";
                     return;
