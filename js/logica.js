@@ -26,7 +26,7 @@ const defaultDB = {
     // Pastores
     "egonzalez": { password: "worship2026**", rol: "pastor", nombre: "Efrain Gonzalez", area: "Pastoral" },
     "mgonzalez": { password: "worship2026**", rol: "pastor", nombre: "Martha Gonzalez", area: "Pastoral" },
-    };
+    },
     canciones: [
         { id: "1", titulo: "Tumbas a Jardines", tono: "B", autor: "Elevation Worship", linkAcordes: "https://www.lacuerda.net", linkVideo: "https://www.youtube.com", activo: true },
         { id: "2", titulo: "Digno de Alabar", tono: "G", autor: "Phil Wickham", linkAcordes: "https://www.lacuerda.net", linkVideo: "https://www.youtube.com", activo: true },
@@ -57,8 +57,8 @@ const defaultDB = {
         guitarra: "maestro1",
         bajo: "alumno3",
         canto: "maestro2"
-    cursos: [], // will hold course objects with materias and asignaciones
-    }
+    },
+    cursos: [] // will hold course objects with materias and asignaciones
 };
 
 // MOTOR DE BASE DE DATOS LOCAL

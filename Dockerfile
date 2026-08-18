@@ -1,5 +1,14 @@
-FROM nginx:alpine
-COPY . /usr/share/nginx/html
+FROM node:20-alpine
 
-# Expose port 80 (default for nginx)
-EXPOSE 80
+WORKDIR /app
+
+# Instalar dependencias primero (cache layer)
+COPY package.json ./
+RUN npm install --production
+
+# Copiar todo el código
+COPY . .
+
+EXPOSE 8080
+
+CMD ["node", "server.js"]
