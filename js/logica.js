@@ -143,6 +143,83 @@ function showToast(mensaje, tipo = 'success') {
     }, 3500);
 }
 
+// SYSTEM DE CONTROL DE PANTALLAS (PANTALLA ELECCION, LOGIN, APP)
+function mostrarPantalla(idPantalla) {
+    document.querySelectorAll('.screen').forEach(s => {
+        s.classList.remove('active');
+        s.style.display = 'none';
+    });
+    const target = document.getElementById(idPantalla);
+    if (target) {
+        target.style.display = 'flex';
+        target.classList.add('active');
+    }
+}
+
+// MENÚS DINÁMICOS SEGÚN EL ROL DEL USUARIO
+const menusConfig = {
+    admin: `
+        <li class="nav-item">
+            <a href="#" class="nav-link active" onclick="cambiarVista('admin'); return false;">
+                <i class="fas fa-user-shield"></i> Administrador
+            </a>
+        </li>
+        <li class="nav-item">
+            <a href="#" class="nav-link" onclick="cambiarVista('pastor'); return false;">
+                <i class="fas fa-chart-bar"></i> Reportes Pastorales
+            </a>
+        </li>
+        <li class="nav-item">
+            <a href="#" class="nav-link" onclick="cambiarVista('maestro'); return false;">
+                <i class="fas fa-chalkboard-teacher"></i> Mis Alumnos (Maestro)
+            </a>
+        </li>
+        <li class="nav-item">
+            <a href="#" class="nav-link" onclick="cambiarVista('adoracion'); return false;">
+                <i class="fas fa-music"></i> Director de Adoración
+            </a>
+        </li>
+        <li class="nav-item">
+            <a href="#" class="nav-link" onclick="cambiarVista('estudiante'); return false;">
+                <i class="fas fa-graduation-cap"></i> Vista Estudiante
+            </a>
+        </li>
+    `,
+    pastor: `
+        <li class="nav-item">
+            <a href="#" class="nav-link active" onclick="cambiarVista('pastor'); return false;">
+                <i class="fas fa-chart-line"></i> Dashboard Pastoral
+            </a>
+        </li>
+        <li class="nav-item">
+            <a href="#" class="nav-link" onclick="cambiarVista('adoracion'); return false;">
+                <i class="fas fa-music"></i> Setlist y Ensamble
+            </a>
+        </li>
+    `,
+    maestro: `
+        <li class="nav-item">
+            <a href="#" class="nav-link active" onclick="cambiarVista('maestro'); return false;">
+                <i class="fas fa-chalkboard-teacher"></i> Mi Especialidad
+            </a>
+        </li>
+    `,
+    adoracion: `
+        <li class="nav-item">
+            <a href="#" class="nav-link active" onclick="cambiarVista('adoracion'); return false;">
+                <i class="fas fa-music"></i> Ensamble & Setlist
+            </a>
+        </li>
+    `,
+    estudiante: `
+        <li class="nav-item">
+            <a href="#" class="nav-link active" onclick="cambiarVista('estudiante'); return false;">
+                <i class="fas fa-graduation-cap"></i> Mi Panel de Alumno
+            </a>
+        </li>
+    `
+};
+
 // -------------------------------------------------------------
 // EVENTOS DE SESIÓN
 // -------------------------------------------------------------
@@ -159,9 +236,7 @@ function iniciarSesion(event) {
         errorMsg.style.display = 'none';
         usuarioActual = { ...db.usuarios[inputUser], username: inputUser };
         
-        document.getElementById('login-screen').classList.remove('active');
-        document.getElementById('app-screen').classList.add('active');
-        
+        mostrarPantalla('app-screen');
         configurarInterfaz(usuarioActual);
         showToast(`¡Bienvenido de vuelta, ${usuarioActual.nombre}!`, 'success');
     } else {
@@ -176,8 +251,7 @@ function cerrarSesion() {
     usuarioActual = null;
     document.getElementById('login-user').value = '';
     document.getElementById('login-pass').value = '';
-    document.getElementById('app-screen').classList.remove('active');
-    document.getElementById('login-screen').classList.add('active');
+    mostrarPantalla('app-choice-screen');
     cerrarReproductor();
     detenerMetronomo();
     showToast("Sesión cerrada con éxito", 'info');
@@ -194,7 +268,9 @@ function configurarInterfaz(usuario) {
     document.getElementById('app-welcome-subtitle').innerText = "Área / Especialidad: " + usuario.area;
     
     document.getElementById('nav-avatar').src = `https://ui-avatars.com/api/?name=${encodeURIComponent(nombre)}&background=d90429&color=fff&bold=true`;
-    document.getElementById('dynamic-menu').innerHTML = menusConfig[rol];
+    if (menusConfig[rol]) {
+        document.getElementById('dynamic-menu').innerHTML = menusConfig[rol];
+    }
     
     cambiarVista(rol);
 }
@@ -1308,17 +1384,7 @@ function iniciarEleccionApp() {
     }
     if (btnWorship) {
         btnWorship.addEventListener('click', () => {
-            // Oculta la pantalla de elección y muestra el login de Worship Sessions
-            const choiceScreen = document.getElementById('app-choice-screen');
-            if (choiceScreen) {
-                choiceScreen.classList.remove('active');
-                choiceScreen.style.display = 'none';
-            }
-            const loginScreen = document.getElementById('login-screen');
-            if (loginScreen) {
-                loginScreen.classList.add('active');
-                loginScreen.style.display = 'block';
-            }
+            mostrarPantalla('login-screen');
         });
     }
 };
