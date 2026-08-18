@@ -41,12 +41,32 @@ function getUserFromToken(req) {
     return null;
 }
 
+// Helper to populate songId objects inside setlist.songs
+function populateSetlistSongs(setlist, songMap) {
+    if (!setlist) return setlist;
+    if (Array.isArray(setlist.songs)) {
+        setlist.songs = setlist.songs.map(item => {
+            if (!item) return item;
+            if (item.songId && typeof item.songId === "object" && item.songId.name) {
+                return item;
+            }
+            const songRefId = item.songId ? String(item.songId) : null;
+            const songObj = songRefId ? songMap.get(songRefId) : null;
+            return {
+                ...item,
+                songId: songObj || (item.songId ? { _id: item.songId, name: "Sin tÃ­tulo" } : null)
+            };
+        });
+    }
+    return setlist;
+}
+
 // ==================== AUTH & LOGIN ====================
 app.post("/login", async (req, res) => {
     try {
         const { username, password } = req.body;
         if (!username || !password) {
-            return res.status(400).json({ error: "Usuario y contrasena requeridos" });
+            return res.status(400).json({ error: "Usuario y contraseÃ±a requeridos" });
         }
         
         const cleanUser = username.trim();
@@ -127,7 +147,7 @@ app.post("/profile-update", async (req, res) => {
     }
 });
 
-// ==================== USERS (GESTION DE USUARIOS) ====================
+// ==================== USERS (GESTIÃ“N DE USUARIOS) ====================
 app.get("/users", async (req, res) => {
     try {
         const users = await db.collection("users").find({}).toArray();
@@ -206,7 +226,12 @@ app.get("/setlists", async (req, res) => {
             filter.ministry = req.query.ministry;
         }
         const setlists = await db.collection("setlists").find(filter).sort({ date: 1, createdAt: -1 }).toArray();
-        res.json(setlists);
+        const songs = await db.collection("songs").find({}).toArray();
+        const songMap = new Map();
+        songs.forEach(s => songMap.set(String(s._id), s));
+
+        const populated = setlists.map(s => populateSetlistSongs(s, songMap));
+        res.json(populated);
     } catch (err) {
         console.error("Error en GET /setlists:", err);
         res.status(500).json({ error: "Error al obtener setlists" });
@@ -218,7 +243,13 @@ app.get("/setlists/:id", async (req, res) => {
         const queryId = toObjectId(req.params.id);
         const setlist = await db.collection("setlists").findOne({ _id: queryId });
         if (!setlist) return res.status(404).json({ error: "Setlist no encontrado" });
-        res.json(setlist);
+
+        const songs = await db.collection("songs").find({}).toArray();
+        const songMap = new Map();
+        songs.forEach(s => songMap.set(String(s._id), s));
+
+        const populated = populateSetlistSongs(setlist, songMap);
+        res.json(populated);
     } catch (err) {
         res.status(500).json({ error: "Error al obtener setlist" });
     }
@@ -327,10 +358,10 @@ app.get("/songs/:id", async (req, res) => {
     try {
         const queryId = toObjectId(req.params.id);
         const song = await db.collection("songs").findOne({ _id: queryId });
-        if (!song) return res.status(404).json({ error: "Cancion no encontrada" });
+        if (!song) return res.status(404).json({ error: "CanciÃ³n no encontrada" });
         res.json(song);
     } catch (err) {
-        res.status(500).json({ error: "Error al obtener cancion" });
+        res.status(500).json({ error: "Error al obtener canciÃ³n" });
     }
 });
 
@@ -341,7 +372,7 @@ app.post("/songs", async (req, res) => {
         res.json({ _id: result.insertedId, ok: true });
     } catch (err) {
         console.error("Error en POST /songs:", err);
-        res.status(500).json({ error: "Error al guardar cancion" });
+        res.status(500).json({ error: "Error al guardar canciÃ³n" });
     }
 });
 
@@ -354,7 +385,7 @@ const handleSongUpdate = async (req, res) => {
         await db.collection("songs").updateOne({ _id: queryId }, { $set: updateData });
         res.json({ ok: true });
     } catch (err) {
-        res.status(500).json({ error: "Error al actualizar cancion" });
+        res.status(500).json({ error: "Error al actualizar canciÃ³n" });
     }
 };
 app.put("/songs/:id", handleSongUpdate);
@@ -366,7 +397,7 @@ app.delete("/songs/:id", async (req, res) => {
         await db.collection("songs").deleteOne({ _id: queryId });
         res.json({ ok: true });
     } catch (err) {
-        res.status(500).json({ error: "Error al eliminar cancion" });
+        res.status(500).json({ error: "Error al eliminar canciÃ³n" });
     }
 });
 
@@ -384,10 +415,10 @@ app.get("/requisitions/:id", async (req, res) => {
     try {
         const queryId = toObjectId(req.params.id);
         const reqItem = await db.collection("requisitions").findOne({ _id: queryId });
-        if (!reqItem) return res.status(404).json({ error: "Requisicion no encontrada" });
+        if (!reqItem) return res.status(404).json({ error: "RequisiciÃ³n no encontrada" });
         res.json(reqItem);
     } catch (err) {
-        res.status(500).json({ error: "Error al obtener requisicion" });
+        res.status(500).json({ error: "Error al obtener requisiciÃ³n" });
     }
 });
 
@@ -397,7 +428,7 @@ app.post("/requisitions", async (req, res) => {
         const result = await db.collection("requisitions").insertOne(newReq);
         res.json({ _id: result.insertedId, ok: true });
     } catch (err) {
-        res.status(500).json({ error: "Error al crear requisicion" });
+        res.status(500).json({ error: "Error al crear requisiciÃ³n" });
     }
 });
 
@@ -410,7 +441,7 @@ const handleReqUpdate = async (req, res) => {
         await db.collection("requisitions").updateOne({ _id: queryId }, { $set: updateData });
         res.json({ ok: true });
     } catch (err) {
-        res.status(500).json({ error: "Error al actualizar requisicion" });
+        res.status(500).json({ error: "Error al actualizar requisiciÃ³n" });
     }
 };
 app.put("/requisitions/:id", handleReqUpdate);
@@ -422,7 +453,7 @@ app.delete("/requisitions/:id", async (req, res) => {
         await db.collection("requisitions").deleteOne({ _id: queryId });
         res.json({ ok: true });
     } catch (err) {
-        res.status(500).json({ error: "Error al eliminar requisicion" });
+        res.status(500).json({ error: "Error al eliminar requisiciÃ³n" });
     }
 });
 
