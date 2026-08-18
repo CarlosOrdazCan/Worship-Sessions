@@ -1,4 +1,4 @@
-﻿const express = require("express");
+const express = require("express");
 const { MongoClient, ObjectId } = require("mongodb");
 const jwt = require("jsonwebtoken");
 const path = require("path");
@@ -255,6 +255,24 @@ app.get("/setlists/:id", async (req, res) => {
     }
 });
 
+async function createNotification({ type, title, message, setlistId, songId, creatorUsername }) {
+    try {
+        if (!db) return;
+        const newNotif = {
+            type: type || "setlist_created",
+            title: title || "Notificación de CAN Alabanza",
+            message: message || "",
+            createdAt: new Date(),
+            setlistId: setlistId ? String(setlistId) : null,
+            songId: songId ? String(songId) : null,
+            readBy: creatorUsername ? [creatorUsername] : []
+        };
+        await db.collection("notifications").insertOne(newNotif);
+    } catch (e) {
+        console.error("Error al crear notificación:", e);
+    }
+}
+
 app.post("/setlists", async (req, res) => {
     try {
         const newSetlist = {
@@ -262,6 +280,20 @@ app.post("/setlists", async (req, res) => {
             createdAt: new Date()
         };
         const result = await db.collection("setlists").insertOne(newSetlist);
+
+        const tokenUser = getUserFromToken(req);
+        const creatorUsername = tokenUser ? tokenUser.username : "";
+        const title = newSetlist.title || newSetlist.name || newSetlist.date || "Nuevo Servicio Programado";
+        const meetingType = newSetlist.meetingType || "Servicio";
+
+        await createNotification({
+            type: "setlist_created",
+            title: `📅 Nuevo Setlist Publicado`,
+            message: `Se ha publicado el setlist "${title}" (${meetingType}). Revisa tus turnos de asistencia.`,
+            setlistId: result.insertedId,
+            creatorUsername
+        });
+
         res.json({ _id: result.insertedId, ok: true });
     } catch (err) {
         console.error("Error en POST /setlists:", err);
@@ -279,6 +311,19 @@ const handleSetlistUpdate = async (req, res) => {
             { _id: queryId },
             { $set: updateData }
         );
+
+        const tokenUser = getUserFromToken(req);
+        const creatorUsername = tokenUser ? tokenUser.username : "";
+        const title = updateData.title || updateData.name || updateData.date || "Servicio Programado";
+
+        await createNotification({
+            type: "setlist_created",
+            title: `📅 Setlist Actualizado`,
+            message: `Se han actualizado las canciones o los turnos del setlist "${title}".`,
+            setlistId: queryId,
+            creatorUsername
+        });
+
         res.json({ ok: true });
     } catch (err) {
         console.error("Error en PUT/PATCH /setlists/:id:", err);
@@ -304,6 +349,8 @@ const handleAbsence = async (req, res) => {
         const queryId = toObjectId(req.params.id);
         const tokenUser = getUserFromToken(req);
         const username = (tokenUser && tokenUser.username) ? tokenUser.username : req.body.username;
+        const memberName = (tokenUser && tokenUser.name) ? tokenUser.name : (req.body.name || req.body.nombre || username || "Un miembro");
+        const reason = req.body.reason || req.body.motivo || req.body.absenceReason || "Sin motivo especificado";
         
         if (username) {
             await db.collection("setlists").updateOne(
@@ -316,6 +363,15 @@ const handleAbsence = async (req, res) => {
                 { $set: req.body }
             );
         }
+
+        await createNotification({
+            type: "absence_reported",
+            title: `⚠️ Aviso de Inasistencia`,
+            message: `${memberName} ha notificado inasistencia: "${reason}".`,
+            setlistId: queryId,
+            creatorUsername: username
+        });
+
         res.json({ ok: true });
     } catch (err) {
         console.error("Error en /setlists/:id/absence:", err);
@@ -369,10 +425,24 @@ app.post("/songs", async (req, res) => {
     try {
         const newSong = { ...req.body, createdAt: new Date() };
         const result = await db.collection("songs").insertOne(newSong);
+
+        const tokenUser = getUserFromToken(req);
+        const creatorUsername = tokenUser ? tokenUser.username : "";
+        const songName = newSong.name || "Nueva Canción";
+        const artist = newSong.artist || "Artista";
+
+        await createNotification({
+            type: "song_created",
+            title: `🎵 Nueva Canción Agregada`,
+            message: `Se agregó "${songName}" (${artist}) al repertorio del equipo.`,
+            songId: result.insertedId,
+            creatorUsername
+        });
+
         res.json({ _id: result.insertedId, ok: true });
     } catch (err) {
         console.error("Error en POST /songs:", err);
-        res.status(500).json({ error: "Error al guardar canciÃ³n" });
+        res.status(500).json({ error: "Error al guardar canción" });
     }
 });
 
