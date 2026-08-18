@@ -241,12 +241,17 @@
                     <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:16px; flex-wrap:wrap; gap:12px;">
                         <div>
                             <span class="status-pill" style="border-color:var(--pastoral-blue); color:var(--pastoral-light); font-size:10px; font-weight:900; padding:4px 10px;">
-                                ⛪ PRÓXIMO SERVICIO EN VIVO
+                                ⛪ SERVICIO SELECCIONADO
                             </span>
                             <h2 id="nextSetName" style="font-size:24px; font-family:var(--font-title); font-weight:900; color:white; margin:10px 0 2px 0;">CARGANDO SERVICIO...</h2>
                             <p id="nextSetMeta" style="color:var(--text-muted); font-size:13px; margin:0;">🗓️ ---</p>
                         </div>
-                        <button onclick="window.print()" class="secondary" style="font-size:11px; padding:8px 14px; font-weight:800;">🖨️ IMPRIMIR ORDEN</button>
+                        <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+                            <select id="pastorServiceSelector" onchange="onPastorSelectService(this.value)" style="background:rgba(15,23,42,0.9); border:1px solid var(--pastoral-blue); color:white; padding:8px 14px; border-radius:10px; font-weight:800; font-size:12px; cursor:pointer; outline:none;">
+                                <option value="">Cargando servicios...</option>
+                            </select>
+                            <button onclick="window.print()" class="secondary" style="font-size:11px; padding:8px 14px; font-weight:800;">🖨️ IMPRIMIR ORDEN</button>
+                        </div>
                     </div>
 
                     <!-- NUEVO BLOQUE: Asistencia por Servicio & Justificación de Ausencias -->
@@ -414,6 +419,64 @@
 
     <script>
         let allRequisitions = [];
+        let allActiveSets = [];
+        let allGlobalUsers = [];
+        let allGlobalSongs = [];
+
+        function onPastorSelectService(setId) {
+            const selected = allActiveSets.find(s => String(s._id) === String(setId)) || allActiveSets[0];
+            if (selected) {
+                renderPastorServiceDetails(selected);
+            }
+        }
+
+        function renderPastorServiceDetails(next) {
+            if (!next) return;
+            document.getElementById("nextSetName").innerText = (next.name || next.title || "Servicio").toUpperCase();
+            
+            const isMiercoles = (next.name || '').toLowerCase().includes('miercoles') || (next.meetingType || '').toLowerCase().includes('miercoles');
+            const subtitle = isMiercoles 
+                ? ("🗓️ " + (next.date || '') + " • Servicio de Oración & Enseñanza (8:00 PM)")
+                : ("🗓️ " + (next.date || '') + " • Servicio Dominical (9:00 AM, 11:00 AM, 1:00 PM)");
+
+            document.getElementById("nextSetMeta").innerText = subtitle;
+
+            // Desglose de Asistencia & Ausencias
+            renderServiceAttendance(next, allGlobalUsers);
+
+            // Escaleta ROS
+            const rosContainer = document.getElementById("rosBlocksContainer");
+            if (next.runOfService && next.runOfService.length > 0) {
+                rosContainer.innerHTML = next.runOfService.map(r => `
+                    <div style="display:grid; grid-template-columns: 80px 1.5fr 2fr; gap:10px; background:rgba(255,255,255,0.03); padding:8px 12px; border-radius:8px; font-size:12px; align-items:center;">
+                        <span style="color:var(--pastoral-light); font-weight:800;">${r.time}</span>
+                        <span style="color:white; font-weight:800;">${r.activity.toUpperCase()}</span>
+                        <span style="color:var(--text-muted); font-size:11px;">${r.cabinaNotes || r.videoNotes || '-'}</span>
+                    </div>
+                `).join('');
+            } else {
+                rosContainer.innerHTML = "<p style='color:var(--text-muted); font-size:12px;'>La escaleta no ha sido configurada para este servicio.</p>";
+            }
+
+            // Canciones
+            const songsContainer = document.getElementById("setSongsContainer");
+            if (next.songs && next.songs.length > 0) {
+                songsContainer.innerHTML = next.songs.map((item, idx) => {
+                    const songObj = (typeof item.songId === 'object' && item.songId !== null) 
+                        ? item.songId 
+                        : (allGlobalSongs.find(s => String(s._id) === String(item.songId || item)) || {});
+                    const title = (songObj.name || item.name || 'Canción').toUpperCase();
+                    const key = item.setlistKey || songObj.key || 'C';
+                    return `
+                    <div style="background:rgba(0,0,0,0.4); border:1px solid var(--border-color); padding:8px 12px; border-radius:8px; display:flex; justify-content:space-between; align-items:center;">
+                        <span style="font-weight:800; font-size:11px; color:white;">${idx + 1}. ${title}</span>
+                        <span class="status-pill confirmed" style="font-size:9px; border-color:var(--pastoral-blue); color:var(--pastoral-light); font-weight:900;">${key}</span>
+                    </div>`;
+                }).join('');
+            } else {
+                songsContainer.innerHTML = "<p style='color:var(--text-muted); font-size:12px;'>No hay canciones asignadas.</p>";
+            }
+        }
 
         async function loadPastoralDashboard() {
             try {
@@ -423,13 +486,14 @@
                 // 1. Cargar Usuarios
                 const uRes = await fetch("/users", { headers: token ? { "Authorization": "Bearer " + token } : {} });
                 const users = await uRes.json();
-                const totalUsers = Array.isArray(users) ? users.length : 0;
+                allGlobalUsers = Array.isArray(users) ? users : [];
+                const totalUsers = allGlobalUsers.length;
                 document.getElementById("kpiTotalUsers").innerText = totalUsers;
 
-                const principalUsers = users.filter(u => (u.ministry || '').toLowerCase().includes('principal') || (!u.ministry && !u.techBranch));
-                const kidsUsers = users.filter(u => (u.ministry || '').toLowerCase().includes('kids'));
-                const audioUsers = users.filter(u => (u.ministry || '').toLowerCase().includes('audio') || (u.instrument || '').toLowerCase().includes('audio'));
-                const prodUsers = users.filter(u => (u.ministry || '').toLowerCase().includes('prod') || u.techBranch);
+                const principalUsers = allGlobalUsers.filter(u => (u.ministry || '').toLowerCase().includes('principal') || (!u.ministry && !u.techBranch));
+                const kidsUsers = allGlobalUsers.filter(u => (u.ministry || '').toLowerCase().includes('kids'));
+                const audioUsers = allGlobalUsers.filter(u => (u.ministry || '').toLowerCase().includes('audio') || (u.instrument || '').toLowerCase().includes('audio'));
+                const prodUsers = allGlobalUsers.filter(u => (u.ministry || '').toLowerCase().includes('prod') || u.techBranch);
 
                 document.getElementById("kpiUsersDetail").innerText = principalUsers.length + " Alabanza, " + kidsUsers.length + " Kids, " + prodUsers.length + " Producción";
 
@@ -460,61 +524,34 @@
                 // 2. Cargar Canciones
                 const sRes = await fetch("/songs", { headers: token ? { "Authorization": "Bearer " + token } : {} });
                 const songs = await sRes.json();
-                document.getElementById("kpiTotalSongs").innerText = Array.isArray(songs) ? songs.length : 0;
+                allGlobalSongs = Array.isArray(songs) ? songs : [];
+                document.getElementById("kpiTotalSongs").innerText = allGlobalSongs.length;
 
                 // 3. Cargar Setlists
                 const setRes = await fetch("/setlists", { headers: token ? { "Authorization": "Bearer " + token } : {} });
                 const setlists = await setRes.json();
-                const activeSets = Array.isArray(setlists) ? setlists.filter(s => s && !s.archived).reverse() : [];
-                document.getElementById("kpiTotalSets").innerText = activeSets.length;
+                allActiveSets = Array.isArray(setlists) ? setlists.filter(s => s && !s.archived) : [];
+                
+                // Ordenar por fecha (las fechas más recientes o futuras primero)
+                allActiveSets.sort((a, b) => new Date(b.date || b.createdAt) - new Date(a.date || a.createdAt));
+                document.getElementById("kpiTotalSets").innerText = allActiveSets.length;
 
-                // Próximo Servicio Activo
-                if (activeSets.length > 0) {
-                    const next = activeSets[0];
-                    document.getElementById("nextSetName").innerText = (next.name || "Servicio").toUpperCase();
-                    
-                    const isMiercoles = (next.name || '').toLowerCase().includes('miercoles') || (next.meetingType || '').toLowerCase().includes('miercoles');
-                    const subtitle = isMiercoles 
-                        ? ("🗓️ " + (next.date || '') + " • Servicio de Oración & Enseñanza (8:00 PM)")
-                        : ("🗓️ " + (next.date || '') + " • Servicio Dominical (9:00 AM, 11:00 AM, 1:00 PM)");
-
-                    document.getElementById("nextSetMeta").innerText = subtitle;
-
-                    // Desglose de Asistencia & Ausencias
-                    renderServiceAttendance(next, users);
-
-                    // Escaleta ROS
-                    const rosContainer = document.getElementById("rosBlocksContainer");
-                    if (next.runOfService && next.runOfService.length > 0) {
-                        rosContainer.innerHTML = next.runOfService.map(r => `
-                            <div style="display:grid; grid-template-columns: 80px 1.5fr 2fr; gap:10px; background:rgba(255,255,255,0.03); padding:8px 12px; border-radius:8px; font-size:12px; align-items:center;">
-                                <span style="color:var(--pastoral-light); font-weight:800;">${r.time}</span>
-                                <span style="color:white; font-weight:800;">${r.activity.toUpperCase()}</span>
-                                <span style="color:var(--text-muted); font-size:11px;">${r.cabinaNotes || r.videoNotes || '-'}</span>
-                            </div>
-                        `).join('');
+                // Poblar selector de servicios para el pastor
+                const selector = document.getElementById("pastorServiceSelector");
+                if (selector) {
+                    if (allActiveSets.length === 0) {
+                        selector.innerHTML = `<option value="">Sin servicios programados</option>`;
                     } else {
-                        rosContainer.innerHTML = "<p style='color:var(--text-muted); font-size:12px;'>La escaleta no ha sido configurada para este servicio.</p>";
-                    }
-
-                    // Canciones
-                    const songsContainer = document.getElementById("setSongsContainer");
-                    if (next.songs && next.songs.length > 0) {
-                        songsContainer.innerHTML = next.songs.map((item, idx) => {
-                            const songObj = (typeof item.songId === 'object' && item.songId !== null) 
-                                ? item.songId 
-                                : (songs.find(s => s._id === (item.songId || item)) || {});
-                            const title = (songObj.name || item.name || 'Canción').toUpperCase();
-                            const key = item.setlistKey || songObj.key || 'C';
-                            return `
-                            <div style="background:rgba(0,0,0,0.4); border:1px solid var(--border-color); padding:8px 12px; border-radius:8px; display:flex; justify-content:space-between; align-items:center;">
-                                <span style="font-weight:800; font-size:11px; color:white;">${idx + 1}. ${title}</span>
-                                <span class="status-pill confirmed" style="font-size:9px; border-color:var(--pastoral-blue); color:var(--pastoral-light); font-weight:900;">${key}</span>
-                            </div>`;
+                        selector.innerHTML = allActiveSets.map(s => {
+                            const nameStr = (s.name || s.title || "Servicio").toUpperCase();
+                            const dateStr = s.date ? `(${s.date})` : "";
+                            return `<option value="${s._id}">📅 ${nameStr} ${dateStr}</option>`;
                         }).join('');
-                    } else {
-                        songsContainer.innerHTML = "<p style='color:var(--text-muted); font-size:12px;'>No hay canciones asignadas.</p>";
                     }
+                }
+
+                if (allActiveSets.length > 0) {
+                    renderPastorServiceDetails(allActiveSets[0]);
                 }
 
                 // 4. Cargar Requisiciones de Equipo
@@ -523,6 +560,7 @@
             } catch (e) {
                 console.error("Error en dashboard pastoral:", e);
             }
+        }
         }
 
         function renderServiceAttendance(service, allUsers) {
