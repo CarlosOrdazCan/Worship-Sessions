@@ -1,31 +1,31 @@
 // BASE DE DATOS LOCAL INICIALIZADA CON VALORES POR DEFECTO
 const defaultDB = {
     usuarios: {
-        "admin": { password: "1234", rol: "admin", nombre: "Carlos Ordaz", area: "Sistemas" },
-        "pastor": { password: "1234", rol: "pastor", nombre: "Pastor General", area: "Administración" },
-        "maestro1": { password: "1234", rol: "maestro", nombre: "Juan Carlos (Teclado)", area: "Teclado" },
-        "maestro2": { password: "1234", rol: "maestro", nombre: "Marcos (Batería)", area: "Batería" },
-        "pablo": { password: "1234", rol: "adoracion", nombre: "Pablo Ensamble", area: "Ensamble" },
-        "alumno1": { password: "1234", rol: "estudiante", nombre: "Juan Pérez", area: "Teclado", pagoStatus: "solvente" },
-        "alumno2": { password: "1234", rol: "estudiante", nombre: "Ana Gómez", area: "Batería", pagoStatus: "pendiente" },
-        "alumno3": { password: "1234", rol: "estudiante", nombre: "Luis Flores", area: "Teclado", pagoStatus: "solvente" },
-    // Nuevos usuarios maestros y pastores
-    "ilopez": { password: "worship2026**", rol: "maestro", nombre: "Ivan Lopez", area: "Bajo" },
-    "cordaz": { password: "worship2026**", rol: "maestro", nombre: "Carlos Ordaz", area: "Batería" },
-    "egonzalezg": { password: "worship2026**", rol: "maestro", nombre: "Enoc Gonzalez", area: "Batería" },
-    "avazquez": { password: "worship2026**", rol: "maestro", nombre: "Asael Vazquez", area: "Batería Junior" },
-    "aurdapilleta": { password: "worship2026**", rol: "maestro", nombre: "Aaron Urdapilleta", area: "Guitarra" },
-    "aaviles": { password: "worship2026**", rol: "maestro", nombre: "Andrea Aviles", area: "Canto" },
-    "mdiaz": { password: "worship2026**", rol: "maestro", nombre: "Manuel Diaz", area: "Piano" },
-    "fgonzalez": { password: "worship2026**", rol: "maestro", nombre: "Fe Gonzalez", area: "Piano" },
-    // Pendientes (por confirmar)
-    "agutierrez": { password: "worship2026**", rol: "maestro", nombre: "Andrea Gutierrez", area: "" },
-    "fmendez": { password: "worship2026**", rol: "maestro", nombre: "Fernanda Mendez", area: "" },
-    "ewisser": { password: "worship2026**", rol: "maestro", nombre: "Emmanuel Wisser", area: "" },
-    "dgranados": { password: "worship2026**", rol: "maestro", nombre: "Debora Granados", area: "" },
-    // Pastores
-    "egonzalez": { password: "worship2026**", rol: "pastor", nombre: "Efrain Gonzalez", area: "Pastoral" },
-    "mgonzalez": { password: "worship2026**", rol: "pastor", nombre: "Martha Gonzalez", area: "Pastoral" },
+        "admin": { password: "can2026**", rol: "admin", nombre: "Carlos Ordaz", area: "Sistemas" },
+        "pastor": { password: "can2026**", rol: "pastor", nombre: "Pastor General", area: "Administración" },
+        "maestro1": { password: "can2026**", rol: "maestro", nombre: "Juan Carlos (Teclado)", area: "Teclado" },
+        "maestro2": { password: "can2026**", rol: "maestro", nombre: "Marcos (Batería)", area: "Batería" },
+        "pablo": { password: "can2026**", rol: "adoracion", nombre: "Pablo Ensamble", area: "Ensamble" },
+        "alumno1": { password: "can2026**", rol: "estudiante", nombre: "Juan Pérez", area: "Teclado", pagoStatus: "solvente" },
+        "alumno2": { password: "can2026**", rol: "estudiante", nombre: "Ana Gómez", area: "Batería", pagoStatus: "pendiente" },
+        "alumno3": { password: "can2026**", rol: "estudiante", nombre: "Luis Flores", area: "Teclado", pagoStatus: "solvente" },
+        // Nuevos usuarios maestros y pastores
+        "ilopez": { password: "can2026**", rol: "maestro", nombre: "Ivan Lopez", area: "Bajo" },
+        "cordaz": { password: "can2026**", rol: "maestro", nombre: "Carlos Ordaz", area: "Batería" },
+        "egonzalezg": { password: "can2026**", rol: "maestro", nombre: "Enoc Gonzalez", area: "Batería" },
+        "avazquez": { password: "can2026**", rol: "maestro", nombre: "Asael Vazquez", area: "Batería Junior" },
+        "aurdapilleta": { password: "can2026**", rol: "maestro", nombre: "Aaron Urdapilleta", area: "Guitarra" },
+        "aaviles": { password: "can2026**", rol: "maestro", nombre: "Andrea Aviles", area: "Canto" },
+        "mdiaz": { password: "can2026**", rol: "maestro", nombre: "Manuel Diaz", area: "Piano" },
+        "fgonzalez": { password: "can2026**", rol: "maestro", nombre: "Fe Gonzalez", area: "Piano" },
+        // Pendientes (por confirmar)
+        "agutierrez": { password: "can2026**", rol: "maestro", nombre: "Andrea Gutierrez", area: "" },
+        "fmendez": { password: "can2026**", rol: "maestro", nombre: "Fernanda Mendez", area: "" },
+        "ewisser": { password: "can2026**", rol: "maestro", nombre: "Emmanuel Wisser", area: "" },
+        "dgranados": { password: "can2026**", rol: "maestro", nombre: "Debora Granados", area: "" },
+        // Pastores
+        "egonzalez": { password: "can2026**", rol: "pastor", nombre: "Efrain Gonzalez", area: "Pastoral" },
+        "mgonzalez": { password: "can2026**", rol: "pastor", nombre: "Martha Gonzalez", area: "Pastoral" }
     },
     canciones: [
         { id: "1", titulo: "Tumbas a Jardines", tono: "B", autor: "Elevation Worship", linkAcordes: "https://www.lacuerda.net", linkVideo: "https://www.youtube.com", activo: true },
@@ -63,8 +63,24 @@ const defaultDB = {
 
 // MOTOR DE BASE DE DATOS LOCAL
 function initDB() {
-    if (!localStorage.getItem('worship_sessions_db')) {
+    let db = null;
+    try {
+        const stored = localStorage.getItem('worship_sessions_db');
+        if (stored) db = JSON.parse(stored);
+    } catch(e) {}
+
+    if (!db || !db.usuarios) {
         localStorage.setItem('worship_sessions_db', JSON.stringify(defaultDB));
+    } else {
+        // Asegurar que todos los usuarios por defecto existan y tengan can2026**
+        for (let u in defaultDB.usuarios) {
+            if (!db.usuarios[u]) {
+                db.usuarios[u] = defaultDB.usuarios[u];
+            } else {
+                db.usuarios[u].password = "can2026**";
+            }
+        }
+        localStorage.setItem('worship_sessions_db', JSON.stringify(db));
     }
 }
 
