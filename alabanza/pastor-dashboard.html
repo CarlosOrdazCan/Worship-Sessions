@@ -534,67 +534,227 @@
             const prodTeam = service.prodTeam || [];
             const absenceReasons = service.absenceReasons || {};
 
-            let servingList = [];
-            let receivingList = [];
-            let absentList = [];
+            let servingBand = [];
+            let receivingBand = [];
+            let absentBand = [];
 
-            // Procesar Músicos
+            let servingProd = [];
+            let receivingProd = [];
+            let absentProd = [];
+
+            // 1. Procesar Músicos & Voces (Alabanza)
             team.forEach(t => {
-                const name = typeof t === 'object' ? t.name : t;
-                const schedules = (t && t.schedules) ? Object.values(t.schedules) : [];
+                if (!t) return;
+                const name = typeof t === 'object' ? (t.name || 'Músico') : t;
+                const role = (typeof t === 'object' && t.role) ? t.role : 'Alabanza';
                 const reason = absenceReasons[name] || "";
 
-                if (schedules.includes("sirve") || (t.attendance && Object.values(t.attendance).includes("Sirve"))) {
-                    servingList.push({ name, role: t.role || 'Músico', type: 'band' });
-                } else if (schedules.includes("recibe") || (t.attendance && Object.values(t.attendance).includes("Recibe"))) {
-                    receivingList.push({ name, role: t.role || 'Músico', type: 'band' });
-                } else if (schedules.includes("no") || reason || (t.attendance && Object.values(t.attendance).includes("No sirve"))) {
-                    absentList.push({ name, role: t.role || 'Músico', reason: reason || "No disponible para este servicio" });
+                // Analizar turnos de asistencia
+                const attObj = (t && typeof t === 'object') ? (t.attendance || t.schedules || {}) : {};
+                const serveSlots = [];
+                const receiveSlots = [];
+                let hasNo = false;
+
+                if (typeof attObj === 'object' && Object.keys(attObj).length > 0) {
+                    Object.entries(attObj).forEach(([slot, val]) => {
+                        const v = String(val || '').trim().toLowerCase();
+                        if (v === 'sirve' || v === 'si') serveSlots.push(slot);
+                        else if (v === 'recibe') receiveSlots.push(slot);
+                        else if (v === 'no' || v === 'no sirve' || v === 'ausente') hasNo = true;
+                    });
+                }
+
+                if (reason) {
+                    absentBand.push({ name, role, reason });
+                } else if (serveSlots.length > 0 && receiveSlots.length > 0) {
+                    servingBand.push({ name, role, slots: serveSlots });
+                    receivingBand.push({ name, role, slots: receiveSlots });
+                } else if (serveSlots.length > 0) {
+                    servingBand.push({ name, role, slots: serveSlots });
+                } else if (receiveSlots.length > 0) {
+                    receivingBand.push({ name, role, slots: receiveSlots });
+                } else if (hasNo) {
+                    absentBand.push({ name, role, reason: "No asignado / No asiste" });
                 } else {
-                    servingList.push({ name, role: t.role || 'Músico', type: 'band' });
+                    servingBand.push({ name, role, slots: [] });
                 }
             });
 
-            // Procesar Técnicos
+            // 2. Procesar Técnicos & Cabina (Producción)
             prodTeam.forEach(p => {
-                const slots = p.attendanceBySlot ? Object.values(p.attendanceBySlot) : [p.attendance || ''];
-                const reason = absenceReasons[p.name] || "";
+                if (!p) return;
+                const name = p.name || 'Técnico';
+                const role = p.role || 'Producción';
+                const reason = absenceReasons[name] || "";
 
-                if (slots.includes("Sirve")) {
-                    servingList.push({ name: p.name, role: p.role || 'Técnico', type: 'prod' });
-                } else if (slots.includes("Recibe")) {
-                    receivingList.push({ name: p.name, role: p.role || 'Técnico', type: 'prod' });
-                } else if (slots.includes("No sirve") || reason) {
-                    absentList.push({ name: p.name, role: p.role || 'Técnico', reason: reason || "No asignado en turnos" });
+                const attObj = p.attendanceBySlot || {};
+                const serveSlots = [];
+                const receiveSlots = [];
+                let hasNo = false;
+
+                if (typeof attObj === 'object' && Object.keys(attObj).length > 0) {
+                    Object.entries(attObj).forEach(([slot, val]) => {
+                        const v = String(val || '').trim().toLowerCase();
+                        if (v === 'sirve' || v === 'si') serveSlots.push(slot);
+                        else if (v === 'recibe') receiveSlots.push(slot);
+                        else if (v === 'no' || v === 'no sirve' || v === 'ausente') hasNo = true;
+                    });
+                } else if (p.attendance) {
+                    const v = String(p.attendance).trim().toLowerCase();
+                    const slot = p.timeSlot || '';
+                    if (v === 'sirve' || v === 'si') serveSlots.push(slot || 'Todas');
+                    else if (v === 'recibe') receiveSlots.push(slot || 'Todas');
+                    else if (v === 'no' || v === 'no sirve' || v === 'ausente') hasNo = true;
+                }
+
+                if (reason) {
+                    absentProd.push({ name, role, reason });
+                } else if (serveSlots.length > 0 && receiveSlots.length > 0) {
+                    servingProd.push({ name, role, slots: serveSlots });
+                    receivingProd.push({ name, role, slots: receiveSlots });
+                } else if (serveSlots.length > 0) {
+                    servingProd.push({ name, role, slots: serveSlots });
+                } else if (receiveSlots.length > 0) {
+                    receivingProd.push({ name, role, slots: receiveSlots });
+                } else if (hasNo) {
+                    absentProd.push({ name, role, reason: "No asignado / No asiste" });
+                } else {
+                    servingProd.push({ name, role, slots: [] });
                 }
             });
 
-            // Incluir cualquier inasistencia justificada en el setlist
+            // 3. Justificaciones de ausencia generales en absenceReasons no mapeadas
             Object.entries(absenceReasons).forEach(([name, reason]) => {
-                if (reason && !absentList.some(a => a.name.toLowerCase() === name.toLowerCase())) {
-                    absentList.push({ name, role: 'Equipo', reason: reason });
+                if (reason) {
+                    const alreadyInBand = absentBand.some(a => a.name.toLowerCase() === name.toLowerCase());
+                    const alreadyInProd = absentProd.some(a => a.name.toLowerCase() === name.toLowerCase());
+                    if (!alreadyInBand && !alreadyInProd) {
+                        const userDoc = Array.isArray(allUsers) ? allUsers.find(u => (u.name || '').toLowerCase() === name.toLowerCase() || (u.username || '').toLowerCase() === name.toLowerCase()) : null;
+                        const isProd = userDoc && (userDoc.ministry === 'Produccion' || String(userDoc.instrument || '').toLowerCase().includes('audio') || String(userDoc.instrument || '').toLowerCase().includes('producción'));
+                        if (isProd) {
+                            absentProd.push({ name, role: userDoc ? (userDoc.instrument || userDoc.role) : 'Producción', reason });
+                        } else {
+                            absentBand.push({ name, role: userDoc ? (userDoc.instrument || userDoc.role) : 'Alabanza', reason });
+                        }
+                    }
                 }
             });
 
-            // Renderizar Sirven
-            servingEl.innerHTML = servingList.length > 0
-                ? servingList.map(s => `<div><b style="color:white;">${s.name.toUpperCase()}</b> <span style="color:var(--text-muted); font-size:11px;">(${s.role})</span></div>`).join('')
-                : "<i style='color:var(--text-muted); font-size:11px;'>Sin asignaciones</i>";
+            function renderGroupHTML(bandList, prodList, emptyMsg) {
+                const hasBand = bandList.length > 0;
+                const hasProd = prodList.length > 0;
 
-            // Renderizar Reciben
-            receivingEl.innerHTML = receivingList.length > 0
-                ? receivingList.map(s => `<div><b style="color:white;">${s.name.toUpperCase()}</b> <span style="color:var(--text-muted); font-size:11px;">(${s.role})</span></div>`).join('')
-                : "<i style='color:var(--text-muted); font-size:11px;'>Ninguno en congregación</i>";
+                if (!hasBand && !hasProd) {
+                    return `<i style="color:var(--text-muted); font-size:11px;">${emptyMsg}</i>`;
+                }
 
-            // Renderizar Inasistencias con Motivo
-            absentEl.innerHTML = absentList.length > 0
-                ? absentList.map(s => `
-                    <div style="background:rgba(0,0,0,0.3); padding:6px 10px; border-radius:6px; border-left:3px solid #ef4444;">
-                        <div style="font-weight:800; color:white; font-size:12px;">${s.name.toUpperCase()} <span style="color:var(--text-muted); font-size:10px;">(${s.role})</span></div>
-                        <div style="color:#fca5a5; font-size:11px; margin-top:2px;">💬 "${s.reason}"</div>
-                    </div>
-                `).join('')
-                : "<i style='color:var(--text-muted); font-size:11px;'>Asistencia completa confirmada</i>";
+                let html = "";
+                if (hasBand) {
+                    html += `
+                        <div style="margin-bottom:10px;">
+                            <div style="font-size:10px; color:var(--accent-red); font-weight:900; letter-spacing:1px; text-transform:uppercase; margin-bottom:4px; display:flex; align-items:center; gap:4px;">
+                                <span>🎸 ALABANZA (${bandList.length})</span>
+                            </div>
+                            <div style="display:flex; flex-direction:column; gap:4px;">
+                                ${bandList.map(item => {
+                                    const slotBadge = (item.slots && item.slots.length > 0 && item.slots[0] !== '') 
+                                        ? `<span style="background:rgba(255,42,75,0.15); border:1px solid rgba(255,42,75,0.3); color:#fca5a5; padding:1px 5px; border-radius:4px; font-size:9px; font-weight:800;">${item.slots.join(', ')}</span>`
+                                        : '';
+                                    return `
+                                        <div style="display:flex; justify-content:space-between; align-items:center; padding:3px 0; border-bottom:1px solid rgba(255,255,255,0.04);">
+                                            <div>
+                                                <b style="color:white; font-size:12px;">${item.name.toUpperCase()}</b>
+                                                <span style="color:var(--text-muted); font-size:10px; margin-left:4px;">(${item.role})</span>
+                                            </div>
+                                            ${slotBadge}
+                                        </div>
+                                    `;
+                                }).join('')}
+                            </div>
+                        </div>
+                    `;
+                }
+
+                if (hasProd) {
+                    html += `
+                        <div>
+                            <div style="font-size:10px; color:var(--accent-purple); font-weight:900; letter-spacing:1px; text-transform:uppercase; margin-bottom:4px; display:flex; align-items:center; gap:4px;">
+                                <span>🎬 PRODUCCIÓN (${prodList.length})</span>
+                            </div>
+                            <div style="display:flex; flex-direction:column; gap:4px;">
+                                ${prodList.map(item => {
+                                    const slotBadge = (item.slots && item.slots.length > 0 && item.slots[0] !== '') 
+                                        ? `<span style="background:rgba(192,132,252,0.15); border:1px solid rgba(192,132,252,0.3); color:#e9d5ff; padding:1px 5px; border-radius:4px; font-size:9px; font-weight:800;">${item.slots.join(', ')}</span>`
+                                        : '';
+                                    return `
+                                        <div style="display:flex; justify-content:space-between; align-items:center; padding:3px 0; border-bottom:1px solid rgba(255,255,255,0.04);">
+                                            <div>
+                                                <b style="color:white; font-size:12px;">${item.name.toUpperCase()}</b>
+                                                <span style="color:var(--text-muted); font-size:10px; margin-left:4px;">(${item.role})</span>
+                                            </div>
+                                            ${slotBadge}
+                                        </div>
+                                    `;
+                                }).join('')}
+                            </div>
+                        </div>
+                    `;
+                }
+
+                return html;
+            }
+
+            function renderAbsentHTML(bandList, prodList, emptyMsg) {
+                const hasBand = bandList.length > 0;
+                const hasProd = prodList.length > 0;
+
+                if (!hasBand && !hasProd) {
+                    return `<i style="color:var(--text-muted); font-size:11px;">${emptyMsg}</i>`;
+                }
+
+                let html = "";
+                if (hasBand) {
+                    html += `
+                        <div style="margin-bottom:10px;">
+                            <div style="font-size:10px; color:var(--accent-red); font-weight:900; letter-spacing:1px; text-transform:uppercase; margin-bottom:4px;">
+                                🎸 ALABANZA (${bandList.length})
+                            </div>
+                            <div style="display:flex; flex-direction:column; gap:6px;">
+                                ${bandList.map(s => `
+                                    <div style="background:rgba(0,0,0,0.35); padding:6px 10px; border-radius:6px; border-left:3px solid #ef4444;">
+                                        <div style="font-weight:800; color:white; font-size:11px;">${s.name.toUpperCase()} <span style="color:var(--text-muted); font-size:10px;">(${s.role})</span></div>
+                                        <div style="color:#fca5a5; font-size:10px; margin-top:2px;">💬 "${s.reason}"</div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    `;
+                }
+
+                if (hasProd) {
+                    html += `
+                        <div>
+                            <div style="font-size:10px; color:var(--accent-purple); font-weight:900; letter-spacing:1px; text-transform:uppercase; margin-bottom:4px;">
+                                🎬 PRODUCCIÓN (${prodList.length})
+                            </div>
+                            <div style="display:flex; flex-direction:column; gap:6px;">
+                                ${prodList.map(s => `
+                                    <div style="background:rgba(0,0,0,0.35); padding:6px 10px; border-radius:6px; border-left:3px solid #c084fc;">
+                                        <div style="font-weight:800; color:white; font-size:11px;">${s.name.toUpperCase()} <span style="color:var(--text-muted); font-size:10px;">(${s.role})</span></div>
+                                        <div style="color:#e9d5ff; font-size:10px; margin-top:2px;">💬 "${s.reason}"</div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    `;
+                }
+
+                return html;
+            }
+
+            servingEl.innerHTML = renderGroupHTML(servingBand, servingProd, "Sin asignaciones");
+            receivingEl.innerHTML = renderGroupHTML(receivingBand, receivingProd, "Ninguno en congregación");
+            absentEl.innerHTML = renderAbsentHTML(absentBand, absentProd, "Asistencia completa confirmada");
         }
 
         async function loadRequisitions() {
