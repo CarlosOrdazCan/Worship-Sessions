@@ -1,0 +1,11 @@
+name: can-app
+services:
+  - name: web
+    github:
+      repo: CarlosOrdazCan/can-app
+      branch: main
+    dockerfile_path: ./Dockerfile
+    http_port: 80
+    routes:
+      - path: /
+        preserve_path_prefix: true
