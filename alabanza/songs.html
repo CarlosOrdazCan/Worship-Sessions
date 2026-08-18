@@ -24,13 +24,7 @@
 </head>
 <body class="animate-up">
     <script>
-        if (!localStorage.getItem("token")) window.location.href = "login.html";
-
-        const savedWallpaper = localStorage.getItem("cordaz_wallpaper");
-        if (savedWallpaper) {
-            document.body.classList.add("ios-wallpaper-active");
-            document.body.style.setProperty("--ios-bg-image", `url(${savedWallpaper})`);
-        }
+        window.location.replace("add-song.html" + window.location.search);
     </script>
 
     <!-- Navigation Header -->

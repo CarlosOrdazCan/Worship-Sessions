@@ -164,7 +164,7 @@
         <!-- Sections Header -->
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
             <h2 style="margin:0; font-family:var(--font-title); font-weight:900; font-size:22px; color:white;">Estructura y Letra</h2>
-            <button onclick="addSection()" class="secondary" style="font-size:11px; padding:10px 18px; font-weight:800; border-color:var(--accent-red); color:var(--accent-red);">+ AGREGAR SECCIÓN</button>
+            <button type="button" onclick="addSection()" class="secondary" style="font-size:11px; padding:10px 18px; font-weight:800; border-color:var(--accent-red); color:var(--accent-red);">+ AGREGAR SECCIÓN</button>
         </div>
 
         <div id="sectionsContainer" style="display:flex; flex-direction:column; gap:16px;"></div>
@@ -240,6 +240,11 @@
         }
 
         function addSection(name = "Verso 1", chords = "", lyrics = "", chordSheet = "") {
+            if (typeof name !== 'string') name = "Verso 1";
+            if (typeof chords !== 'string') chords = "";
+            if (typeof lyrics !== 'string') lyrics = "";
+            if (typeof chordSheet !== 'string') chordSheet = "";
+
             const div = document.createElement("div");
             div.className = "section-card animate-fade";
 

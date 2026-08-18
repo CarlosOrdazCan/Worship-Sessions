@@ -122,18 +122,31 @@ function normalizeSectionName(rawName) {
 const CHORD_TOKEN_REGEX = /^[A-Ga-g][#b]?(?:m|maj|min|dim|aug|sus[24]?|add[0-9]|M?[0-9]*(?:-[0-9]+)?)*(?:\/[A-Ga-g][#b]?)?$/;
 const CHORD_INLINE_REGEX = /\b([A-G][#b]?(?:m|maj|min|dim|aug|sus[24]?|add[0-9]|M?[0-9]*(?:-[0-9]+)?)*(?:\/[A-G][#b]?)?)\b/g;
 
+function isSectionHeader(line) {
+    if (!line || !line.trim()) return false;
+    const trimmed = line.trim();
+    const match = trimmed.match(headerRegex);
+    if (!match) return false;
+    const rawSec = (match[1] || match[2] || match[3] || '').trim();
+    if (!rawSec) return false;
+    // Si es un acorde único entre corchetes tipo [C] o [G/B], no es encabezado
+    if (CHORD_TOKEN_REGEX.test(rawSec)) return false;
+    return rawSec;
+}
+
 /**
  * Detecta si una línea de texto está compuesta principalmente por acordes
  */
 function isLineOfChords(line) {
     if (!line || !line.trim()) return false;
+    if (isSectionHeader(line)) return false;
     const tokens = line.trim().split(/\s+/).filter(t => t.length > 0);
     if (tokens.length === 0) return false;
     let chordCount = 0;
     tokens.forEach(t => {
         // Remover paréntesis, corchetes, comas, barras o signos
         const cleanT = t.replace(/[\[\]\(\),\|\/\-]/g, '');
-        if (cleanT && (CHORD_TOKEN_REGEX.test(cleanT) || /^[0-9]+$/.test(cleanT))) {
+        if (cleanT && CHORD_TOKEN_REGEX.test(cleanT)) {
             chordCount++;
         }
     });
@@ -231,12 +244,14 @@ function smartSongParser(text) {
     function flush() {
         if (currentLines.length > 0 || currentChords.size > 0) {
             const rawBody = currentLines.join('\n').trim();
-            sections.push({
-                name: currentName || "Verso 1",
-                chords: Array.from(currentChords).join(' - '),
-                lyrics: cleanPureLyrics(rawBody),
-                chordSheet: rawBody
-            });
+            if (rawBody || currentChords.size > 0) {
+                sections.push({
+                    name: currentName || "Verso 1",
+                    chords: Array.from(currentChords).join(' - '),
+                    lyrics: cleanPureLyrics(rawBody),
+                    chordSheet: rawBody
+                });
+            }
             currentLines = [];
             currentChords = new Set();
         }
@@ -245,20 +260,16 @@ function smartSongParser(text) {
     lines.forEach(rawLine => {
         const trimmed = rawLine.trim();
         if (!trimmed) {
-            currentLines.push("");
+            if (currentLines.length > 0) currentLines.push("");
             return;
         }
         
         // Detectar si es un encabezado de sección
-        const headerMatch = rawLine.match(headerRegex);
-        if (headerMatch && !isLineOfChords(rawLine)) {
-            const rawSecName = (headerMatch[1] || headerMatch[2] || headerMatch[3] || '').trim();
-            // Asegurarnos que NO sea un acorde solitario tipo [D2] o [G/B]
-            if (rawSecName.length > 0 && rawSecName.length < 40 && !CHORD_TOKEN_REGEX.test(rawSecName)) {
-                flush();
-                currentName = normalizeSectionName(rawSecName);
-                return;
-            }
+        const rawSecName = isSectionHeader(rawLine);
+        if (rawSecName) {
+            flush();
+            currentName = normalizeSectionName(rawSecName);
+            return;
         }
 
         // Si es una línea de acordes, extraer los acordes para la lista rápida
