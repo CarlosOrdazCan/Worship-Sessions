@@ -575,9 +575,15 @@
                     Object.entries(attObj).forEach(([slot, val]) => {
                         if (!isSlotValidForService(slot)) return; // Ignorar horarios que no corresponden a este servicio (ej. domingo en miércoles)
                         const v = String(val || '').trim().toLowerCase();
-                        if (v === 'sirve' || v === 'si') serveSlots.push(slot);
-                        else if (v === 'recibe') receiveSlots.push(slot);
-                        else if (v === 'no' || v === 'no sirve' || v === 'ausente') hasNo = true;
+                        if (v === 'sirve' || v === 'si') {
+                            serveSlots.push(slot);
+                        } else if (v === 'kids' || v.includes('kids') || v === 'sirve en kids' || v === 'sirve_kids') {
+                            serveSlots.push(isMiercoles ? 'Kids' : `${slot} (Kids)`);
+                        } else if (v === 'recibe') {
+                            receiveSlots.push(slot);
+                        } else if (v === 'no' || v === 'no sirve' || v === 'ausente') {
+                            hasNo = true;
+                        }
                     });
                 }
 
@@ -678,7 +684,13 @@
                             <div style="display:flex; flex-direction:column; gap:4px;">
                                 ${bandList.map(item => {
                                     const slotBadge = (item.slots && item.slots.length > 0 && item.slots[0] !== '') 
-                                        ? `<span style="background:rgba(255,42,75,0.15); border:1px solid rgba(255,42,75,0.3); color:#fca5a5; padding:1px 5px; border-radius:4px; font-size:9px; font-weight:800;">${item.slots.join(', ')}</span>`
+                                        ? item.slots.map(s => {
+                                            const isKidsBadge = s.toLowerCase().includes('kids');
+                                            const bg = isKidsBadge ? 'rgba(245,158,11,0.15)' : 'rgba(255,42,75,0.15)';
+                                            const border = isKidsBadge ? 'rgba(245,158,11,0.35)' : 'rgba(255,42,75,0.3)';
+                                            const color = isKidsBadge ? '#fcd34d' : '#fca5a5';
+                                            return `<span style="background:${bg}; border:1px solid ${border}; color:${color}; padding:1px 5px; border-radius:4px; font-size:9px; font-weight:800; margin-left:3px;">${s}</span>`;
+                                        }).join('')
                                         : '';
                                     return `
                                         <div style="display:flex; justify-content:space-between; align-items:center; padding:3px 0; border-bottom:1px solid rgba(255,255,255,0.04);">
@@ -686,7 +698,7 @@
                                                 <b style="color:white; font-size:12px;">${item.name.toUpperCase()}</b>
                                                 <span style="color:var(--text-muted); font-size:10px; margin-left:4px;">(${item.role})</span>
                                             </div>
-                                            ${slotBadge}
+                                            <div>${slotBadge}</div>
                                         </div>
                                     `;
                                 }).join('')}

@@ -108,6 +108,13 @@
             border-color: #10b981;
             box-shadow: 0 0 10px rgba(16, 185, 129, 0.4);
         }
+        .attend-btn.selected-kids, .attend-btn.selected-sirve_kids, .attend-btn.selected-sirve-kids {
+            background: #f59e0b;
+            color: #000;
+            font-weight: 900;
+            border-color: #f59e0b;
+            box-shadow: 0 0 10px rgba(245, 158, 11, 0.4);
+        }
         .attend-btn.selected-recibe {
             background: #38bdf8;
             color: #000;
@@ -429,10 +436,28 @@
 
             container.innerHTML = filteredUsers.map(user => {
                 const photoSrc = user.photo || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=0c0a0c&color=ff2a4b&size=200&bold=true`;
+                const isHibrido = String(user.ministry || '').toLowerCase().includes('hibrid') || String(user.role || '').toLowerCase().includes('hibrid');
                 
                 // Buscar si ya tiene asistencia asignada previamente
                 let existingMember = setlistData.team.find(t => t.memberId === user._id);
                 let sched = existingMember ? existingMember.schedules : { '9am': 'sirve', '11am': 'sirve', '1pm': 'sirve', '8pm': 'sirve' };
+
+                function renderButtonGroup(slot) {
+                    const currentVal = (sched[slot] || '').toLowerCase();
+                    const isKids = currentVal === 'kids' || currentVal === 'sirve en kids' || currentVal === 'sirve_kids';
+                    const kidsBtn = isHibrido ? `
+                        <button type="button" class="attend-btn ${isKids ? 'selected-kids' : ''}" onclick="setAttendance('${user._id}', '${slot}', 'kids', this)">SIRVE EN KIDS</button>
+                    ` : '';
+
+                    return `
+                        <div class="toggle-btn-group">
+                            <button type="button" class="attend-btn ${currentVal === 'no' ? 'selected-no' : ''}" onclick="setAttendance('${user._id}', '${slot}', 'no', this)">NO ASISTE</button>
+                            <button type="button" class="attend-btn ${currentVal === 'sirve' ? 'selected-sirve' : ''}" onclick="setAttendance('${user._id}', '${slot}', 'sirve', this)">SIRVE</button>
+                            ${kidsBtn}
+                            <button type="button" class="attend-btn ${currentVal === 'recibe' ? 'selected-recibe' : ''}" onclick="setAttendance('${user._id}', '${slot}', 'recibe', this)">RECIBE</button>
+                        </div>
+                    `;
+                }
 
                 let schedulesHTML = "";
 
@@ -441,27 +466,15 @@
                         <div class="schedule-group">
                             <div class="schedule-box">
                                 <div class="sched-title">9:00 AM</div>
-                                <div class="toggle-btn-group">
-                                    <button class="attend-btn ${sched['9am'] === 'no' ? 'selected-no' : ''}" onclick="setAttendance('${user._id}', '9am', 'no', this)">NO ASISTE</button>
-                                    <button class="attend-btn ${sched['9am'] === 'sirve' ? 'selected-sirve' : ''}" onclick="setAttendance('${user._id}', '9am', 'sirve', this)">SIRVE</button>
-                                    <button class="attend-btn ${sched['9am'] === 'recibe' ? 'selected-recibe' : ''}" onclick="setAttendance('${user._id}', '9am', 'recibe', this)">RECIBE</button>
-                                </div>
+                                ${renderButtonGroup('9am')}
                             </div>
                             <div class="schedule-box">
                                 <div class="sched-title">11:00 AM</div>
-                                <div class="toggle-btn-group">
-                                    <button class="attend-btn ${sched['11am'] === 'no' ? 'selected-no' : ''}" onclick="setAttendance('${user._id}', '11am', 'no', this)">NO ASISTE</button>
-                                    <button class="attend-btn ${sched['11am'] === 'sirve' ? 'selected-sirve' : ''}" onclick="setAttendance('${user._id}', '11am', 'sirve', this)">SIRVE</button>
-                                    <button class="attend-btn ${sched['11am'] === 'recibe' ? 'selected-recibe' : ''}" onclick="setAttendance('${user._id}', '11am', 'recibe', this)">RECIBE</button>
-                                </div>
+                                ${renderButtonGroup('11am')}
                             </div>
                             <div class="schedule-box">
                                 <div class="sched-title">1:00 PM</div>
-                                <div class="toggle-btn-group">
-                                    <button class="attend-btn ${sched['1pm'] === 'no' ? 'selected-no' : ''}" onclick="setAttendance('${user._id}', '1pm', 'no', this)">NO ASISTE</button>
-                                    <button class="attend-btn ${sched['1pm'] === 'sirve' ? 'selected-sirve' : ''}" onclick="setAttendance('${user._id}', '1pm', 'sirve', this)">SIRVE</button>
-                                    <button class="attend-btn ${sched['1pm'] === 'recibe' ? 'selected-recibe' : ''}" onclick="setAttendance('${user._id}', '1pm', 'recibe', this)">RECIBE</button>
-                                </div>
+                                ${renderButtonGroup('1pm')}
                             </div>
                         </div>
                     `;
@@ -472,11 +485,7 @@
                         <div class="schedule-group">
                             <div class="schedule-box" style="min-width:240px;">
                                 <div class="sched-title">${labelTitle}</div>
-                                <div class="toggle-btn-group">
-                                    <button class="attend-btn ${sched['8pm'] === 'no' ? 'selected-no' : ''}" onclick="setAttendance('${user._id}', '8pm', 'no', this)">NO ASISTE</button>
-                                    <button class="attend-btn ${sched['8pm'] === 'sirve' ? 'selected-sirve' : ''}" onclick="setAttendance('${user._id}', '8pm', 'sirve', this)">SIRVE</button>
-                                    <button class="attend-btn ${sched['8pm'] === 'recibe' ? 'selected-recibe' : ''}" onclick="setAttendance('${user._id}', '8pm', 'recibe', this)">RECIBE</button>
-                                </div>
+                                ${renderButtonGroup('8pm')}
                             </div>
                         </div>
                     `;
@@ -487,7 +496,10 @@
                         <div style="display:flex; align-items:center; gap:16px;">
                             <img src="${photoSrc}" style="width:50px; height:50px; border-radius:50%; object-fit:cover; border:2px solid var(--accent-red);">
                             <div>
-                                <h4 style="margin:0 0 2px 0; font-family:var(--font-title); font-size:15px; font-weight:800; color:white;">${user.name.toUpperCase()}</h4>
+                                <div style="display:flex; align-items:center; gap:6px;">
+                                    <h4 style="margin:0; font-family:var(--font-title); font-size:15px; font-weight:800; color:white;">${user.name.toUpperCase()}</h4>
+                                    ${isHibrido ? '<span style="background:rgba(245,158,11,0.2); color:#f59e0b; border:1px solid rgba(245,158,11,0.4); font-size:9px; padding:1px 6px; border-radius:4px; font-weight:900;">HÍBRIDO</span>' : ''}
+                                </div>
                                 <span style="font-size:11px; color:var(--accent-blue); font-weight:700;">${user.instrument || user.role}</span>
                             </div>
                         </div>
