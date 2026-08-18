@@ -578,6 +578,7 @@
                 console.warn("Error cargando notificaciones:", e);
             }
         }
+        setInterval(loadNotifications, 15000);
 
         function timeAgo(dateString) {
             const d = new Date(dateString);
