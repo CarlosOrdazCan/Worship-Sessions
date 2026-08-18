@@ -69,8 +69,8 @@
 
         .pastoral-grid {
             display: grid;
-            grid-template-columns: 1.6fr 1fr;
-            gap: 28px;
+            grid-template-columns: 2.2fr 1fr;
+            gap: 24px;
             align-items: start;
         }
 
@@ -287,22 +287,25 @@
                         </div>
                     </div>
 
-                    <!-- Orden de Culto / ROS Preview -->
-                    <div style="background:rgba(0,0,0,0.5); border:1px solid var(--border-color); border-radius:14px; padding:18px; margin-top:16px;">
-                        <h4 style="font-size:11px; color:var(--pastoral-light); font-weight:900; letter-spacing:1.5px; text-transform:uppercase; margin:0 0 12px 0;">
-                            📋 ORDEN DEL CULTO (ESCALETA EJECUTIVA)
-                        </h4>
-                        <div id="rosBlocksContainer" style="display:flex; flex-direction:column; gap:10px;">
-                            <p style="color:var(--text-muted); font-size:12px;">Cargando escaleta del servicio...</p>
+                    <!-- BLOQUE PARALELO: Escaleta ROS (Izquierda) + Canciones del Setlist (Derecha) -->
+                    <div style="display:grid; grid-template-columns: 1.2fr 1fr; gap:16px; margin-top:16px;">
+                        <!-- Orden de Culto / ROS Preview -->
+                        <div style="background:rgba(0,0,0,0.5); border:1px solid var(--border-color); border-radius:14px; padding:18px;">
+                            <h4 style="font-size:11px; color:var(--pastoral-light); font-weight:900; letter-spacing:1.5px; text-transform:uppercase; margin:0 0 12px 0;">
+                                📋 ORDEN DEL CULTO (ESCALETA EJECUTIVA)
+                            </h4>
+                            <div id="rosBlocksContainer" style="display:flex; flex-direction:column; gap:8px;">
+                                <p style="color:var(--text-muted); font-size:12px;">Cargando escaleta del servicio...</p>
+                            </div>
                         </div>
-                    </div>
 
-                    <!-- Canciones Programadas -->
-                    <div style="margin-top:20px;">
-                        <h4 style="font-size:11px; color:var(--pastoral-light); font-weight:900; letter-spacing:1.5px; text-transform:uppercase; margin:0 0 12px 0;">
-                            🎵 CANCIONES DEL SETLIST
-                        </h4>
-                        <div id="setSongsContainer" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:10px;">
+                        <!-- Canciones Programadas -->
+                        <div style="background:rgba(0,0,0,0.5); border:1px solid var(--border-color); border-radius:14px; padding:18px;">
+                            <h4 style="font-size:11px; color:var(--pastoral-light); font-weight:900; letter-spacing:1.5px; text-transform:uppercase; margin:0 0 12px 0;">
+                                🎵 CANCIONES DEL SETLIST
+                            </h4>
+                            <div id="setSongsContainer" style="display:flex; flex-direction:column; gap:8px;">
+                            </div>
                         </div>
                     </div>
                 </div>
