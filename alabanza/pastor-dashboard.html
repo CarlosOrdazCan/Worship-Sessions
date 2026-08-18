@@ -534,6 +534,22 @@
             const prodTeam = service.prodTeam || [];
             const absenceReasons = service.absenceReasons || {};
 
+            const serviceName = (service.name || '').toLowerCase();
+            const meetingType = (service.meetingType || '').toLowerCase();
+            const isMiercoles = serviceName.includes('miercoles') || serviceName.includes('miércoles') || meetingType.includes('miercoles') || meetingType.includes('miércoles');
+            const isDomingo = !isMiercoles && (meetingType.includes('domingo') || serviceName.includes('domingo') || serviceName.includes('dominical'));
+
+            function isSlotValidForService(slotKey) {
+                const s = String(slotKey || '').toLowerCase().trim();
+                if (isMiercoles) {
+                    return s.includes('8') || s.includes('oracion') || s.includes('oración') || s.includes('miercoles') || s.includes('miércoles') || s === 'todas';
+                }
+                if (isDomingo) {
+                    return s.includes('9') || s.includes('11') || s.includes('1pm') || s.includes('1:00') || s.includes('1ra') || s.includes('2da') || s.includes('3ra') || s === 'todas';
+                }
+                return true;
+            }
+
             let servingBand = [];
             let receivingBand = [];
             let absentBand = [];
@@ -549,7 +565,7 @@
                 const role = (typeof t === 'object' && t.role) ? t.role : 'Alabanza';
                 const reason = absenceReasons[name] || "";
 
-                // Analizar turnos de asistencia
+                // Analizar turnos de asistencia filtrando por el tipo de culto
                 const attObj = (t && typeof t === 'object') ? (t.attendance || t.schedules || {}) : {};
                 const serveSlots = [];
                 const receiveSlots = [];
@@ -557,6 +573,7 @@
 
                 if (typeof attObj === 'object' && Object.keys(attObj).length > 0) {
                     Object.entries(attObj).forEach(([slot, val]) => {
+                        if (!isSlotValidForService(slot)) return; // Ignorar horarios que no corresponden a este servicio (ej. domingo en miércoles)
                         const v = String(val || '').trim().toLowerCase();
                         if (v === 'sirve' || v === 'si') serveSlots.push(slot);
                         else if (v === 'recibe') receiveSlots.push(slot);
@@ -567,12 +584,12 @@
                 if (reason) {
                     absentBand.push({ name, role, reason });
                 } else if (serveSlots.length > 0 && receiveSlots.length > 0) {
-                    servingBand.push({ name, role, slots: serveSlots });
-                    receivingBand.push({ name, role, slots: receiveSlots });
+                    servingBand.push({ name, role, slots: isMiercoles ? [] : serveSlots });
+                    receivingBand.push({ name, role, slots: isMiercoles ? [] : receiveSlots });
                 } else if (serveSlots.length > 0) {
-                    servingBand.push({ name, role, slots: serveSlots });
+                    servingBand.push({ name, role, slots: isMiercoles ? [] : serveSlots });
                 } else if (receiveSlots.length > 0) {
-                    receivingBand.push({ name, role, slots: receiveSlots });
+                    receivingBand.push({ name, role, slots: isMiercoles ? [] : receiveSlots });
                 } else if (hasNo) {
                     absentBand.push({ name, role, reason: "No asignado / No asiste" });
                 } else {
@@ -594,28 +611,31 @@
 
                 if (typeof attObj === 'object' && Object.keys(attObj).length > 0) {
                     Object.entries(attObj).forEach(([slot, val]) => {
+                        if (!isSlotValidForService(slot)) return;
                         const v = String(val || '').trim().toLowerCase();
                         if (v === 'sirve' || v === 'si') serveSlots.push(slot);
                         else if (v === 'recibe') receiveSlots.push(slot);
                         else if (v === 'no' || v === 'no sirve' || v === 'ausente') hasNo = true;
                     });
                 } else if (p.attendance) {
-                    const v = String(p.attendance).trim().toLowerCase();
                     const slot = p.timeSlot || '';
-                    if (v === 'sirve' || v === 'si') serveSlots.push(slot || 'Todas');
-                    else if (v === 'recibe') receiveSlots.push(slot || 'Todas');
-                    else if (v === 'no' || v === 'no sirve' || v === 'ausente') hasNo = true;
+                    if (isSlotValidForService(slot)) {
+                        const v = String(p.attendance).trim().toLowerCase();
+                        if (v === 'sirve' || v === 'si') serveSlots.push(slot || 'Todas');
+                        else if (v === 'recibe') receiveSlots.push(slot || 'Todas');
+                        else if (v === 'no' || v === 'no sirve' || v === 'ausente') hasNo = true;
+                    }
                 }
 
                 if (reason) {
                     absentProd.push({ name, role, reason });
                 } else if (serveSlots.length > 0 && receiveSlots.length > 0) {
-                    servingProd.push({ name, role, slots: serveSlots });
-                    receivingProd.push({ name, role, slots: receiveSlots });
+                    servingProd.push({ name, role, slots: isMiercoles ? [] : serveSlots });
+                    receivingProd.push({ name, role, slots: isMiercoles ? [] : receiveSlots });
                 } else if (serveSlots.length > 0) {
-                    servingProd.push({ name, role, slots: serveSlots });
+                    servingProd.push({ name, role, slots: isMiercoles ? [] : serveSlots });
                 } else if (receiveSlots.length > 0) {
-                    receivingProd.push({ name, role, slots: receiveSlots });
+                    receivingProd.push({ name, role, slots: isMiercoles ? [] : receiveSlots });
                 } else if (hasNo) {
                     absentProd.push({ name, role, reason: "No asignado / No asiste" });
                 } else {
