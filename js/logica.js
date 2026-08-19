@@ -113,20 +113,16 @@ function initDB() {
     if (!db || !db.usuarios) {
         localStorage.setItem('worship_sessions_db', JSON.stringify(defaultDB));
     } else {
-        // Asegurar que usuarios por defecto existan
-        for (let u in defaultDB.usuarios) {
-            if (!db.usuarios[u]) {
-                db.usuarios[u] = defaultDB.usuarios[u];
-            } else {
-                db.usuarios[u].password = "can2026**";
-            }
-        }
-        if (!db.estatusClases) db.estatusClases = defaultDB.estatusClases;
-        if (!db.anunciosStaff) db.anunciosStaff = defaultDB.anunciosStaff;
-        if (!db.tareas) db.tareas = defaultDB.tareas;
-        if (!db.entregasTareas) db.entregasTareas = defaultDB.entregasTareas;
+        // Garantizar colecciones si no existen en versiones previas de la DB
+        let modificado = false;
+        if (!db.estatusClases) { db.estatusClases = defaultDB.estatusClases; modificado = true; }
+        if (!db.anunciosStaff) { db.anunciosStaff = defaultDB.anunciosStaff; modificado = true; }
+        if (!db.tareas) { db.tareas = defaultDB.tareas; modificado = true; }
+        if (!db.entregasTareas) { db.entregasTareas = defaultDB.entregasTareas; modificado = true; }
         
-        localStorage.setItem('worship_sessions_db', JSON.stringify(db));
+        if (modificado) {
+            localStorage.setItem('worship_sessions_db', JSON.stringify(db));
+        }
     }
 }
 
