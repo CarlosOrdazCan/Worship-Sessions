@@ -1724,7 +1724,8 @@ function renderizarEstudiante(db) {
     const user = usuarioActual;
     const username = user.username;
     
-    document.getElementById('student-instrument-title').innerText = `Instrumento: ${user.area}`;
+    const titleEl = document.getElementById('student-instrument-title');
+    if (titleEl) titleEl.innerText = `Instrumento: ${user.area}`;
 
     // 1. Cargar Banner de Estatus de Clase (Publicado por Producción)
     const estatusBanner = document.getElementById('student-class-status-banner');
@@ -1821,122 +1822,143 @@ function renderizarEstudiante(db) {
     
     // Cargar Alerta Dominical si fue asignado a tocar
     const avisoServicio = document.getElementById('student-worship-alert');
-    let rolAsignado = null;
-    Object.keys(db.ensambleRoles).forEach(puesto => {
-        if (db.ensambleRoles[puesto] === username) {
-            rolAsignado = puesto;
+    if (avisoServicio) {
+        let rolAsignado = null;
+        if (db.ensambleRoles) {
+            Object.keys(db.ensambleRoles).forEach(puesto => {
+                if (db.ensambleRoles[puesto] === username) {
+                    rolAsignado = puesto;
+                }
+            });
         }
-    });
-    
-    if (rolAsignado) {
-        avisoServicio.style.display = 'block';
-        document.getElementById('stud-worship-role-tag').innerText = rolAsignado.toUpperCase();
-    } else {
-        avisoServicio.style.display = 'none';
+        
+        if (rolAsignado) {
+            avisoServicio.style.display = 'block';
+            const roleTag = document.getElementById('stud-worship-role-tag');
+            if (roleTag) roleTag.innerText = rolAsignado.toUpperCase();
+        } else {
+            avisoServicio.style.display = 'none';
+        }
     }
 
     // Cargar Muro de Anuncios del Maestro de su área
     const announcementsContainer = document.getElementById('student-announcements-wall');
-    announcementsContainer.innerHTML = '';
-    const anunciosArea = db.anuncios.filter(a => a.area === user.area);
-    
-    if (anunciosArea.length > 0) {
-        anunciosArea.forEach(a => {
-            const div = document.createElement('div');
-            div.className = 'announcement-banner';
-            div.innerHTML = `
-                <div class="announcement-banner-header">
-                    <strong><i class="fas fa-bullhorn"></i> AVISO DE CLASE (${a.area})</strong>
-                    <small>${a.fecha}</small>
-                </div>
-                <p>${a.contenido}</p>
-                <span class="announcement-author">Publicado por: ${a.autor}</span>
-            `;
-            announcementsContainer.appendChild(div);
-        });
+    if (announcementsContainer) {
+        announcementsContainer.innerHTML = '';
+        const anunciosArea = (db.anuncios || []).filter(a => a.area === user.area);
+        
+        if (anunciosArea.length > 0) {
+            anunciosArea.forEach(a => {
+                const div = document.createElement('div');
+                div.className = 'announcement-banner';
+                div.innerHTML = `
+                    <div class="announcement-banner-header">
+                        <strong><i class="fas fa-bullhorn"></i> AVISO DE CLASE (${a.area})</strong>
+                        <small>${a.fecha}</small>
+                    </div>
+                    <p>${a.contenido}</p>
+                    <span class="announcement-author">Publicado por: ${a.autor}</span>
+                `;
+                announcementsContainer.appendChild(div);
+            });
+        }
     }
 
     // Calificaciones
-    const notas = db.calificaciones[username] || { teoria: 0, tecnica: 0, notas: "Aún no se han registrado evaluaciones en el sistema para ti." };
+    const notas = (db.calificaciones || {})[username] || { teoria: 0, tecnica: 0, notas: "Aún no se han registrado evaluaciones en el sistema para ti." };
     const teoriaVal = typeof notas.teoria === 'number' ? notas.teoria : 0;
     const tecnicaVal = typeof notas.tecnica === 'number' ? notas.tecnica : 0;
     
-    document.getElementById('stud-progress-teoria').style.width = teoriaVal + "%";
-    document.getElementById('stud-val-teoria').innerText = teoriaVal + "/100";
-    document.getElementById('stud-progress-tecnica').style.width = tecnicaVal + "%";
-    document.getElementById('stud-val-tecnica').innerText = tecnicaVal + "/100";
-    document.getElementById('stud-observaciones').innerText = notas.notas || "Sin anotaciones del profesor.";
+    const progTeoria = document.getElementById('stud-progress-teoria');
+    const valTeoria = document.getElementById('stud-val-teoria');
+    const progTecnica = document.getElementById('stud-progress-tecnica');
+    const valTecnica = document.getElementById('stud-val-tecnica');
+    const obsEl = document.getElementById('stud-observaciones');
+
+    if (progTeoria) progTeoria.style.width = teoriaVal + "%";
+    if (valTeoria) valTeoria.innerText = teoriaVal + "/100";
+    if (progTecnica) progTecnica.style.width = tecnicaVal + "%";
+    if (valTecnica) valTecnica.innerText = tecnicaVal + "/100";
+    if (obsEl) obsEl.innerText = notas.notas || "Sin anotaciones del profesor.";
     
     // Alerta de Adeudo de colegiatura
     const billingAlert = document.getElementById('student-billing-alert');
-    if (user.pagoStatus === 'pendiente') {
-        billingAlert.style.display = 'block';
-    } else {
-        billingAlert.style.display = 'none';
+    if (billingAlert) {
+        if (user.pagoStatus === 'pendiente') {
+            billingAlert.style.display = 'block';
+        } else {
+            billingAlert.style.display = 'none';
+        }
     }
 
     // Asistencias
-    const asistenciaObj = db.asistencia[username] || {};
+    const asistenciaObj = (db.asistencia || {})[username] || {};
     const totalFechas = Object.keys(asistenciaObj).length;
     const presentes = Object.values(asistenciaObj).filter(v => v === 'presente').length;
     const promAsistencia = totalFechas > 0 ? Math.round((presentes / totalFechas) * 100) : 0;
     
-    document.getElementById('stud-attendance-pct').innerText = promAsistencia + "%";
-    document.getElementById('stud-attendance-desc').innerText = `Clases asistidas: ${presentes} de ${totalFechas}`;
+    const attPct = document.getElementById('stud-attendance-pct');
+    const attDesc = document.getElementById('stud-attendance-desc');
+    if (attPct) attPct.innerText = promAsistencia + "%";
+    if (attDesc) attDesc.innerText = `Clases asistidas: ${presentes} de ${totalFechas}`;
     
     // Setlist activo con reproductor multimedia
     const listSetlist = document.getElementById('stud-setlist-ul');
-    listSetlist.innerHTML = '';
-    const cancionesActivas = db.canciones.filter(c => c.activo);
-    
-    if (cancionesActivas.length === 0) {
-        listSetlist.innerHTML = `<li class="text-muted" style="padding:10px 0;">No hay canciones asignadas al ensamble actual.</li>`;
-    } else {
-        cancionesActivas.forEach(c => {
-            const li = document.createElement('li');
-            li.className = 'stud-song-item';
-            const safeTitulo = c.titulo.replace(/['"]/g, '');
-            const safeAutor = c.autor.replace(/['"]/g, '');
-            
-            li.innerHTML = `
-                <div>
-                    <strong>${c.titulo}</strong><br>
-                    <small>${c.autor}</small>
-                </div>
-                <div class="song-actions-flex">
-                    <span class="tone-badge mini">${c.tono}</span>
-                    <button class="btn btn-sm btn-primary" onclick="reproducirPista('${safeTitulo}', '${safeAutor}', '${c.tono}')">
-                        <i class="fas fa-play"></i> Ensayar
-                    </button>
-                    ${c.linkAcordes ? `<a href="${c.linkAcordes}" target="_blank" class="btn btn-sm btn-secondary"><i class="fas fa-file-invoice"></i></a>` : ''}
-                    ${c.linkVideo ? `<a href="${c.linkVideo}" target="_blank" class="btn btn-sm btn-video"><i class="fab fa-youtube"></i></a>` : ''}
-                </div>
-            `;
-            listSetlist.appendChild(li);
-        });
+    if (listSetlist) {
+        listSetlist.innerHTML = '';
+        const cancionesActivas = (db.canciones || []).filter(c => c.activo);
+        
+        if (cancionesActivas.length === 0) {
+            listSetlist.innerHTML = `<li class="text-muted" style="padding:10px 0;">No hay canciones asignadas al ensamble actual.</li>`;
+        } else {
+            cancionesActivas.forEach(c => {
+                const li = document.createElement('li');
+                li.className = 'stud-song-item';
+                const safeTitulo = c.titulo.replace(/['"]/g, '');
+                const safeAutor = c.autor.replace(/['"]/g, '');
+                
+                li.innerHTML = `
+                    <div>
+                        <strong>${c.titulo}</strong><br>
+                        <small>${c.autor}</small>
+                    </div>
+                    <div class="song-actions-flex">
+                        <span class="tone-badge mini">${c.tono}</span>
+                        <button class="btn btn-sm btn-primary" onclick="reproducirPista('${safeTitulo}', '${safeAutor}', '${c.tono}')">
+                            <i class="fas fa-play"></i> Ensayar
+                        </button>
+                        ${c.linkAcordes ? `<a href="${c.linkAcordes}" target="_blank" class="btn btn-sm btn-secondary"><i class="fas fa-file-invoice"></i></a>` : ''}
+                        ${c.linkVideo ? `<a href="${c.linkVideo}" target="_blank" class="btn btn-sm btn-video"><i class="fab fa-youtube"></i></a>` : ''}
+                    </div>
+                `;
+                listSetlist.appendChild(li);
+            });
+        }
     }
     
     // Materiales
     const listMateriales = document.getElementById('stud-materials-ul');
-    listMateriales.innerHTML = '';
-    const materialesFiltrados = db.materiales.filter(m => m.area === user.area);
-    
-    if (materialesFiltrados.length === 0) {
-        listMateriales.innerHTML = `<li class="text-muted" style="padding:10px 0; grid-column: 1/-1; text-align: center;">No hay guías ni materiales cargados para la especialidad de ${user.area} actualmente.</li>`;
-    } else {
-        materialesFiltrados.forEach(m => {
-            const li = document.createElement('li');
-            li.className = 'material-card-item';
-            li.innerHTML = `
-                <div style="flex: 1;">
-                    <h4 style="color: var(--primary-red); font-size: 0.95rem; font-weight: 600;"><i class="fas fa-book-open"></i> ${m.titulo}</h4>
-                    <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 5px;">${m.descripcion}</p>
-                    <small class="text-muted" style="display:block; margin-top:5px; font-size:0.75rem;">Subido el: ${m.fecha}</small>
-                </div>
-                ${m.enlace ? `<a href="${m.enlace}" target="_blank" class="btn btn-sm btn-primary" style="align-self: center;"><i class="fas fa-external-link-alt"></i> Descargar</a>` : ''}
-            `;
-            listMateriales.appendChild(li);
-        });
+    if (listMateriales) {
+        listMateriales.innerHTML = '';
+        const materialesFiltrados = (db.materiales || []).filter(m => m.area === user.area);
+        
+        if (materialesFiltrados.length === 0) {
+            listMateriales.innerHTML = `<li class="text-muted" style="padding:10px 0; grid-column: 1/-1; text-align: center;">No hay guías ni materiales cargados para la especialidad de ${user.area} actualmente.</li>`;
+        } else {
+            materialesFiltrados.forEach(m => {
+                const li = document.createElement('li');
+                li.className = 'material-card-item';
+                li.innerHTML = `
+                    <div style="flex: 1;">
+                        <h4 style="color: var(--primary-red); font-size: 0.95rem; font-weight: 600;"><i class="fas fa-book-open"></i> ${m.titulo}</h4>
+                        <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 5px;">${m.descripcion}</p>
+                        <small class="text-muted" style="display:block; margin-top:5px; font-size:0.75rem;">Subido el: ${m.fecha}</small>
+                    </div>
+                    ${m.enlace ? `<a href="${m.enlace}" target="_blank" class="btn btn-sm btn-primary" style="align-self: center;"><i class="fas fa-external-link-alt"></i> Descargar</a>` : ''}
+                `;
+                listMateriales.appendChild(li);
+            });
+        }
     }
 
     // 3. Cargar Módulo de Ensamble Asignado para Estudiantes
