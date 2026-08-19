@@ -118,6 +118,18 @@ const defaultDB = {
     cursos: []
 };
 
+function normalizeRol(rol) {
+    if (!rol) return 'estudiante';
+    const r = String(rol).trim().toLowerCase();
+    if (r === 'alumno' || r === 'alumnos' || r === 'estudiante' || r === 'estudiantes' || r === 'student') return 'estudiante';
+    if (r === 'maestro' || r === 'profesor' || r === 'docente' || r === 'teacher') return 'maestro';
+    if (r === 'pastor' || r === 'pastoral') return 'pastor';
+    if (r === 'produccion' || r === 'staff') return 'produccion';
+    if (r === 'adoracion' || r === 'ensamble') return 'adoracion';
+    if (r === 'admin' || r === 'administrador') return 'admin';
+    return r;
+}
+
 // MOTOR DE BASE DE DATOS LOCAL
 function initDB() {
     let db = null;
@@ -129,7 +141,6 @@ function initDB() {
     if (!db || !db.usuarios) {
         localStorage.setItem('worship_sessions_db', JSON.stringify(defaultDB));
     } else {
-        // Garantizar colecciones si no existen en versiones previas de la DB
         let modificado = false;
         if (!db.estatusClases) { db.estatusClases = defaultDB.estatusClases; modificado = true; }
         if (!db.anunciosStaff) { db.anunciosStaff = defaultDB.anunciosStaff; modificado = true; }
@@ -137,10 +148,28 @@ function initDB() {
         if (!db.entregasTareas) { db.entregasTareas = defaultDB.entregasTareas; modificado = true; }
         if (db.ensambleActivo === undefined) { db.ensambleActivo = false; modificado = true; }
         if (!db.ensambleAsignaciones) { db.ensambleAsignaciones = defaultDB.ensambleAsignaciones; modificado = true; }
-        if (!db.usuarios["alumno"]) {
-            db.usuarios["alumno"] = { password: "can2026**", rol: "estudiante", nombre: "Alumno de Prueba", area: "Teclado", pagoStatus: "solvente" };
-            modificado = true;
-        }
+        
+        // Sanear y normalizar roles de todos los usuarios
+        Object.keys(db.usuarios).forEach(uKey => {
+            const uObj = db.usuarios[uKey];
+            if (uObj && uObj.rol) {
+                const normRol = normalizeRol(uObj.rol);
+                if (uObj.rol !== normRol) {
+                    uObj.rol = normRol;
+                    modificado = true;
+                }
+            }
+        });
+
+        // Garantizar usuario alumno de prueba siempre con datos limpios
+        db.usuarios["alumno"] = {
+            password: "can2026**",
+            rol: "estudiante",
+            nombre: "Alumno de Prueba",
+            area: "Teclado",
+            pagoStatus: "solvente"
+        };
+        modificado = true;
         
         if (modificado) {
             localStorage.setItem('worship_sessions_db', JSON.stringify(db));
@@ -295,6 +324,7 @@ const menusConfig = {
         </li>
     `
 };
+menusConfig.alumno = menusConfig.estudiante;
 
 // -------------------------------------------------------------
 // EVENTOS DE SESIÓN
@@ -311,6 +341,7 @@ function iniciarSesion(event) {
     if (db.usuarios[inputUser] && db.usuarios[inputUser].password === inputPass) {
         errorMsg.style.display = 'none';
         usuarioActual = { ...db.usuarios[inputUser], username: inputUser };
+        usuarioActual.rol = normalizeRol(usuarioActual.rol);
         
         // Guardar sesión persistente
         localStorage.setItem('ws_user_session', JSON.stringify(usuarioActual));
@@ -339,17 +370,26 @@ function cerrarSesion() {
 
 // CONFIGURACIÓN DE LA INTERFAZ SEGÚN EL ROL
 function configurarInterfaz(usuario) {
-    const rol = usuario.rol;
-    const nombre = usuario.nombre;
+    if (!usuario) return;
+    const rol = normalizeRol(usuario.rol);
+    usuario.rol = rol;
+    const nombre = usuario.nombre || usuario.username || 'Usuario';
     
-    document.getElementById('lbl-rol-actual').innerText = rol.toUpperCase();
-    document.getElementById('nav-username').innerText = nombre;
-    document.getElementById('app-welcome-title').innerText = "Hola, " + nombre;
-    document.getElementById('app-welcome-subtitle').innerText = "Área / Especialidad: " + (usuario.area || 'Estudiante');
+    const lblRol = document.getElementById('lbl-rol-actual');
+    const navUser = document.getElementById('nav-username');
+    const appTitle = document.getElementById('app-welcome-title');
+    const appSub = document.getElementById('app-welcome-subtitle');
+    const navAvatar = document.getElementById('nav-avatar');
+    const dynMenu = document.getElementById('dynamic-menu');
+
+    if (lblRol) lblRol.innerText = rol.toUpperCase();
+    if (navUser) navUser.innerText = nombre;
+    if (appTitle) appTitle.innerText = "Hola, " + nombre;
+    if (appSub) appSub.innerText = "Área / Especialidad: " + (usuario.area || 'Estudiante');
+    if (navAvatar) navAvatar.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(nombre)}&background=d90429&color=fff&bold=true`;
     
-    document.getElementById('nav-avatar').src = `https://ui-avatars.com/api/?name=${encodeURIComponent(nombre)}&background=d90429&color=fff&bold=true`;
-    if (menusConfig[rol]) {
-        document.getElementById('dynamic-menu').innerHTML = menusConfig[rol];
+    if (dynMenu && (menusConfig[rol] || menusConfig['estudiante'])) {
+        dynMenu.innerHTML = menusConfig[rol] || menusConfig['estudiante'];
     }
     
     cambiarVista(rol);
@@ -357,36 +397,43 @@ function configurarInterfaz(usuario) {
 
 // CAMBIO DE VISTAS DENTRO DEL PANEL PRINCIPAL
 function cambiarVista(rolVista) {
+    const rol = normalizeRol(rolVista);
+    
     document.querySelectorAll('.app-view').forEach(v => {
         v.classList.remove('active');
         v.style.display = 'none';
     });
     document.querySelectorAll('#dynamic-menu .nav-link').forEach(link => link.classList.remove('active'));
     
-    const targetView = document.getElementById('view-' + rolVista);
+    let targetView = document.getElementById('view-' + rol);
+    if (!targetView) {
+        targetView = document.getElementById('view-estudiante');
+    }
+    
     if (targetView) {
         targetView.style.display = 'block';
         targetView.classList.add('active');
     }
     
-    renderizarDatosVista(rolVista);
+    renderizarDatosVista(rol);
 }
 
 // RENDERIZAR DATOS EN LAS VISTAS ESPECÍFICAS
 function renderizarDatosVista(rolVista) {
     const db = getDB();
+    const rol = normalizeRol(rolVista);
     
-    if (rolVista === 'admin') {
+    if (rol === 'admin') {
         renderizarAdmin(db);
-    } else if (rolVista === 'pastor') {
+    } else if (rol === 'pastor') {
         renderizarPastor(db);
-    } else if (rolVista === 'maestro') {
+    } else if (rol === 'maestro') {
         renderizarMaestro(db);
-    } else if (rolVista === 'produccion') {
+    } else if (rol === 'produccion') {
         renderizarProduccion(db);
-    } else if (rolVista === 'adoracion') {
+    } else if (rol === 'adoracion') {
         renderizarAdoracion(db);
-    } else if (rolVista === 'estudiante') {
+    } else {
         renderizarEstudiante(db);
     }
 }
