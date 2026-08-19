@@ -153,6 +153,21 @@
 
                 <!-- ================= VISTA: ADMIN SISTEMA ================= -->
                 <div id="view-admin" class="app-view">
+                    <!-- QUICK ROLE SWITCHER FOR ADMIN -->
+                    <div style="background:rgba(229,9,20,0.08); border:1px solid rgba(229,9,20,0.3); padding:1rem 1.4rem; border-radius:16px; margin-bottom:1.8rem; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+                        <div style="display:flex; align-items:center; gap:10px;">
+                            <i class="fas fa-key" style="color:var(--primary-red); font-size:1.2rem;"></i>
+                            <strong style="color:white; font-size:0.9rem;">ACCESO TOTAL DE ADMINISTRADOR (FULL ACCESS)</strong>
+                        </div>
+                        <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                            <button class="btn btn-sm btn-secondary" onclick="cambiarVista('pastor')"><i class="fas fa-chart-line"></i> Pastor</button>
+                            <button class="btn btn-sm btn-secondary" onclick="cambiarVista('maestro')"><i class="fas fa-chalkboard-teacher"></i> Maestro</button>
+                            <button class="btn btn-sm btn-secondary" onclick="cambiarVista('produccion')"><i class="fas fa-sliders-h"></i> Producción</button>
+                            <button class="btn btn-sm btn-secondary" onclick="cambiarVista('adoracion')"><i class="fas fa-music"></i> Adoración</button>
+                            <button class="btn btn-sm btn-secondary" onclick="cambiarVista('estudiante')"><i class="fas fa-graduation-cap"></i> Estudiante</button>
+                        </div>
+                    </div>
+
                     <div class="dashboard-grid">
                         <div class="card status-card">
                             <div class="card-icon"><i class="fas fa-server"></i></div>
@@ -259,6 +274,14 @@
                                 <small class="text-muted">Asistencia global histórica</small>
                             </div>
                         </div>
+                        <div class="card">
+                            <div class="card-icon red-variant"><i class="fas fa-tasks"></i></div>
+                            <div>
+                                <h3>Tareas Entregadas</h3>
+                                <div class="stat-val" id="pastor-homework-pct">0%</div>
+                                <small class="text-muted" id="pastor-homework-count">0 / 0 entregas</small>
+                            </div>
+                        </div>
                         <!-- NUEVA CARD FINANZAS / PAGOS -->
                         <div class="card">
                             <div class="card-icon red-variant"><i class="fas fa-wallet"></i></div>
@@ -358,6 +381,59 @@
                         </div>
                     </div>
 
+                    <!-- BANNER COMUNICADOS DE STAFF PRODUCCIÓN PARA MAESTROS -->
+                    <div id="maestro-staff-announcements-banner" class="announcements-wall-container" style="margin-bottom: 2rem;">
+                        <!-- Cargado por JS -->
+                    </div>
+
+                    <!-- MÓDULO GOOGLE CLASSROOM PARA MAESTROS: CREAR TAREAS & EVALUAR VIDEOS -->
+                    <div class="maestro-panels-grid" style="display: grid; grid-template-columns: 1fr 1.2fr; gap: 1.8rem; margin-bottom: 2rem;">
+                        <!-- CREAR NUEVA TAREA -->
+                        <div class="panel-box">
+                            <div class="panel-header">
+                                <h3><i class="fas fa-plus-circle"></i> Asignar Tarea (Google Classroom)</h3>
+                            </div>
+                            <form onsubmit="guardarTareaMaestro(event)" style="display: flex; flex-direction: column; gap: 12px;">
+                                <div class="form-group" style="margin-bottom: 0;">
+                                    <label for="tarea-titulo">Título de la Tarea</label>
+                                    <input type="text" id="tarea-titulo" class="form-control" placeholder="Ej. Grabar Escala de Sol Mayor" required>
+                                </div>
+                                <div class="form-group" style="margin-bottom: 0;">
+                                    <label for="tarea-desc">Instrucciones / Requisitos</label>
+                                    <textarea id="tarea-desc" class="form-control" rows="3" placeholder="Ej. Graba un video de 30s ejecutando la escala a 90 BPM..." required></textarea>
+                                </div>
+                                <div class="form-group" style="margin-bottom: 0;">
+                                    <label for="tarea-fecha-limite">Fecha Límite de Entrega</label>
+                                    <input type="date" id="tarea-fecha-limite" class="form-control" required>
+                                </div>
+                                <button type="submit" class="btn btn-primary" style="justify-content: center;"><i class="fas fa-paper-plane"></i> Publicar Tarea</button>
+                            </form>
+                        </div>
+
+                        <!-- EVALUACIÓN DE TAREAS ENTREGADAS EN VIDEO -->
+                        <div class="panel-box">
+                            <div class="panel-header">
+                                <h3><i class="fas fa-video"></i> Videos Entregados por Alumnos</h3>
+                            </div>
+                            <p class="text-muted">Videos enviados por estudiantes para revisión y calificación.</p>
+                            <div class="table-container" style="margin-top: 1rem;">
+                                <table class="table-custom">
+                                    <thead>
+                                        <tr>
+                                            <th>Alumno / Tarea</th>
+                                            <th>Video</th>
+                                            <th>Estado / Nota</th>
+                                            <th></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="maestro-homework-submissions-tbody">
+                                        <!-- Cargado por JavaScript -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- REJILLA MAESTRO: CARGA DE MATERIALES Y PUBLICACIÓN DE AVISOS -->
                     <div class="maestro-panels-grid" style="display: grid; grid-template-columns: 1.2fr 1fr; gap: 1.8rem; margin-bottom: 2rem;">
                         <!-- SUBIR MATERIAL DIDÁCTICO -->
@@ -450,6 +526,92 @@
                     </div>
                 </div>
 
+                <!-- ================= VISTA: PRODUCCIÓN & STAFF ================= -->
+                <div id="view-produccion" class="app-view">
+                    <div class="dashboard-grid">
+                        <div class="card">
+                            <div class="card-icon"><i class="fas fa-sliders-h"></i></div>
+                            <div>
+                                <h3>Estatus de la Academia</h3>
+                                <div class="stat-val" id="prod-status-tag" style="font-size:1.2rem;">Normal</div>
+                                <small class="text-muted">Estado actual de clases</small>
+                            </div>
+                        </div>
+                        <div class="card">
+                            <div class="card-icon red-variant"><i class="fas fa-bullhorn"></i></div>
+                            <div>
+                                <h3>Avisos a Maestros</h3>
+                                <div class="stat-val" id="prod-announcements-count">0</div>
+                                <small class="text-muted">Publicaciones del staff</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="maestro-panels-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.8rem; margin-bottom: 2rem;">
+                        <!-- CONTROL DE ESTATUS DE CLASES -->
+                        <div class="panel-box">
+                            <div class="panel-header">
+                                <h3><i class="fas fa-calendar-day"></i> Estatus de Clases (Comunidad)</h3>
+                            </div>
+                            <form onsubmit="actualizarEstatusClases(event)" style="display: flex; flex-direction: column; gap: 12px;">
+                                <div class="form-group" style="margin-bottom: 0;">
+                                    <label for="prod-class-state">Estado de la Clase</label>
+                                    <select id="prod-class-state" class="form-control">
+                                        <option value="normal">✅ Clases Normales (Sábado Habitual)</option>
+                                        <option value="suspendida">🚫 Clase Suspendida (Sin actividad)</option>
+                                        <option value="especial">⚠️ Horario Especial / Evento</option>
+                                    </select>
+                                </div>
+                                <div class="form-group" style="margin-bottom: 0;">
+                                    <label for="prod-class-message">Mensaje Informativo para la Comunidad</label>
+                                    <textarea id="prod-class-message" class="form-control" rows="3" placeholder="Ej. Este sábado no habrá clases presenciales debido a la Conferencia Anual..." required></textarea>
+                                </div>
+                                <button type="submit" class="btn btn-primary" style="justify-content: center;"><i class="fas fa-save"></i> Publicar Estatus de Clase</button>
+                            </form>
+                        </div>
+
+                        <!-- PUBLICAR ANUNCIO PARA MAESTROS -->
+                        <div class="panel-box">
+                            <div class="panel-header">
+                                <h3><i class="fas fa-users-cog"></i> Comunicados del Staff para Maestros</h3>
+                            </div>
+                            <form onsubmit="publicarAnuncioStaff(event)" style="display: flex; flex-direction: column; gap: 12px;">
+                                <div class="form-group" style="margin-bottom: 0;">
+                                    <label for="staff-announcement-title">Título del Aviso</label>
+                                    <input type="text" id="staff-announcement-title" class="form-control" placeholder="Ej. Junta Presencial de Docentes" required>
+                                </div>
+                                <div class="form-group" style="margin-bottom: 0;">
+                                    <label for="staff-announcement-content">Detalle del Comunicado</label>
+                                    <textarea id="staff-announcement-content" class="form-control" rows="3" placeholder="Ej. Estimados profesores, les recordamos la entrega de reportes..." required></textarea>
+                                </div>
+                                <button type="submit" class="btn btn-primary" style="justify-content: center;"><i class="fas fa-paper-plane"></i> Enviar Aviso a Maestros</button>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- TABLA DE COMUNICADOS PUBLICADOS -->
+                    <div class="panel-box">
+                        <div class="panel-header">
+                            <h3><i class="fas fa-list"></i> Historial de Comunicados de Staff</h3>
+                        </div>
+                        <div class="table-container">
+                            <table class="table-custom">
+                                <thead>
+                                    <tr>
+                                        <th>Título / Comunicado</th>
+                                        <th>Fecha</th>
+                                        <th>Publicado por</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="prod-staff-announcements-tbody">
+                                    <!-- Cargado por JS -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- ================= VISTA: ADORACION ================= -->
                 <div id="view-adoracion" class="app-view">
                     <div class="dashboard-grid">
@@ -520,6 +682,15 @@
                 <!-- ================= VISTA: ESTUDIANTE ================= -->
                 <div id="view-estudiante" class="app-view">
                     
+                    <!-- BANNER ESTATUS DE CLASES (PRODUCCIÓN) -->
+                    <div id="student-class-status-banner" class="class-status-banner normal">
+                        <div class="banner-icon" id="stud-class-status-icon"><i class="fas fa-calendar-check"></i></div>
+                        <div>
+                            <h4 id="stud-class-status-title" style="font-size:1rem; font-weight:800; margin-bottom:2px; color:white;">Estatus de Clases: Normal</h4>
+                            <p id="stud-class-status-desc" style="font-size:0.88rem; margin:0; color:var(--text-light);">Cargando información...</p>
+                        </div>
+                    </div>
+
                     <!-- NOTIFICACIÓN DE ROL DE TOCAR DOMINGO (PLANIFICADOR) -->
                     <div id="student-worship-alert" class="worship-alert-banner" style="display: none; margin-bottom: 1.5rem;">
                         <div class="banner-icon"><i class="fas fa-bell animate-bell"></i></div>
@@ -541,6 +712,18 @@
                     <!-- MURO DE AVISOS DEL MAESTRO -->
                     <div id="student-announcements-wall" class="announcements-wall-container" style="margin-bottom: 1.5rem;">
                         <!-- Anuncios del maestro cargados dinámicamente -->
+                    </div>
+
+                    <!-- PANEL GOOGLE CLASSROOM: MIS TAREAS & ENTREGAS EN VIDEO -->
+                    <div class="panel-box" style="margin-bottom: 1.5rem;">
+                        <div class="panel-header">
+                            <h3><i class="fas fa-tasks"></i> Mis Tareas Asignadas (Google Classroom)</h3>
+                            <span class="badge badge-rol" id="stud-homework-progress-badge">0 / 0 Completadas</span>
+                        </div>
+                        <p class="text-muted">Sube tu video de práctica semanal directamente para que tu maestro lo revise y califique.</p>
+                        <div id="student-classroom-tasks-container" style="margin-top: 1rem;">
+                            <!-- Tareas cargadas por JS -->
+                        </div>
                     </div>
 
                     <div class="dashboard-grid">
@@ -839,6 +1022,53 @@
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" onclick="cerrarModalCancion()">Cancelar</button>
                     <button type="submit" class="btn btn-primary">Guardar Canción</button>
+                </div>
+    <!-- MODAL: ENTREGAR TAREA EN VIDEO (ALUMNO) -->
+    <div id="modal-entregar-tarea" class="modal-overlay">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3 id="modal-entregar-tarea-title">Subir Tarea en Video</h3>
+                <button class="modal-close-btn" onclick="cerrarModalEntregarTarea()">&times;</button>
+            </div>
+            <form onsubmit="guardarEntregaTarea(event)">
+                <div class="modal-body">
+                    <p class="text-muted" id="modal-entregar-tarea-desc" style="margin-bottom: 12px; font-size: 0.88rem;"></p>
+                    <div class="form-group">
+                        <label for="tarea-video-url"><i class="fab fa-youtube" style="color:var(--primary-red);"></i> Enlace a Tu Video de Práctica</label>
+                        <input type="url" id="tarea-video-url" class="form-control" placeholder="https://www.youtube.com/watch?v=... o Google Drive / Vimeo" required>
+                        <small class="text-muted" style="display:block; margin-top:5px;">Puedes pegar un enlace de YouTube, Google Drive o cualquier nube de video.</small>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="cerrarModalEntregarTarea()">Cancelar</button>
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-upload"></i> Enviar Tarea</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: EVALUAR TAREA EN VIDEO (MAESTRO / ADMIN) -->
+    <div id="modal-evaluar-tarea" class="modal-overlay">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3 id="modal-evaluar-tarea-title">Evaluar Entrega de Video</h3>
+                <button class="modal-close-btn" onclick="cerrarModalEvaluarTarea()">&times;</button>
+            </div>
+            <form onsubmit="guardarEvaluacionTarea(event)">
+                <div class="modal-body">
+                    <p id="eval-tarea-student-tag" style="font-weight: 700; color: white; margin-bottom: 10px;"></p>
+                    <div class="form-group">
+                        <label for="eval-tarea-calificacion">Calificación (0 - 100)</label>
+                        <input type="number" id="eval-tarea-calificacion" class="form-control" min="0" max="100" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="eval-tarea-feedback">Observaciones y Retroalimentación</label>
+                        <textarea id="eval-tarea-feedback" class="form-control" rows="3" placeholder="Ej. Excelente digitación y tempo constante. Te sugiero cuidar la postura..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="cerrarModalEvaluarTarea()">Cancelar</button>
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-check-circle"></i> Guardar Evaluación</button>
                 </div>
             </form>
         </div>

@@ -1816,3 +1816,93 @@ textarea.form-control {
         width: 100%;
     }
 }
+
+/* ================= GOOGLE CLASSROOM & MULTI-ROLE ENHANCEMENTS ================= */
+.class-status-banner {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 1.2rem 1.6rem;
+    border-radius: 16px;
+    margin-bottom: 1.5rem;
+    position: relative;
+    border: 1px solid var(--border-color);
+}
+.class-status-banner.normal {
+    background: linear-gradient(135deg, rgba(46, 196, 182, 0.1) 0%, rgba(15, 15, 18, 0.9) 100%);
+    border-color: rgba(46, 196, 182, 0.3);
+}
+.class-status-banner.suspendida {
+    background: linear-gradient(135deg, rgba(229, 9, 20, 0.15) 0%, rgba(15, 15, 18, 0.9) 100%);
+    border-color: rgba(229, 9, 20, 0.4);
+}
+.class-status-banner.especial {
+    background: linear-gradient(135deg, rgba(245, 158, 11, 0.15) 0%, rgba(15, 15, 18, 0.9) 100%);
+    border-color: rgba(245, 158, 11, 0.4);
+}
+.class-status-banner .banner-icon {
+    font-size: 1.8rem;
+}
+.class-status-banner.normal .banner-icon { color: var(--green-accent); }
+.class-status-banner.suspendida .banner-icon { color: var(--primary-red); }
+.class-status-banner.especial .banner-icon { color: #f59e0b; }
+
+.classroom-task-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    padding: 1.4rem;
+    margin-bottom: 1rem;
+    transition: all 0.25s ease;
+}
+.classroom-task-card:hover {
+    border-color: rgba(255, 255, 255, 0.15);
+    transform: translateY(-2px);
+}
+.task-status-pill {
+    padding: 4px 10px;
+    border-radius: 8px;
+    font-size: 0.75rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    display: inline-block;
+}
+.task-status-pill.pendiente {
+    background: rgba(239, 68, 68, 0.15);
+    color: #ef4444;
+    border: 1px solid rgba(239, 68, 68, 0.3);
+}
+.task-status-pill.entregado {
+    background: rgba(245, 158, 11, 0.15);
+    color: #f59e0b;
+    border: 1px solid rgba(245, 158, 11, 0.3);
+}
+.task-status-pill.calificado {
+    background: rgba(16, 185, 129, 0.15);
+    color: #10b981;
+    border: 1px solid rgba(16, 185, 129, 0.3);
+}
+.task-status-pill.vencido {
+    background: rgba(239, 68, 68, 0.25);
+    color: #f87171;
+    border: 1px solid #ef4444;
+}
+
+.submission-video-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 14px;
+    border-radius: 10px;
+    background: rgba(229, 9, 20, 0.15);
+    color: var(--primary-red-hover);
+    border: 1px solid rgba(229, 9, 20, 0.3);
+    font-weight: 700;
+    font-size: 0.82rem;
+    text-decoration: none;
+    transition: all 0.2s ease;
+}
+.submission-video-link:hover {
+    background: var(--primary-red);
+    color: white;
+}

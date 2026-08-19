@@ -1,7 +1,8 @@
 // BASE DE DATOS LOCAL INICIALIZADA CON VALORES POR DEFECTO
 const defaultDB = {
     usuarios: {
-        "admin": { password: "can2026**", rol: "admin", nombre: "Carlos Ordaz", area: "Sistemas" },
+        "admin": { password: "can2026**", rol: "admin", nombre: "Carlos Ordaz (Admin)", area: "Sistemas / Dirección" },
+        "produccion": { password: "can2026**", rol: "produccion", nombre: "Equipo Producción & Staff", area: "Producción" },
         "pastor": { password: "can2026**", rol: "pastor", nombre: "Pastor General", area: "Administración" },
         "maestro1": { password: "can2026**", rol: "maestro", nombre: "Juan Carlos (Teclado)", area: "Teclado" },
         "maestro2": { password: "can2026**", rol: "maestro", nombre: "Marcos (Batería)", area: "Batería" },
@@ -18,11 +19,6 @@ const defaultDB = {
         "aaviles": { password: "can2026**", rol: "maestro", nombre: "Andrea Aviles", area: "Canto" },
         "mdiaz": { password: "can2026**", rol: "maestro", nombre: "Manuel Diaz", area: "Piano" },
         "fgonzalez": { password: "can2026**", rol: "maestro", nombre: "Fe Gonzalez", area: "Piano" },
-        // Pendientes (por confirmar)
-        "agutierrez": { password: "can2026**", rol: "maestro", nombre: "Andrea Gutierrez", area: "" },
-        "fmendez": { password: "can2026**", rol: "maestro", nombre: "Fernanda Mendez", area: "" },
-        "ewisser": { password: "can2026**", rol: "maestro", nombre: "Emmanuel Wisser", area: "" },
-        "dgranados": { password: "can2026**", rol: "maestro", nombre: "Debora Granados", area: "" },
         // Pastores
         "egonzalez": { password: "can2026**", rol: "pastor", nombre: "Efrain Gonzalez", area: "Pastoral" },
         "mgonzalez": { password: "can2026**", rol: "pastor", nombre: "Martha Gonzalez", area: "Pastoral" }
@@ -58,7 +54,52 @@ const defaultDB = {
         bajo: "alumno3",
         canto: "maestro2"
     },
-    cursos: [] // will hold course objects with materias and asignaciones
+    estatusClases: {
+        estado: "normal",
+        mensaje: "✅ Próxima Clase: Sábado de 10:00 AM a 1:00 PM • Asistencia Normal.",
+        fechaActualizacion: "2026-08-18",
+        publicadoPor: "Equipo Producción & Staff"
+    },
+    anunciosStaff: [
+        {
+            id: "s1",
+            titulo: "Junta Presencial de Docentes",
+            contenido: "Estimados maestros, este jueves a las 7:00 PM tendremos junta de coordinación académica previo al fin de semana.",
+            fecha: "2026-08-18",
+            autor: "Equipo Producción & Staff"
+        }
+    ],
+    tareas: [
+        {
+            id: "t1",
+            area: "Teclado",
+            titulo: "Grabar Escala de Do Mayor a 2 Manos",
+            descripcion: "Graba un video de 30 a 60 segundos ejecutando la escala de Do Mayor en 2 octavas a 90 BPM con metrónomo.",
+            fechaLimite: "2026-08-25",
+            maestro: "Juan Carlos (Teclado)"
+        },
+        {
+            id: "t2",
+            area: "Batería",
+            titulo: "Rudimento Paradiddle en Pad de Práctica",
+            descripcion: "Graba un video ejecutando 1 minuto de paradiddles limpios a 100 BPM en tu pad de práctica.",
+            fechaLimite: "2026-08-26",
+            maestro: "Marcos (Batería)"
+        }
+    ],
+    entregasTareas: {
+        "t1_alumno1": {
+            id: "e1",
+            tareaId: "t1",
+            username: "alumno1",
+            videoUrl: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+            fechaEntrega: "2026-08-18",
+            estado: "calificado",
+            calificacion: 95,
+            feedback: "¡Excelente tempo y paso de pulgar impecable!"
+        }
+    },
+    cursos: []
 };
 
 // MOTOR DE BASE DE DATOS LOCAL
@@ -72,7 +113,7 @@ function initDB() {
     if (!db || !db.usuarios) {
         localStorage.setItem('worship_sessions_db', JSON.stringify(defaultDB));
     } else {
-        // Asegurar que todos los usuarios por defecto existan y tengan can2026**
+        // Asegurar que usuarios por defecto existan
         for (let u in defaultDB.usuarios) {
             if (!db.usuarios[u]) {
                 db.usuarios[u] = defaultDB.usuarios[u];
@@ -80,6 +121,11 @@ function initDB() {
                 db.usuarios[u].password = "can2026**";
             }
         }
+        if (!db.estatusClases) db.estatusClases = defaultDB.estatusClases;
+        if (!db.anunciosStaff) db.anunciosStaff = defaultDB.anunciosStaff;
+        if (!db.tareas) db.tareas = defaultDB.tareas;
+        if (!db.entregasTareas) db.entregasTareas = defaultDB.entregasTareas;
+        
         localStorage.setItem('worship_sessions_db', JSON.stringify(db));
     }
 }
@@ -175,6 +221,11 @@ const menusConfig = {
             </a>
         </li>
         <li class="nav-item">
+            <a href="#" class="nav-link" onclick="cambiarVista('produccion'); return false;">
+                <i class="fas fa-sliders-h"></i> Staff Producción
+            </a>
+        </li>
+        <li class="nav-item">
             <a href="#" class="nav-link" onclick="cambiarVista('adoracion'); return false;">
                 <i class="fas fa-music"></i> Director de Adoración
             </a>
@@ -200,7 +251,14 @@ const menusConfig = {
     maestro: `
         <li class="nav-item">
             <a href="#" class="nav-link active" onclick="cambiarVista('maestro'); return false;">
-                <i class="fas fa-chalkboard-teacher"></i> Mi Especialidad
+                <i class="fas fa-chalkboard-teacher"></i> Mi Especialidad & Classroom
+            </a>
+        </li>
+    `,
+    produccion: `
+        <li class="nav-item">
+            <a href="#" class="nav-link active" onclick="cambiarVista('produccion'); return false;">
+                <i class="fas fa-sliders-h"></i> Staff Producción
             </a>
         </li>
     `,
@@ -214,7 +272,7 @@ const menusConfig = {
     estudiante: `
         <li class="nav-item">
             <a href="#" class="nav-link active" onclick="cambiarVista('estudiante'); return false;">
-                <i class="fas fa-graduation-cap"></i> Mi Panel de Alumno
+                <i class="fas fa-graduation-cap"></i> Mi Panel (Classroom)
             </a>
         </li>
     `
@@ -298,6 +356,8 @@ function renderizarDatosVista(rolVista) {
         renderizarPastor(db);
     } else if (rolVista === 'maestro') {
         renderizarMaestro(db);
+    } else if (rolVista === 'produccion') {
+        renderizarProduccion(db);
     } else if (rolVista === 'adoracion') {
         renderizarAdoracion(db);
     } else if (rolVista === 'estudiante') {
@@ -561,6 +621,16 @@ function renderizarPastor(db) {
     
     document.getElementById('pastor-total-students').innerText = totalEstudiantes;
     document.getElementById('pastor-global-attendance').innerText = promAsistencia + "%";
+
+    // Estadísticas de Tareas Cumplidas (Google Classroom)
+    const totalTareasAsignadas = (db.tareas || []).length;
+    const totalEntregasRecibidas = Object.keys(db.entregasTareas || {}).length;
+    const pctCumplimientoTareas = totalTareasAsignadas > 0 ? Math.min(100, Math.round((totalEntregasRecibidas / (totalTareasAsignadas * Math.max(totalEstudiantes, 1))) * 100)) : 100;
+    
+    const hwPctEl = document.getElementById('pastor-homework-pct');
+    const hwCountEl = document.getElementById('pastor-homework-count');
+    if (hwPctEl) hwPctEl.innerText = pctCumplimientoTareas + "%";
+    if (hwCountEl) hwCountEl.innerText = `${totalEntregasRecibidas} entregas recibidas`;
     
     // Estadísticas Financieras
     const solventes = estudiantesArr.filter(e => e.pagoStatus !== 'pendiente').length;
@@ -667,11 +737,80 @@ function filtrarPastorData() {
 }
 
 // -------------------------------------------------------------
-// RENDER DE ROL: MAESTRO (MATERIALES Y ANUNCIOS GENERALES)
+// RENDER DE ROL: MAESTRO (MATERIALES, TAREAS CLASSROOM Y ANUNCIOS)
 // -------------------------------------------------------------
 function renderizarMaestro(db) {
     const areaMaestro = usuarioActual.area;
     document.getElementById('area-maestro').innerText = areaMaestro;
+
+    // 1. Cargar Comunicados de Staff Producción para Maestros
+    const staffBannerContainer = document.getElementById('maestro-staff-announcements-banner');
+    if (staffBannerContainer) {
+        staffBannerContainer.innerHTML = '';
+        const comunicados = db.anunciosStaff || [];
+        if (comunicados.length > 0) {
+            comunicados.forEach(s => {
+                const div = document.createElement('div');
+                div.className = 'announcement-banner';
+                div.style.borderColor = 'var(--primary-red)';
+                div.innerHTML = `
+                    <div class="announcement-banner-header">
+                        <strong style="color:var(--primary-red);"><i class="fas fa-bullhorn"></i> COMUNICADO DEL STAFF PRODUCCIÓN: ${s.titulo}</strong>
+                        <small>${s.fecha}</small>
+                    </div>
+                    <p>${s.contenido}</p>
+                    <span class="announcement-author">Emitido por: ${s.autor}</span>
+                `;
+                staffBannerContainer.appendChild(div);
+            });
+        }
+    }
+
+    // 2. Cargar Tabla de Tareas Entregadas en Video por Alumnos
+    const hwSubTbody = document.getElementById('maestro-homework-submissions-tbody');
+    if (hwSubTbody) {
+        hwSubTbody.innerHTML = '';
+        const entregas = db.entregasTareas || {};
+        const tareasMaestro = (db.tareas || []).filter(t => usuarioActual.rol === 'admin' || t.area === areaMaestro);
+        const tareaIdsMaestro = tareasMaestro.map(t => t.id);
+        
+        const entregasFiltradas = Object.keys(entregas).filter(k => tareaIdsMaestro.includes(entregas[k].tareaId));
+        
+        if (entregasFiltradas.length === 0) {
+            hwSubTbody.innerHTML = `<tr><td colspan="4" style="text-align:center;" class="text-muted">No hay videos entregados por alumnos aún.</td></tr>`;
+        } else {
+            entregasFiltradas.forEach(key => {
+                const e = entregas[key];
+                const student = db.usuarios[e.username] || { nombre: e.username };
+                const tObj = (db.tareas || []).find(t => t.id === e.tareaId) || { titulo: 'Tarea' };
+                
+                const tr = document.createElement('tr');
+                const isCalificado = e.estado === 'calificado';
+                const statusBadge = isCalificado 
+                    ? `<span class="task-status-pill calificado">${e.calificacion}/100</span>`
+                    : `<span class="task-status-pill entregado">Por Calificar</span>`;
+                
+                tr.innerHTML = `
+                    <td>
+                        <strong style="color:white;">${student.nombre}</strong><br>
+                        <small class="text-muted">${tObj.titulo} (Entregado: ${e.fechaEntrega})</small>
+                    </td>
+                    <td>
+                        <a href="${e.videoUrl}" target="_blank" class="submission-video-link">
+                            <i class="fab fa-youtube"></i> Ver Video ↗
+                        </a>
+                    </td>
+                    <td>${statusBadge}</td>
+                    <td>
+                        <button class="btn btn-sm btn-primary" onclick="abrirModalEvaluarTarea('${key}')">
+                            <i class="fas fa-check-circle"></i> Evaluar
+                        </button>
+                    </td>
+                `;
+                hwSubTbody.appendChild(tr);
+            });
+        }
+    }
     
     // Tabla Alumnos
     const tbody = document.getElementById('maestro-students-tbody');
@@ -680,7 +819,7 @@ function renderizarMaestro(db) {
     let count = 0;
     Object.keys(db.usuarios).forEach(username => {
         const user = db.usuarios[username];
-        if (user.rol === 'estudiante' && user.area === areaMaestro) {
+        if (user.rol === 'estudiante' && (usuarioActual.rol === 'admin' || user.area === areaMaestro)) {
             count++;
             
             const notasObj = db.calificaciones[username] || { teoria: 'Sin calificar', tecnica: 'Sin calificar', notas: '' };
@@ -717,7 +856,7 @@ function renderizarMaestro(db) {
     // Tabla Materiales Cargados
     const materialsTbody = document.getElementById('maestro-materials-tbody');
     materialsTbody.innerHTML = '';
-    const materialesFiltrados = db.materiales.filter(m => m.area === areaMaestro);
+    const materialesFiltrados = db.materiales.filter(m => usuarioActual.rol === 'admin' || m.area === areaMaestro);
     
     if (materialesFiltrados.length === 0) {
         materialsTbody.innerHTML = `<tr><td colspan="3" style="text-align: center;" class="text-muted">No has subido ningún material didáctico todavía.</td></tr>`;
@@ -738,7 +877,7 @@ function renderizarMaestro(db) {
     // Tabla Anuncios Publicados
     const bulletinsTbody = document.getElementById('maestro-bulletins-tbody');
     bulletinsTbody.innerHTML = '';
-    const anunciosFiltrados = db.anuncios.filter(a => a.area === areaMaestro);
+    const anunciosFiltrados = db.anuncios.filter(a => usuarioActual.rol === 'admin' || a.area === areaMaestro);
     
     if (anunciosFiltrados.length === 0) {
         bulletinsTbody.innerHTML = `<tr><td colspan="3" style="text-align: center;" class="text-muted">No has publicado avisos informativos.</td></tr>`;
@@ -753,6 +892,115 @@ function renderizarMaestro(db) {
             `;
             bulletinsTbody.appendChild(tr);
         });
+    }
+}
+
+// -------------------------------------------------------------
+// RENDER DE ROL: PRODUCCIÓN & STAFF
+// -------------------------------------------------------------
+function renderizarProduccion(db) {
+    const estatus = db.estatusClases || { estado: 'normal', mensaje: 'Clases normales.' };
+    const prodStatusTag = document.getElementById('prod-status-tag');
+    const prodClassState = document.getElementById('prod-class-state');
+    const prodClassMsg = document.getElementById('prod-class-message');
+    
+    if (prodStatusTag) {
+        let label = "✅ Clases Normales";
+        if (estatus.estado === 'suspendida') label = "🚫 Clase Suspendida";
+        if (estatus.estado === 'especial') label = "⚠️ Horario Especial";
+        prodStatusTag.innerText = label;
+    }
+    if (prodClassState) prodClassState.value = estatus.estado;
+    if (prodClassMsg) prodClassMsg.value = estatus.mensaje;
+
+    // Historial de comunicados de Staff
+    const anunciosStaff = db.anunciosStaff || [];
+    const prodAnnCount = document.getElementById('prod-announcements-count');
+    if (prodAnnCount) prodAnnCount.innerText = anunciosStaff.length;
+
+    const tbody = document.getElementById('prod-staff-announcements-tbody');
+    if (tbody) {
+        tbody.innerHTML = '';
+        if (anunciosStaff.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;" class="text-muted">No hay comunicados del staff emitidos aún.</td></tr>`;
+        } else {
+            anunciosStaff.forEach(a => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>
+                        <strong style="color:white;">${a.titulo}</strong><br>
+                        <small class="text-muted">${a.contenido}</small>
+                    </td>
+                    <td>${a.fecha}</td>
+                    <td><span class="badge badge-rol">${a.autor}</span></td>
+                    <td>
+                        <button class="btn btn-sm btn-delete" onclick="eliminarAnuncioStaff('${a.id}')"><i class="fas fa-trash-alt"></i></button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+    }
+}
+
+function actualizarEstatusClases(event) {
+    event.preventDefault();
+    const estado = document.getElementById('prod-class-state').value;
+    const mensaje = document.getElementById('prod-class-message').value.trim();
+    
+    if (!mensaje) {
+        showToast("Escribe un mensaje de estatus de clase.", "error");
+        return;
+    }
+    
+    const db = getDB();
+    db.estatusClases = {
+        estado,
+        mensaje,
+        fechaActualizacion: new Date().toISOString().split('T')[0],
+        publicadoPor: usuarioActual ? usuarioActual.nombre : "Equipo Producción & Staff"
+    };
+    saveDB(db);
+    showToast("Estatus de clases actualizado para la comunidad", "success");
+    renderizarDatosVista(usuarioActual ? usuarioActual.rol : 'produccion');
+}
+
+function publicarAnuncioStaff(event) {
+    event.preventDefault();
+    const titulo = document.getElementById('staff-announcement-title').value.trim();
+    const contenido = document.getElementById('staff-announcement-content').value.trim();
+    
+    if (!titulo || !contenido) {
+        showToast("Completa título y contenido del aviso.", "error");
+        return;
+    }
+    
+    const db = getDB();
+    if (!db.anunciosStaff) db.anunciosStaff = [];
+    const nuevoId = (db.anunciosStaff.length > 0 ? Math.max(...db.anunciosStaff.map(s => parseInt(s.id.replace('s','')) || 0)) + 1 : 1).toString();
+    
+    db.anunciosStaff.push({
+        id: 's' + nuevoId,
+        titulo,
+        contenido,
+        fecha: new Date().toISOString().split('T')[0],
+        autor: usuarioActual ? usuarioActual.nombre : "Equipo Producción & Staff"
+    });
+    
+    saveDB(db);
+    document.getElementById('staff-announcement-title').value = '';
+    document.getElementById('staff-announcement-content').value = '';
+    showToast("Comunicado para maestros enviado con éxito");
+    renderizarDatosVista(usuarioActual ? usuarioActual.rol : 'produccion');
+}
+
+function eliminarAnuncioStaff(id) {
+    if (confirm("¿Deseas eliminar este comunicado del staff?")) {
+        const db = getDB();
+        db.anunciosStaff = (db.anunciosStaff || []).filter(a => a.id !== id);
+        saveDB(db);
+        showToast("Comunicado eliminado");
+        renderizarDatosVista(usuarioActual ? usuarioActual.rol : 'produccion');
     }
 }
 
@@ -1098,6 +1346,142 @@ function alternarEstadoCancion(cancionId) {
 }
 
 // -------------------------------------------------------------
+// LÓGICA DE GOOGLE CLASSROOM (CREACIÓN, ENTREGA Y EVALUACIÓN DE TAREAS EN VIDEO)
+// -------------------------------------------------------------
+let tareaIdEntregarSeleccionada = null;
+let entregaKeyEvaluarSeleccionada = null;
+
+function guardarTareaMaestro(event) {
+    event.preventDefault();
+    const titulo = document.getElementById('tarea-titulo').value.trim();
+    const desc = document.getElementById('tarea-desc').value.trim();
+    const fecha = document.getElementById('tarea-fecha-limite').value;
+    
+    if (!titulo || !desc || !fecha) {
+        showToast("Completa los datos de la tarea.", "error");
+        return;
+    }
+    
+    const db = getDB();
+    if (!db.tareas) db.tareas = [];
+    const nuevoId = 't' + (db.tareas.length + 1);
+    
+    db.tareas.push({
+        id: nuevoId,
+        area: usuarioActual.area,
+        titulo,
+        descripcion: desc,
+        fechaLimite: fecha,
+        maestro: usuarioActual.nombre
+    });
+    
+    saveDB(db);
+    document.getElementById('tarea-titulo').value = '';
+    document.getElementById('tarea-desc').value = '';
+    document.getElementById('tarea-fecha-limite').value = '';
+    showToast("Tarea de Classroom asignada a los alumnos", "success");
+    renderizarDatosVista(usuarioActual.rol);
+}
+
+function eliminarTarea(id) {
+    if (confirm("¿Deseas eliminar esta tarea asignada?")) {
+        const db = getDB();
+        db.tareas = (db.tareas || []).filter(t => t.id !== id);
+        saveDB(db);
+        showToast("Tarea eliminada");
+        renderizarDatosVista(usuarioActual.rol);
+    }
+}
+
+function abrirModalEntregarTarea(tareaId) {
+    tareaIdEntregarSeleccionada = tareaId;
+    const db = getDB();
+    const tarea = (db.tareas || []).find(t => t.id === tareaId);
+    
+    if (tarea) {
+        document.getElementById('modal-entregar-tarea-title').innerText = `Entregar Tarea: ${tarea.titulo}`;
+        document.getElementById('modal-entregar-tarea-desc').innerText = `Instrucciones: ${tarea.descripcion} (Fecha Límite: ${tarea.fechaLimite})`;
+    }
+    
+    const existingKey = `${tareaId}_${usuarioActual.username}`;
+    const entregaExistente = (db.entregasTareas || {})[existingKey];
+    document.getElementById('tarea-video-url').value = entregaExistente ? entregaExistente.videoUrl : '';
+    
+    document.getElementById('modal-entregar-tarea').classList.add('active');
+}
+
+function cerrarModalEntregarTarea() {
+    document.getElementById('modal-entregar-tarea').classList.remove('active');
+}
+
+function guardarEntregaTarea(event) {
+    event.preventDefault();
+    const videoUrl = document.getElementById('tarea-video-url').value.trim();
+    if (!videoUrl) {
+        showToast("Pega un enlace de video válido.", "error");
+        return;
+    }
+    
+    const db = getDB();
+    if (!db.entregasTareas) db.entregasTareas = {};
+    const key = `${tareaIdEntregarSeleccionada}_${usuarioActual.username}`;
+    
+    db.entregasTareas[key] = {
+        id: 'e_' + Date.now(),
+        tareaId: tareaIdEntregarSeleccionada,
+        username: usuarioActual.username,
+        videoUrl: videoUrl,
+        fechaEntrega: new Date().toISOString().split('T')[0],
+        estado: 'entregado',
+        calificacion: null,
+        feedback: ''
+    };
+    
+    saveDB(db);
+    cerrarModalEntregarTarea();
+    showToast("¡Tarea entregada en video con éxito!", "success");
+    renderizarDatosVista(usuarioActual.rol);
+}
+
+function abrirModalEvaluarTarea(entregaKey) {
+    entregaKeyEvaluarSeleccionada = entregaKey;
+    const db = getDB();
+    const entrega = (db.entregasTareas || {})[entregaKey];
+    
+    if (entrega) {
+        const user = db.usuarios[entrega.username] || { nombre: entrega.username };
+        const tarea = (db.tareas || []).find(t => t.id === entrega.tareaId) || { titulo: 'Tarea' };
+        
+        document.getElementById('eval-tarea-student-tag').innerText = `Alumno: ${user.nombre} • Tarea: ${tarea.titulo}`;
+        document.getElementById('eval-tarea-calificacion').value = entrega.calificacion || 90;
+        document.getElementById('eval-tarea-feedback').value = entrega.feedback || '';
+        
+        document.getElementById('modal-evaluar-tarea').classList.add('active');
+    }
+}
+
+function cerrarModalEvaluarTarea() {
+    document.getElementById('modal-evaluar-tarea').classList.remove('active');
+}
+
+function guardarEvaluacionTarea(event) {
+    event.preventDefault();
+    const cal = parseInt(document.getElementById('eval-tarea-calificacion').value) || 0;
+    const feedback = document.getElementById('eval-tarea-feedback').value.trim();
+    
+    const db = getDB();
+    if (db.entregasTareas && db.entregasTareas[entregaKeyEvaluarSeleccionada]) {
+        db.entregasTareas[entregaKeyEvaluarSeleccionada].calificacion = cal;
+        db.entregasTareas[entregaKeyEvaluarSeleccionada].feedback = feedback;
+        db.entregasTareas[entregaKeyEvaluarSeleccionada].estado = 'calificado';
+        saveDB(db);
+        showToast("Calificación de tarea guardada con éxito", "success");
+        cerrarModalEvaluarTarea();
+        renderizarDatosVista(usuarioActual.rol);
+    }
+}
+
+// -------------------------------------------------------------
 // RENDER DE ROL: ESTUDIANTE / ALUMNO, METRÓNOMO Y PLANIFICADOR
 // -------------------------------------------------------------
 function renderizarEstudiante(db) {
@@ -1105,6 +1489,99 @@ function renderizarEstudiante(db) {
     const username = user.username;
     
     document.getElementById('student-instrument-title').innerText = `Instrumento: ${user.area}`;
+
+    // 1. Cargar Banner de Estatus de Clase (Publicado por Producción)
+    const estatusBanner = document.getElementById('student-class-status-banner');
+    const estatusTitle = document.getElementById('stud-class-status-title');
+    const estatusDesc = document.getElementById('stud-class-status-desc');
+    const estatusIcon = document.getElementById('stud-class-status-icon');
+    
+    const currentClassState = db.estatusClases || { estado: 'normal', mensaje: 'Clases presenciales este Sábado.' };
+    if (estatusBanner && estatusTitle && estatusDesc) {
+        estatusBanner.className = `class-status-banner ${currentClassState.estado}`;
+        if (currentClassState.estado === 'normal') {
+            if (estatusIcon) estatusIcon.innerHTML = `<i class="fas fa-calendar-check"></i>`;
+            estatusTitle.innerText = "Estatus de Clases: ✅ NORMAL";
+        } else if (currentClassState.estado === 'suspendida') {
+            if (estatusIcon) estatusIcon.innerHTML = `<i class="fas fa-ban"></i>`;
+            estatusTitle.innerText = "Estatus de Clases: 🚫 SUSPENDIDA";
+        } else {
+            if (estatusIcon) estatusIcon.innerHTML = `<i class="fas fa-exclamation-triangle"></i>`;
+            estatusTitle.innerText = "Estatus de Clases: ⚠️ HORARIO ESPECIAL";
+        }
+        estatusDesc.innerText = currentClassState.mensaje;
+    }
+
+    // 2. Cargar Mis Tareas de Google Classroom (Video Submissions)
+    const classroomContainer = document.getElementById('student-classroom-tasks-container');
+    if (classroomContainer) {
+        classroomContainer.innerHTML = '';
+        const misTareas = (db.tareas || []).filter(t => user.rol === 'admin' || t.area === user.area);
+        const misEntregas = db.entregasTareas || {};
+        
+        let entregadasCount = 0;
+        
+        if (misTareas.length === 0) {
+            classroomContainer.innerHTML = `<p class="text-muted" style="text-align:center; padding:15px 0;">No tienes tareas asignadas actualmente para ${user.area}.</p>`;
+        } else {
+            misTareas.forEach(t => {
+                const key = `${t.id}_${username}`;
+                const entrega = misEntregas[key];
+                
+                const card = document.createElement('div');
+                card.className = 'classroom-task-card';
+                
+                let badgeHtml = `<span class="task-status-pill pendiente">🔴 Pendiente</span>`;
+                let actionBtnHtml = `<button class="btn btn-sm btn-primary" onclick="abrirModalEntregarTarea('${t.id}')"><i class="fas fa-upload"></i> Subir Video de Tarea</button>`;
+                let feedbackHtml = '';
+                
+                if (entrega) {
+                    entregadasCount++;
+                    if (entrega.estado === 'calificado') {
+                        badgeHtml = `<span class="task-status-pill calificado">🟢 Calificada: ${entrega.calificacion}/100</span>`;
+                        actionBtnHtml = `<a href="${entrega.videoUrl}" target="_blank" class="submission-video-link"><i class="fab fa-youtube"></i> Mi Video ↗</a>`;
+                        if (entrega.feedback) {
+                            feedbackHtml = `<div style="background:rgba(255,255,255,0.03); border-left:3px solid var(--green-accent); padding:8px 12px; margin-top:10px; border-radius:6px;">
+                                <strong style="font-size:0.8rem; color:var(--green-accent);">Retroalimentación del Profesor:</strong>
+                                <p style="font-size:0.85rem; margin:3px 0 0; color:white;">${entrega.feedback}</p>
+                            </div>`;
+                        }
+                    } else {
+                        badgeHtml = `<span class="task-status-pill entregado">🟡 Entregada (En revisión)</span>`;
+                        actionBtnHtml = `<button class="btn btn-sm btn-secondary" onclick="abrirModalEntregarTarea('${t.id}')"><i class="fas fa-edit"></i> Cambiar Video</button>`;
+                    }
+                } else {
+                    const todayStr = new Date().toISOString().split('T')[0];
+                    if (t.fechaLimite < todayStr) {
+                        badgeHtml = `<span class="task-status-pill vencido">⚠️ Vencida / En Mora</span>`;
+                    }
+                }
+
+                card.innerHTML = `
+                    <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:15px; flex-wrap:wrap;">
+                        <div style="flex:1;">
+                            <div style="display:flex; align-items:center; gap:10px; margin-bottom:6px;">
+                                <h4 style="color:white; font-size:1rem; margin:0;">${t.titulo}</h4>
+                                ${badgeHtml}
+                            </div>
+                            <p style="font-size:0.88rem; color:var(--text-light); margin:0 0 8px;">${t.descripcion}</p>
+                            <small class="text-muted"><i class="far fa-calendar-alt"></i> Fecha Límite: ${t.fechaLimite} &nbsp;&bull;&nbsp; Profesor: ${t.maestro}</small>
+                            ${feedbackHtml}
+                        </div>
+                        <div>
+                            ${actionBtnHtml}
+                        </div>
+                    </div>
+                `;
+                classroomContainer.appendChild(card);
+            });
+        }
+
+        const progressBadge = document.getElementById('stud-homework-progress-badge');
+        if (progressBadge) {
+            progressBadge.innerText = `${entregadasCount} / ${misTareas.length} Completadas`;
+        }
+    }
     
     // Cargar Alerta Dominical si fue asignado a tocar
     const avisoServicio = document.getElementById('student-worship-alert');
