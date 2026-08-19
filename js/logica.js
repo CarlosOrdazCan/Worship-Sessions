@@ -312,6 +312,9 @@ function iniciarSesion(event) {
         errorMsg.style.display = 'none';
         usuarioActual = { ...db.usuarios[inputUser], username: inputUser };
         
+        // Guardar sesión persistente
+        localStorage.setItem('ws_user_session', JSON.stringify(usuarioActual));
+        
         mostrarPantalla('app-screen');
         configurarInterfaz(usuarioActual);
         showToast(`¡Bienvenido de vuelta, ${usuarioActual.nombre}!`, 'success');
@@ -325,6 +328,7 @@ function iniciarSesion(event) {
 
 function cerrarSesion() {
     usuarioActual = null;
+    localStorage.removeItem('ws_user_session');
     document.getElementById('login-user').value = '';
     document.getElementById('login-pass').value = '';
     mostrarPantalla('app-choice-screen');
@@ -341,7 +345,7 @@ function configurarInterfaz(usuario) {
     document.getElementById('lbl-rol-actual').innerText = rol.toUpperCase();
     document.getElementById('nav-username').innerText = nombre;
     document.getElementById('app-welcome-title').innerText = "Hola, " + nombre;
-    document.getElementById('app-welcome-subtitle').innerText = "Área / Especialidad: " + usuario.area;
+    document.getElementById('app-welcome-subtitle').innerText = "Área / Especialidad: " + (usuario.area || 'Estudiante');
     
     document.getElementById('nav-avatar').src = `https://ui-avatars.com/api/?name=${encodeURIComponent(nombre)}&background=d90429&color=fff&bold=true`;
     if (menusConfig[rol]) {
@@ -353,11 +357,15 @@ function configurarInterfaz(usuario) {
 
 // CAMBIO DE VISTAS DENTRO DEL PANEL PRINCIPAL
 function cambiarVista(rolVista) {
-    document.querySelectorAll('.app-view').forEach(v => v.classList.remove('active'));
+    document.querySelectorAll('.app-view').forEach(v => {
+        v.classList.remove('active');
+        v.style.display = 'none';
+    });
     document.querySelectorAll('#dynamic-menu .nav-link').forEach(link => link.classList.remove('active'));
     
     const targetView = document.getElementById('view-' + rolVista);
     if (targetView) {
+        targetView.style.display = 'block';
         targetView.classList.add('active');
     }
     
@@ -2560,4 +2568,20 @@ function iniciarEleccionApp() {
 window.onload = function() {
     initDB();
     iniciarEleccionApp();
+    
+    // Auto-restaurar sesión activa al recargar la página
+    try {
+        const savedSession = localStorage.getItem('ws_user_session');
+        if (savedSession) {
+            const parsedSession = JSON.parse(savedSession);
+            const db = getDB();
+            if (parsedSession && parsedSession.username && db.usuarios[parsedSession.username]) {
+                usuarioActual = { ...db.usuarios[parsedSession.username], username: parsedSession.username };
+                mostrarPantalla('app-screen');
+                configurarInterfaz(usuarioActual);
+            }
+        }
+    } catch(e) {
+        console.error("Error al restaurar la sesión del usuario:", e);
+    }
 };
