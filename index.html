@@ -432,6 +432,80 @@
                                 </table>
                             </div>
                         </div>
+                    <!-- MÓDULO DE ASIGNACIÓN DE ENSAMBLES POR CICLO (SÓLO SI ESTÁ ACTIVO O MAESTROS/ADMIN) -->
+                    <div class="panel-box" style="margin-bottom: 2rem;">
+                        <div class="panel-header">
+                            <h3><i class="fas fa-layer-group"></i> Asignar Alumnos a Canciones de Ensamble (Niveles y Playthrough)</h3>
+                            <span class="badge badge-rol" id="maestro-ensamble-status-badge">Etapa de Ensamble</span>
+                        </div>
+                        <p class="text-muted">Asigna a los estudiantes de tu especialidad a las canciones del ensamble activo, especificando su nivel y agregando tu video de apoyo (Playthrough).</p>
+                        
+                        <form onsubmit="guardarAsignacionEnsambleMaestro(event)" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-top: 1rem; align-items: flex-end;">
+                            <div class="form-group" style="margin-bottom: 0;">
+                                <label for="ens-assign-song">Canción de Ensamble</label>
+                                <select id="ens-assign-song" class="form-control" onchange="cargarDetallesCancionEnsamble(this.value)" required>
+                                    <!-- Cargado por JS -->
+                                </select>
+                            </div>
+                            <div class="form-group" style="margin-bottom: 0;">
+                                <label for="ens-assign-student">Alumno de tu Especialidad</label>
+                                <select id="ens-assign-student" class="form-control" required>
+                                    <!-- Cargado por JS -->
+                                </select>
+                            </div>
+                            <div class="form-group" style="margin-bottom: 0;">
+                                <label for="ens-assign-level">Nivel Asignado</label>
+                                <select id="ens-assign-level" class="form-control" required>
+                                    <option value="Avanzado">🔴 Avanzado</option>
+                                    <option value="Intermedio" selected>🟡 Intermedio</option>
+                                    <option value="Básico">🟢 Básico</option>
+                                    <option value="Junior">🟣 Junior</option>
+                                </select>
+                            </div>
+                            <div class="form-group" style="margin-bottom: 0;">
+                                <label for="ens-assign-tempo">Tempo (BPM)</label>
+                                <input type="text" id="ens-assign-tempo" class="form-control" placeholder="Ej. 120 BPM">
+                            </div>
+                            <div class="form-group" style="margin-bottom: 0;">
+                                <label for="ens-assign-tono">Tono Principal</label>
+                                <input type="text" id="ens-assign-tono" class="form-control" placeholder="Ej. Sol (G)">
+                            </div>
+                            <div class="form-group" style="margin-bottom: 0;">
+                                <label for="ens-assign-compas">Compás</label>
+                                <select id="ens-assign-compas" class="form-control">
+                                    <option value="4/4">4/4</option>
+                                    <option value="6/8">6/8</option>
+                                    <option value="3/4">3/4</option>
+                                    <option value="2/4">2/4</option>
+                                </select>
+                            </div>
+                            <div class="form-group" style="margin-bottom: 0; grid-column: 1 / -1;">
+                                <label for="ens-assign-playthrough">Video Playthrough del Profesor (YouTube / Drive Link)</label>
+                                <input type="url" id="ens-assign-playthrough" class="form-control" placeholder="https://www.youtube.com/watch?v=...">
+                            </div>
+                            <div class="form-group" style="margin-bottom: 0; grid-column: 1 / -1;">
+                                <label for="ens-assign-notes">Indicaciones Técnicas para el Alumno</label>
+                                <input type="text" id="ens-assign-notes" class="form-control" placeholder="Ej. Revisa la entrada del Coro 2 a 120 BPM en corcheas limpios...">
+                            </div>
+                            <button type="submit" class="btn btn-primary" style="grid-column: 1 / -1; justify-content: center;"><i class="fas fa-save"></i> Guardar Asignación de Ensamble</button>
+                        </form>
+
+                        <div class="table-container" style="margin-top: 1.5rem;">
+                            <table class="table-custom">
+                                <thead>
+                                    <tr>
+                                        <th>Canción</th>
+                                        <th>Alumno Asignado</th>
+                                        <th>Puesto / Nivel</th>
+                                        <th>Recursos / Playthrough</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="maestro-ensamble-assignments-tbody">
+                                    <!-- Cargado por JS -->
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
 
                     <!-- REJILLA MAESTRO: CARGA DE MATERIALES Y PUBLICACIÓN DE AVISOS -->
@@ -610,6 +684,30 @@
                             </table>
                         </div>
                     </div>
+
+                    <!-- TABLA DE CONTROL DE COLEGIATURAS (PRODUCCIÓN & STAFF) -->
+                    <div class="panel-box" style="margin-top: 1.8rem;">
+                        <div class="panel-header">
+                            <h3><i class="fas fa-file-invoice-dollar"></i> Control de Colegiaturas y Pagos de Alumnos</h3>
+                            <span class="badge badge-rol" id="prod-billing-summary-badge">0 Solventes</span>
+                        </div>
+                        <p class="text-muted">Administra y actualiza el estado de pago de los alumnos de la academia.</p>
+                        <div class="table-container" style="margin-top: 1rem;">
+                            <table class="table-custom">
+                                <thead>
+                                    <tr>
+                                        <th>Alumno</th>
+                                        <th>Instrumento / Área</th>
+                                        <th>Estado de Colegiatura</th>
+                                        <th>Acción de Producción</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="prod-billing-tbody">
+                                    <!-- Cargado por JS -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- ================= VISTA: ADORACION ================= -->
@@ -623,6 +721,15 @@
                                 <small class="text-muted">Canciones preparadas para domingo</small>
                             </div>
                         </div>
+                    </div>
+
+                    <!-- PANEL DE CONTROL DE ETAPA DE ENSAMBLES (ADMIN) -->
+                    <div class="panel-box" style="margin-bottom: 2rem; background: linear-gradient(135deg, rgba(230,0,0,0.1), rgba(15,15,20,0.9)); border: 1px solid var(--primary-red);">
+                        <div class="panel-header">
+                            <h3><i class="fas fa-toggle-on"></i> Etapa de Ensambles por Ciclo (Control de Dirección)</h3>
+                            <button id="admin-toggle-ensamble-btn" class="btn btn-primary" onclick="alternarEtapaEnsamble()"><i class="fas fa-power-off"></i> Habilitar Ensambles</button>
+                        </div>
+                        <p class="text-muted" id="admin-ensamble-status-desc">Los ensambles se habilitan a mitad del ciclo escolar para asignar repertorio y playthroughs a alumnos seleccionados.</p>
                     </div>
 
                     <!-- ASIGNACIÓN DE INSTRUMENTISTAS DOMINGO -->
@@ -787,20 +894,59 @@
                         </div>
                     </div>
 
-                    <!-- METRÓNOMO INTERACTIVO SINTETIZADO -->
+                    <!-- PANEL ENSAMBLE ASIGNADO AL ALUMNO (SI ESTÁ ACTIVADA LA ETAPA POR ADMIN) -->
+                    <div id="student-ensamble-container" class="panel-box" style="margin-bottom: 1.5rem;">
+                        <div class="panel-header">
+                            <h3><i class="fas fa-guitar"></i> Mi Ensamble Asignado (Repertorio por Ciclo)</h3>
+                            <span class="badge badge-rol" id="stud-ensamble-status-tag">Etapa Activa</span>
+                        </div>
+                        <p class="text-muted">Revisa las canciones de ensamble en las que fuiste asignado, mira el video playthrough de tu maestro y practica con las notas técnicas.</p>
+                        <div id="student-ensamble-cards-wall" style="margin-top: 1rem;">
+                            <!-- Cargado por JS -->
+                        </div>
+                    </div>
+
+                    <!-- METRÓNOMO INTERACTIVO SINTETIZADO MEJORADO -->
                     <div class="panel-box metronome-panel-box" style="margin-top: 1.5rem;">
                         <div class="panel-header">
-                            <h3><i class="fas fa-drum"></i> Metrónomo de Práctica (Herramienta de Estudio)</h3>
-                            <div id="metro-light-dot" class="metro-light-indicator"></div>
+                            <h3><i class="fas fa-drum"></i> Metrónomo de Práctica Profesional</h3>
+                            <div id="metro-beat-indicators" class="metro-beats-container" style="display: flex; gap: 8px;">
+                                <div class="metro-led-dot active">1</div>
+                                <div class="metro-led-dot">2</div>
+                                <div class="metro-led-dot">3</div>
+                                <div class="metro-led-dot">4</div>
+                            </div>
                         </div>
-                        <p class="text-muted">Utiliza nuestro metrónomo con tono sintetizado integrado para estudiar tus escalas, canciones y ejercicios a tempo constante.</p>
-                        <div class="metronome-interface" style="display: flex; align-items: center; gap: 30px; margin-top: 1.5rem; flex-wrap: wrap;">
-                            <div class="metro-speed-display" style="font-size: 2.2rem; font-weight: 800; min-width: 120px;">
+                        <p class="text-muted">Ajusta el compás (4/4, 6/8, 3/4), la velocidad BPM y practica con el tono sintetizado diferenciado para el primer tiempo.</p>
+                        
+                        <div class="metronome-interface" style="display: flex; align-items: center; gap: 15px; margin-top: 1.5rem; flex-wrap: wrap;">
+                            <div class="metro-speed-display" style="font-size: 2.2rem; font-weight: 800; min-width: 100px;">
                                 <span id="metro-bpm-val">120</span> <small style="font-size: 1rem; color: var(--text-muted);">BPM</small>
                             </div>
-                            <div class="metro-slider-container" style="flex: 1; min-width: 200px;">
+                            
+                            <div class="form-group" style="margin-bottom: 0; width: 110px;">
+                                <label style="font-size: 0.75rem; color: var(--text-muted);">Compás</label>
+                                <select id="metro-compas" class="form-control" onchange="cambiarCompasMetronomo(this.value)">
+                                    <option value="4/4" selected>4/4</option>
+                                    <option value="3/4">3/4</option>
+                                    <option value="6/8">6/8</option>
+                                    <option value="2/4">2/4</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group" style="margin-bottom: 0; width: 130px;">
+                                <label style="font-size: 0.75rem; color: var(--text-muted);">Subdivisión</label>
+                                <select id="metro-subdivision" class="form-control">
+                                    <option value="negras" selected>Negras (1x)</option>
+                                    <option value="corcheas">Corcheas (2x)</option>
+                                    <option value="tresillos">Tresillos (3x)</option>
+                                </select>
+                            </div>
+
+                            <div class="metro-slider-container" style="flex: 1; min-width: 160px;">
                                 <input type="range" id="metro-slider" min="40" max="240" value="120" class="metro-slider-range" oninput="cambiarBpm(this.value)" style="width: 100%;">
                             </div>
+                            
                             <button type="button" class="btn btn-primary" id="metro-play-btn" onclick="toggleMetronomo()" style="justify-content: center; height: 50px; width: 160px; font-size: 0.95rem;">
                                 <i class="fas fa-play"></i> Ensayar Tempo
                             </button>
@@ -880,13 +1026,11 @@
                         <select id="user-area" class="form-control">
                             <option value="Teclado">Teclado</option>
                             <option value="Batería">Batería</option>
+                            <option value="Batería Junior">Batería Junior</option>
                             <option value="Guitarra Eléctrica">Guitarra Eléctrica</option>
+                            <option value="Guitarra Acústica">Guitarra Acústica</option>
                             <option value="Bajo Eléctrico">Bajo Eléctrico</option>
                             <option value="Canto / Voces">Canto / Voces</option>
-                            <option value="Ensamble">Ensamble General</option>
-                            <option value="Pastorado">Pastorado</option>
-                            <option value="Sistemas">Sistemas</option>
-                            <option value="Administración">Administración</option>
                         </select>
                     </div>
                     <!-- CAMPO DINÁMICO DE PAGO -->

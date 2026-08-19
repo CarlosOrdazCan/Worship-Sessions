@@ -99,6 +99,21 @@ const defaultDB = {
             feedback: "¡Excelente tempo y paso de pulgar impecable!"
         }
     },
+    ensambleActivo: false,
+    ensambleAsignaciones: {
+        "1_alumno1": {
+            id: "ens_1_alumno1",
+            songId: "1",
+            username: "alumno1",
+            nivel: "Avanzado",
+            tempo: "120 BPM",
+            tono: "B (Si)",
+            compas: "4/4",
+            playthroughUrl: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+            notes: "Estudiar la entrada del verso 2 a 120 BPM en octavas limpias.",
+            maestro: "Juan Carlos (Teclado)"
+        }
+    },
     cursos: []
 };
 
@@ -119,6 +134,8 @@ function initDB() {
         if (!db.anunciosStaff) { db.anunciosStaff = defaultDB.anunciosStaff; modificado = true; }
         if (!db.tareas) { db.tareas = defaultDB.tareas; modificado = true; }
         if (!db.entregasTareas) { db.entregasTareas = defaultDB.entregasTareas; modificado = true; }
+        if (db.ensambleActivo === undefined) { db.ensambleActivo = false; modificado = true; }
+        if (!db.ensambleAsignaciones) { db.ensambleAsignaciones = defaultDB.ensambleAsignaciones; modificado = true; }
         
         if (modificado) {
             localStorage.setItem('worship_sessions_db', JSON.stringify(db));
@@ -889,6 +906,90 @@ function renderizarMaestro(db) {
             bulletinsTbody.appendChild(tr);
         });
     }
+
+    // 3. Cargar Módulo Asignaciones de Ensamble para el Maestro
+    const isEnsambleActivo = db.ensambleActivo || usuarioActual.rol === 'admin';
+    const statusBadge = document.getElementById('maestro-ensamble-status-badge');
+    if (statusBadge) {
+        statusBadge.innerText = db.ensambleActivo ? "🟢 ETAPA DE ENSAMBLES ACTIVA" : "🔴 ETAPA INACTIVA (MITAD DE CICLO)";
+        statusBadge.style.background = db.ensambleActivo ? "rgba(16, 185, 129, 0.15)" : "rgba(239, 68, 68, 0.15)";
+        statusBadge.style.color = db.ensambleActivo ? "#10b981" : "#ef4444";
+    }
+
+    const selectSong = document.getElementById('ens-assign-song');
+    const selectStudent = document.getElementById('ens-assign-student');
+    
+    if (selectSong && selectStudent) {
+        selectSong.innerHTML = '<option value="">-- Seleccionar Canción --</option>';
+        (db.canciones || []).filter(c => c.activo).forEach(c => {
+            const opt = document.createElement('option');
+            opt.value = c.id;
+            opt.innerText = `${c.titulo} - ${c.autor} (${c.tono})`;
+            selectSong.appendChild(opt);
+        });
+
+        selectStudent.innerHTML = '<option value="">-- Seleccionar Alumno --</option>';
+        Object.keys(db.usuarios).forEach(uname => {
+            const u = db.usuarios[uname];
+            if (u.rol === 'estudiante' && (usuarioActual.rol === 'admin' || u.area === areaMaestro)) {
+                const opt = document.createElement('option');
+                opt.value = uname;
+                opt.innerText = `${u.nombre} (${u.area}) - @${uname}`;
+                selectStudent.appendChild(opt);
+            }
+        });
+    }
+
+    // Tabla Asignaciones de Ensamble
+    const ensTbody = document.getElementById('maestro-ensamble-assignments-tbody');
+    if (ensTbody) {
+        ensTbody.innerHTML = '';
+        const asignaciones = db.ensambleAsignaciones || {};
+        const keys = Object.keys(asignaciones);
+        
+        let filteredKeys = keys;
+        if (usuarioActual.rol !== 'admin') {
+            filteredKeys = keys.filter(k => {
+                const u = db.usuarios[asignaciones[k].username];
+                return u && u.area === areaMaestro;
+            });
+        }
+
+        if (filteredKeys.length === 0) {
+            ensTbody.innerHTML = `<tr><td colspan="5" style="text-align:center;" class="text-muted">No has asignado alumnos de tu área a canciones de ensamble todavía.</td></tr>`;
+        } else {
+            filteredKeys.forEach(k => {
+                const item = asignaciones[k];
+                const student = db.usuarios[item.username] || { nombre: item.username, area: areaMaestro };
+                const song = (db.canciones || []).find(c => c.id === item.songId) || { titulo: 'Canción' };
+                
+                let lvlClass = 'basico';
+                if (item.nivel === 'Avanzado') lvlClass = 'avanzado';
+                if (item.nivel === 'Intermedio') lvlClass = 'intermedio';
+                if (item.nivel === 'Junior') lvlClass = 'junior';
+
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>
+                        <strong style="color:white;">${song.titulo}</strong><br>
+                        <small class="text-muted">Tempo: ${item.tempo} | Tono: ${item.tono} | Compás: ${item.compas}</small>
+                    </td>
+                    <td>
+                        <strong style="color:white;">${student.nombre}</strong><br>
+                        <small class="text-muted">${student.area}</small>
+                    </td>
+                    <td><span class="badge-level ${lvlClass}">${item.nivel}</span></td>
+                    <td>
+                        ${item.playthroughUrl ? `<a href="${item.playthroughUrl}" target="_blank" class="submission-video-link"><i class="fab fa-youtube"></i> Playthrough ↗</a>` : '<span class="text-muted">Sin Video</span>'}
+                    </td>
+                    <td>
+                        <button class="btn btn-sm btn-delete" onclick="eliminarAsignacionEnsamble('${k}')"><i class="fas fa-trash-alt"></i></button>
+                    </td>
+                `;
+                ensTbody.appendChild(tr);
+            });
+        }
+    }
 }
 
 // -------------------------------------------------------------
@@ -936,6 +1037,55 @@ function renderizarProduccion(db) {
                 tbody.appendChild(tr);
             });
         }
+    }
+
+    // Tabla Control de Colegiaturas de Alumnos
+    const billingTbody = document.getElementById('prod-billing-tbody');
+    if (billingTbody) {
+        billingTbody.innerHTML = '';
+        const alumnos = Object.values(db.usuarios).filter(u => u.rol === 'estudiante');
+        const solventesCount = alumnos.filter(u => u.pagoStatus !== 'pendiente').length;
+        
+        const badgeSummary = document.getElementById('prod-billing-summary-badge');
+        if (badgeSummary) badgeSummary.innerText = `${solventesCount} de ${alumnos.length} Solventes`;
+
+        if (alumnos.length === 0) {
+            billingTbody.innerHTML = `<tr><td colspan="4" style="text-align:center;" class="text-muted">No hay alumnos registrados en la academia.</td></tr>`;
+        } else {
+            alumnos.forEach(u => {
+                const isSolvente = u.pagoStatus !== 'pendiente';
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>
+                        <strong style="color:white;">${u.nombre}</strong><br>
+                        <small class="text-muted">@${u.username}</small>
+                    </td>
+                    <td><span class="badge badge-rol">${u.area}</span></td>
+                    <td>
+                        <span class="badge badge-estado ${isSolvente ? 'presente' : 'ausente'}">
+                            ${isSolvente ? 'SOLVENTE (AL DÍA)' : 'PAGO PENDIENTE'}
+                        </span>
+                    </td>
+                    <td>
+                        <button class="btn btn-sm ${isSolvente ? 'btn-deactivate' : 'btn-activate'}" onclick="alternarPagoAlumnoProduccion('${u.username}')">
+                            ${isSolvente ? '<i class="fas fa-exclamation-triangle"></i> Marcar Pendiente' : '<i class="fas fa-check-circle"></i> Marcar Solvente'}
+                        </button>
+                    </td>
+                `;
+                billingTbody.appendChild(tr);
+            });
+        }
+    }
+}
+
+function alternarPagoAlumnoProduccion(username) {
+    const db = getDB();
+    if (db.usuarios && db.usuarios[username]) {
+        const actual = db.usuarios[username].pagoStatus;
+        db.usuarios[username].pagoStatus = actual === 'pendiente' ? 'solvente' : 'pendiente';
+        saveDB(db);
+        showToast(`Estado de colegiatura de @${username} actualizado`, "success");
+        renderizarDatosVista(usuarioActual ? usuarioActual.rol : 'produccion');
     }
 }
 
@@ -1171,7 +1321,91 @@ function eliminarMaterial(id) {
 // -------------------------------------------------------------
 let cancionIdSeleccionada = null;
 
+function alternarEtapaEnsamble() {
+    const db = getDB();
+    db.ensambleActivo = !db.ensambleActivo;
+    saveDB(db);
+    showToast(db.ensambleActivo ? "⚡ Etapa de Ensambles HABILITADA en la plataforma" : "🚫 Etapa de Ensambles DESHABILITADA", "success");
+    renderizarDatosVista(usuarioActual ? usuarioActual.rol : 'admin');
+}
+
+function eliminarCancion(id) {
+    if (confirm("¿Estás seguro de eliminar permanentemente esta canción del repertorio?")) {
+        const db = getDB();
+        db.canciones = db.canciones.filter(c => c.id !== id);
+        saveDB(db);
+        showToast("Canción eliminada del repertorio", "success");
+        renderizarDatosVista(usuarioActual ? usuarioActual.rol : 'adoracion');
+    }
+}
+
+function guardarAsignacionEnsambleMaestro(event) {
+    event.preventDefault();
+    const songId = document.getElementById('ens-assign-song').value;
+    const studentUsername = document.getElementById('ens-assign-student').value;
+    const level = document.getElementById('ens-assign-level').value;
+    const tempo = document.getElementById('ens-assign-tempo').value.trim() || '120 BPM';
+    const tono = document.getElementById('ens-assign-tono').value.trim() || 'C';
+    const compas = document.getElementById('ens-assign-compas').value;
+    const playthroughUrl = document.getElementById('ens-assign-playthrough').value.trim();
+    const notes = document.getElementById('ens-assign-notes').value.trim();
+
+    if (!songId || !studentUsername) {
+        showToast("Selecciona canción y alumno.", "error");
+        return;
+    }
+
+    const db = getDB();
+    if (!db.ensambleAsignaciones) db.ensambleAsignaciones = {};
+    
+    const key = `${songId}_${studentUsername}`;
+    db.ensambleAsignaciones[key] = {
+        id: 'ens_' + key,
+        songId,
+        username: studentUsername,
+        nivel: level,
+        tempo,
+        tono,
+        compas,
+        playthroughUrl,
+        notes,
+        maestro: usuarioActual ? usuarioActual.nombre : "Maestro"
+    };
+
+    saveDB(db);
+    showToast("Asignación de ensamble guardada para el alumno", "success");
+    renderizarDatosVista(usuarioActual ? usuarioActual.rol : 'maestro');
+}
+
+function eliminarAsignacionEnsamble(key) {
+    if (confirm("¿Deseas retirar esta asignación de ensamble al alumno?")) {
+        const db = getDB();
+        if (db.ensambleAsignaciones && db.ensambleAsignaciones[key]) {
+            delete db.ensambleAsignaciones[key];
+            saveDB(db);
+            showToast("Asignación retirada");
+            renderizarDatosVista(usuarioActual ? usuarioActual.rol : 'maestro');
+        }
+    }
+}
+
 function renderizarAdoracion(db) {
+    // 0. Estado del Toggle Admin
+    const toggleBtn = document.getElementById('admin-toggle-ensamble-btn');
+    const toggleDesc = document.getElementById('admin-ensamble-status-desc');
+    
+    if (toggleBtn) {
+        toggleBtn.innerHTML = db.ensambleActivo 
+            ? `<i class="fas fa-power-off"></i> Deshabilitar Ensambles` 
+            : `<i class="fas fa-play-circle"></i> Habilitar Etapa de Ensambles`;
+        toggleBtn.className = db.ensambleActivo ? `btn btn-secondary` : `btn btn-primary`;
+    }
+    if (toggleDesc) {
+        toggleDesc.innerHTML = db.ensambleActivo
+            ? `<strong style="color:var(--green-accent);">✅ ETAPA HABILITADA:</strong> Los maestros ya pueden asignar alumnos y repertorio de ensamble.`
+            : `<strong style="color:var(--primary-red);">🚫 ETAPA EN ESPERA:</strong> Los ensambles se activarán a mitad del ciclo escolar por el Administrador.`;
+    }
+
     // 1. Tabla de Setlist
     const tbody = document.getElementById('adoracion-setlist-tbody');
     tbody.innerHTML = '';
@@ -1199,6 +1433,7 @@ function renderizarAdoracion(db) {
                 <button class="btn btn-sm ${c.activo ? 'btn-deactivate' : 'btn-activate'}" onclick="alternarEstadoCancion('${c.id}')">
                     ${c.activo ? '<i class="fas fa-eye-slash"></i> Ocultar' : '<i class="fas fa-eye"></i> Activar'}
                 </button>
+                <button class="btn btn-sm btn-delete" onclick="eliminarCancion('${c.id}')" title="Eliminar canción"><i class="fas fa-trash-alt"></i></button>
             </td>
         `;
         tbody.appendChild(tr);
@@ -1699,6 +1934,79 @@ function renderizarEstudiante(db) {
         });
     }
 
+    // 3. Cargar Módulo de Ensamble Asignado para Estudiantes
+    const ensamblePanel = document.getElementById('student-ensamble-container');
+    const ensambleWall = document.getElementById('student-ensamble-cards-wall');
+    const ensambleTag = document.getElementById('stud-ensamble-status-tag');
+    
+    const isEnsambleActivo = db.ensambleActivo || false;
+    
+    if (ensamblePanel && ensambleWall) {
+        if (ensambleTag) {
+            ensambleTag.innerText = isEnsambleActivo ? "ETAPA ACTIVA DE ENSAMBLES" : "ETAPA EN ESPERA (MITAD DE CICLO)";
+            ensambleTag.style.background = isEnsambleActivo ? "rgba(16, 185, 129, 0.15)" : "rgba(239, 68, 68, 0.15)";
+            ensambleTag.style.color = isEnsambleActivo ? "#10b981" : "#ef4444";
+        }
+
+        ensambleWall.innerHTML = '';
+        
+        if (!isEnsambleActivo) {
+            ensambleWall.innerHTML = `
+                <div style="background: rgba(255,255,255,0.03); border: 1px dashed rgba(255,255,255,0.15); border-radius: 12px; padding: 20px; text-align: center;">
+                    <i class="fas fa-hourglass-half" style="font-size: 2rem; color: var(--text-muted); margin-bottom: 10px;"></i>
+                    <h4 style="color: white; margin: 0 0 6px;">Etapa de Ensambles en Espera</h4>
+                    <p style="font-size: 0.88rem; color: var(--text-muted); margin: 0;">La asignación de repertorio y ensambles se habilitará a mitad del ciclo escolar por la dirección académica.</p>
+                </div>
+            `;
+        } else {
+            const asignaciones = db.ensambleAsignaciones || {};
+            const misAsignaciones = Object.keys(asignaciones).filter(k => asignaciones[k].username === username);
+            
+            if (misAsignaciones.length === 0) {
+                ensambleWall.innerHTML = `<p class="text-muted" style="text-align: center; padding: 15px 0;">Aún no has sido asignado a canciones de ensamble para este ciclo. Revisa con tu maestro de ${user.area}.</p>`;
+            } else {
+                misAsignaciones.forEach(key => {
+                    const asig = asignaciones[key];
+                    const song = (db.canciones || []).find(c => c.id === asig.songId) || { titulo: "Canción de Ensamble", autor: "Academia", tono: asig.tono, linkAcordes: "", linkVideo: "" };
+                    
+                    let lvlClass = 'basico';
+                    if (asig.nivel === 'Avanzado') lvlClass = 'avanzado';
+                    if (asig.nivel === 'Intermedio') lvlClass = 'intermedio';
+                    if (asig.nivel === 'Junior') lvlClass = 'junior';
+
+                    const card = document.createElement('div');
+                    card.className = 'classroom-task-card';
+                    card.style.borderColor = 'rgba(230,0,0,0.3)';
+                    card.innerHTML = `
+                        <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:15px; flex-wrap:wrap;">
+                            <div style="flex:1;">
+                                <div style="display:flex; align-items:center; gap:10px; margin-bottom:8px;">
+                                    <h4 style="color:white; font-size:1.1rem; margin:0;"><i class="fas fa-music" style="color:var(--primary-red);"></i> ${song.titulo}</h4>
+                                    <span class="badge-level ${lvlClass}">${asig.nivel}</span>
+                                </div>
+                                <p style="font-size:0.88rem; color:var(--text-light); margin:0 0 10px;">${song.autor}</p>
+                                
+                                <div style="display:flex; gap:15px; flex-wrap:wrap; font-size:0.85rem; background:rgba(255,255,255,0.03); padding:8px 12px; border-radius:8px; margin-bottom:10px;">
+                                    <span>⏱️ <strong>Tempo:</strong> ${asig.tempo}</span>
+                                    <span>🎵 <strong>Tono:</strong> ${asig.tono}</span>
+                                    <span>🎼 <strong>Compás:</strong> ${asig.compas}</span>
+                                </div>
+                                
+                                ${asig.notes ? `<p style="font-size:0.85rem; color:#fca5a5; font-style:italic; margin:0 0 10px;"><i class="fas fa-comment-dots"></i> <strong>Indicaciones del Maestro (${asig.maestro}):</strong> "${asig.notes}"</p>` : ''}
+                            </div>
+                            <div style="display:flex; flex-direction:column; gap:8px;">
+                                ${asig.playthroughUrl ? `<a href="${asig.playthroughUrl}" target="_blank" class="submission-video-link"><i class="fab fa-youtube"></i> Video Playthrough ↗</a>` : ''}
+                                ${song.linkAcordes ? `<a href="${song.linkAcordes}" target="_blank" class="cancion-link"><i class="fas fa-file-pdf"></i> Acordes Cifrados</a>` : ''}
+                                ${song.linkVideo ? `<a href="${song.linkVideo}" target="_blank" class="cancion-link" style="color:#ff333f;"><i class="fab fa-youtube"></i> Video Referencia</a>` : ''}
+                            </div>
+                        </div>
+                    `;
+                    ensambleWall.appendChild(card);
+                });
+            }
+        }
+    }
+
     // Inicializar Metrónomo visual UI
     actualizarMetronomeUI();
 }
@@ -1755,6 +2063,36 @@ function cerrarReproductor() {
 // -------------------------------------------------------------
 // LÓGICA DE METRÓNOMO SINTETIZADO INTERACTIVO (WEB AUDIO API)
 // -------------------------------------------------------------
+let metroCompas = "4/4";
+let metroSubdivision = "negras";
+let metroCurrentBeat = 0;
+let metroTiemposPorCompas = 4;
+
+function cambiarCompasMetronomo(compasVal) {
+    metroCompas = compasVal;
+    if (compasVal === '4/4') metroTiemposPorCompas = 4;
+    if (compasVal === '3/4') metroTiemposPorCompas = 3;
+    if (compasVal === '6/8') metroTiemposPorCompas = 6;
+    if (compasVal === '2/4') metroTiemposPorCompas = 2;
+    
+    metroCurrentBeat = 0;
+    actualizarBeatLedsUI();
+}
+
+function actualizarBeatLedsUI() {
+    const container = document.getElementById('metro-beat-indicators');
+    if (!container) return;
+    container.innerHTML = '';
+    
+    for (let i = 1; i <= metroTiemposPorCompas; i++) {
+        const dot = document.createElement('div');
+        dot.className = `metro-led-dot ${i === 1 ? 'accent-beat' : ''}`;
+        dot.innerText = i;
+        dot.id = `metro-dot-${i}`;
+        container.appendChild(dot);
+    }
+}
+
 function cambiarBpm(valor) {
     metronomeBpm = parseInt(valor);
     document.getElementById('metro-bpm-val').innerText = metronomeBpm;
@@ -1770,7 +2108,6 @@ function playMetronomeClick() {
         audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     }
     
-    // Previene errores de seguridad de navegadores (User Interaction constraint)
     if (audioCtx.state === 'suspended') {
         audioCtx.resume();
     }
@@ -1778,26 +2115,32 @@ function playMetronomeClick() {
     const osc = audioCtx.createOscillator();
     const gain = audioCtx.createGain();
     
-    osc.type = "triangle"; // tono agradable de campana / clic
-    osc.frequency.setValueAtTime(1000, audioCtx.currentTime); // Pitch alto
+    const isAccentBeat = (metroCurrentBeat === 0);
+    osc.type = "triangle";
+    osc.frequency.setValueAtTime(isAccentBeat ? 1500 : 900, audioCtx.currentTime);
     
-    gain.gain.setValueAtTime(0.4, audioCtx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.05); // Se extingue rápido en 50ms
+    gain.gain.setValueAtTime(isAccentBeat ? 0.6 : 0.35, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.04);
     
     osc.connect(gain);
     gain.connect(audioCtx.destination);
     
     osc.start();
-    osc.stop(audioCtx.currentTime + 0.05);
+    osc.stop(audioCtx.currentTime + 0.04);
     
-    // Destello visual sutil del indicador luminoso
-    const dot = document.getElementById('metro-light-dot');
-    if (dot) {
-        dot.classList.add('flash-active');
-        setTimeout(() => {
-            dot.classList.remove('flash-active');
-        }, 60);
+    const container = document.getElementById('metro-beat-indicators');
+    if (container) {
+        const dots = container.querySelectorAll('.metro-led-dot');
+        dots.forEach((dot, index) => {
+            if (index === metroCurrentBeat) {
+                dot.classList.add('active');
+            } else {
+                dot.classList.remove('active');
+            }
+        });
     }
+
+    metroCurrentBeat = (metroCurrentBeat + 1) % metroTiemposPorCompas;
 }
 
 function toggleMetronomo() {
@@ -1806,7 +2149,7 @@ function toggleMetronomo() {
         showToast("Metrónomo detenido", "info");
     } else {
         iniciarMetronomo();
-        showToast("Metrónomo activo (" + metronomeBpm + " BPM)");
+        showToast("Metrónomo activo (" + metronomeBpm + " BPM - Compás " + metroCompas + ")");
     }
 }
 
@@ -1817,7 +2160,6 @@ function iniciarMetronomo() {
     
     const intervalMs = (60000 / metronomeBpm);
     
-    // Primer clic instantáneo
     playMetronomeClick();
     
     metronomeInterval = setInterval(() => {
@@ -1827,6 +2169,7 @@ function iniciarMetronomo() {
 
 function detenerMetronomo() {
     metronomeIsPlaying = false;
+    metroCurrentBeat = 0;
     const playBtn = document.getElementById('metro-play-btn');
     if (playBtn) {
         playBtn.innerHTML = '<i class="fas fa-play"></i>';
@@ -1837,11 +2180,13 @@ function detenerMetronomo() {
         clearInterval(metronomeInterval);
         metronomeInterval = null;
     }
+    actualizarBeatLedsUI();
 }
 
 function actualizarMetronomeUI() {
     document.getElementById('metro-bpm-val').innerText = metronomeBpm;
     document.getElementById('metro-slider').value = metronomeBpm;
+    actualizarBeatLedsUI();
 }
 
 // INICIALIZACIÓN

@@ -1906,3 +1906,66 @@ textarea.form-control {
     background: var(--primary-red);
     color: white;
 }
+
+/* METRÓNOMO PRO LED INDICATORS & NIVEL BADGES */
+.metro-beats-container {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.metro-led-dot {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    font-weight: 800;
+    color: var(--text-muted);
+    transition: all 0.15s ease;
+}
+.metro-led-dot.active {
+    background: var(--primary-red);
+    color: white;
+    box-shadow: 0 0 12px var(--primary-red);
+    border-color: #ff4d58;
+    transform: scale(1.15);
+}
+.metro-led-dot.accent-beat {
+    background: #e60000;
+    box-shadow: 0 0 16px #ff1a1a;
+}
+
+.badge-level {
+    padding: 4px 10px;
+    border-radius: 8px;
+    font-size: 0.72rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+.badge-level.avanzado {
+    background: rgba(230, 0, 0, 0.18);
+    color: #ff333f;
+    border: 1px solid rgba(230, 0, 0, 0.4);
+}
+.badge-level.intermedio {
+    background: rgba(245, 158, 11, 0.18);
+    color: #fbbf24;
+    border: 1px solid rgba(245, 158, 11, 0.4);
+}
+.badge-level.basico {
+    background: rgba(16, 185, 129, 0.18);
+    color: #34d399;
+    border: 1px solid rgba(16, 185, 129, 0.4);
+}
+.badge-level.junior {
+    background: rgba(168, 85, 247, 0.18);
+    color: #c084fc;
+    border: 1px solid rgba(168, 85, 247, 0.4);
+}
