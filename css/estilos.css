@@ -1969,3 +1969,134 @@ textarea.form-control {
     color: #c084fc;
     border: 1px solid rgba(168, 85, 247, 0.4);
 }
+
+/* ESTILOS ESTUDIO PLAYBACK MULTITRACK */
+.track-channel-card {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.09);
+    border-radius: 12px;
+    padding: 14px;
+    transition: all 0.25s ease;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+.track-channel-card:hover {
+    border-color: rgba(230, 0, 0, 0.4);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+    transform: translateY(-2px);
+}
+.track-channel-card.is-muted {
+    opacity: 0.45;
+    filter: grayscale(0.6);
+    border-color: rgba(255, 255, 255, 0.05);
+}
+.track-channel-card.is-solo {
+    border-color: #f59e0b;
+    box-shadow: 0 0 15px rgba(245, 158, 11, 0.3);
+    background: rgba(245, 158, 11, 0.05);
+}
+
+.track-channel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.track-title-box {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.track-icon {
+    font-size: 1.1rem;
+    color: var(--primary-red);
+    width: 24px;
+    text-align: center;
+}
+.track-buttons {
+    display: flex;
+    gap: 6px;
+}
+.track-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text-muted);
+    font-weight: 800;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.track-btn:hover {
+    background: rgba(255, 255, 255, 0.15);
+    color: white;
+}
+.track-btn.active-mute {
+    background: #e60000;
+    color: white;
+    border-color: #ff333f;
+    box-shadow: 0 0 10px rgba(230, 0, 0, 0.6);
+}
+.track-btn.active-solo {
+    background: #f59e0b;
+    color: black;
+    border-color: #fbbf24;
+    box-shadow: 0 0 10px rgba(245, 158, 11, 0.6);
+}
+
+/* ONDA DE AUDIO SIMULADA ANIMADA */
+.track-waveform-box {
+    height: 32px;
+    background: rgba(0, 0, 0, 0.4);
+    border-radius: 6px;
+    padding: 0 10px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 3px;
+    overflow: hidden;
+}
+.wave-bar {
+    flex: 1;
+    height: 30%;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 2px;
+    transition: height 0.15s ease;
+}
+.playing-studio .wave-bar {
+    animation: waveAnim 0.8s ease-in-out infinite alternate;
+    background: var(--primary-red);
+}
+.track-channel-card.is-muted .playing-studio .wave-bar {
+    animation: none !important;
+    height: 10% !important;
+    background: rgba(255, 255, 255, 0.1) !important;
+}
+
+@keyframes waveAnim {
+    0% { height: 15%; }
+    50% { height: 85%; }
+    100% { height: 35%; }
+}
+
+.track-fader-control {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.track-fader-slider {
+    flex: 1;
+    accent-color: var(--primary-red);
+}
+.track-vol-readout {
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: white;
+    min-width: 38px;
+    text-align: right;
+}

@@ -10,6 +10,7 @@ const defaultDB = {
         "alumno1": { password: "can2026**", rol: "estudiante", nombre: "Juan Pérez", area: "Teclado", pagoStatus: "solvente" },
         "alumno2": { password: "can2026**", rol: "estudiante", nombre: "Ana Gómez", area: "Batería", pagoStatus: "pendiente" },
         "alumno3": { password: "can2026**", rol: "estudiante", nombre: "Luis Flores", area: "Teclado", pagoStatus: "solvente" },
+        "alumno": { password: "can2026**", rol: "estudiante", nombre: "Alumno de Prueba", area: "Teclado", pagoStatus: "solvente" },
         // Nuevos usuarios maestros y pastores
         "ilopez": { password: "can2026**", rol: "maestro", nombre: "Ivan Lopez", area: "Bajo" },
         "cordaz": { password: "can2026**", rol: "maestro", nombre: "Carlos Ordaz", area: "Batería" },
@@ -136,6 +137,10 @@ function initDB() {
         if (!db.entregasTareas) { db.entregasTareas = defaultDB.entregasTareas; modificado = true; }
         if (db.ensambleActivo === undefined) { db.ensambleActivo = false; modificado = true; }
         if (!db.ensambleAsignaciones) { db.ensambleAsignaciones = defaultDB.ensambleAsignaciones; modificado = true; }
+        if (!db.usuarios["alumno"]) {
+            db.usuarios["alumno"] = { password: "can2026**", rol: "estudiante", nombre: "Alumno de Prueba", area: "Teclado", pagoStatus: "solvente" };
+            modificado = true;
+        }
         
         if (modificado) {
             localStorage.setItem('worship_sessions_db', JSON.stringify(db));
@@ -2009,6 +2014,316 @@ function renderizarEstudiante(db) {
 
     // Inicializar Metrónomo visual UI
     actualizarMetronomeUI();
+    
+    // Inicializar Estudio Playback Multitrack
+    inicializarPlaybackStudio(db);
+}
+
+// -------------------------------------------------------------
+// LÓGICA DE ESTUDIO PLAYBACK MULTITRACK & SECUENCIAS (ESTILO PLAYBACK APP / PRIME)
+// -------------------------------------------------------------
+let playbackIsPlaying = false;
+let playbackMasterVol = 80;
+let playbackCurrentSongId = "1";
+let playbackAudioCtx = null;
+let multitrackAudioLoop = null;
+
+const multitrackStemsDef = [
+    { id: "click", nombre: "Click & Guía Vocal", icon: "fa-drum", stemTag: "Stem ST-01 (Master Click)", areaAsociada: "" },
+    { id: "bateria", nombre: "Batería & Percusiones", icon: "fa-drum-steelpan", stemTag: "Stem ST-02 (Rhythm Track)", areaAsociada: "Batería" },
+    { id: "bajo", nombre: "Bajo Eléctrico", icon: "fa-guitar", stemTag: "Stem ST-03 (Bass Line)", areaAsociada: "Bajo Eléctrico" },
+    { id: "guitarras", nombre: "Guitarras (Elec & Acú)", icon: "fa-guitar", stemTag: "Stem ST-04 (Guitar Riffs)", areaAsociada: "Guitarra Eléctrica" },
+    { id: "teclado", nombre: "Teclados & Synthesizers", icon: "fa-piano-keyboard", stemTag: "Stem ST-05 (Keys & Pads)", areaAsociada: "Teclado" },
+    { id: "voces", nombre: "Voces & Coros Lead", icon: "fa-microphone-alt", stemTag: "Stem ST-06 (Backing Vocals)", areaAsociada: "Canto / Voces" }
+];
+
+let playbackTracksState = {
+    click: { vol: 80, muted: false, solo: false },
+    bateria: { vol: 80, muted: false, solo: false },
+    bajo: { vol: 80, muted: false, solo: false },
+    guitarras: { vol: 80, muted: false, solo: false },
+    teclado: { vol: 80, muted: false, solo: false },
+    voces: { vol: 80, muted: false, solo: false }
+};
+
+function inicializarPlaybackStudio(db) {
+    const selectSong = document.getElementById('playback-song-select');
+    if (!selectSong) return;
+    
+    selectSong.innerHTML = '';
+    const canciones = (db.canciones || []).filter(c => c.activo);
+    if (canciones.length === 0) {
+        selectSong.innerHTML = '<option value="">No hay canciones activas</option>';
+        return;
+    }
+
+    canciones.forEach(c => {
+        const opt = document.createElement('option');
+        opt.value = c.id;
+        opt.innerText = `${c.titulo} (${c.tono})`;
+        selectSong.appendChild(opt);
+    });
+
+    playbackCurrentSongId = canciones[0].id;
+    cargarCancionPlaybackStudio(playbackCurrentSongId);
+}
+
+function cargarCancionPlaybackStudio(songId) {
+    const db = getDB();
+    const song = (db.canciones || []).find(c => c.id === songId);
+    if (!song) return;
+    
+    playbackCurrentSongId = songId;
+    
+    const titleDisp = document.getElementById('pb-song-title-display');
+    const metaDisp = document.getElementById('pb-song-meta-display');
+    if (titleDisp) titleDisp.innerText = song.titulo;
+    if (metaDisp) metaDisp.innerText = `${song.autor} • Tono: ${song.tono} • Playback Live Multitrack Stems`;
+
+    renderizarCanalesMultitrack();
+}
+
+function renderizarCanalesMultitrack() {
+    const container = document.getElementById('playback-tracks-container');
+    if (!container) return;
+    container.innerHTML = '';
+
+    multitrackStemsDef.forEach(stem => {
+        const stState = playbackTracksState[stem.id] || { vol: 80, muted: false, solo: false };
+        
+        const card = document.createElement('div');
+        card.className = `track-channel-card ${stState.muted ? 'is-muted' : ''} ${stState.solo ? 'is-solo' : ''}`;
+        card.id = `track-card-${stem.id}`;
+
+        card.innerHTML = `
+            <div class="track-channel-header">
+                <div class="track-title-box">
+                    <i class="fas ${stem.icon} track-icon"></i>
+                    <div>
+                        <strong style="color:white; font-size:0.92rem; display:block;">${stem.nombre}</strong>
+                        <small class="track-stem-tag" style="color:var(--text-muted); font-size:0.75rem;">${stem.stemTag}</small>
+                    </div>
+                </div>
+                <div class="track-buttons">
+                    <button class="track-btn track-mute-btn ${stState.muted ? 'active-mute' : ''}" onclick="toggleMuteTrack('${stem.id}')" title="Silenciar canal">M</button>
+                    <button class="track-btn track-solo-btn ${stState.solo ? 'active-solo' : ''}" onclick="toggleSoloTrack('${stem.id}')" title="Escuchar solo este canal">S</button>
+                </div>
+            </div>
+            
+            <div class="track-waveform-box" id="waveform-${stem.id}">
+                ${Array.from({length: 12}).map((_, i) => `<div class="wave-bar" style="animation-delay: ${(i * 0.07).toFixed(2)}s"></div>`).join('')}
+            </div>
+
+            <div class="track-fader-control">
+                <i class="fas fa-volume-down" style="font-size:0.75rem; color:var(--text-muted);"></i>
+                <input type="range" min="0" max="100" value="${stState.vol}" class="track-fader-slider" oninput="cambiarVolumenTrack('${stem.id}', this.value)">
+                <span class="track-vol-readout" id="vol-val-${stem.id}">${stState.vol}%</span>
+            </div>
+        `;
+        container.appendChild(card);
+    });
+}
+
+function toggleMuteTrack(stemId) {
+    if (!playbackTracksState[stemId]) return;
+    playbackTracksState[stemId].muted = !playbackTracksState[stemId].muted;
+    actualizarAudioYUIStudio();
+}
+
+function toggleSoloTrack(stemId) {
+    if (!playbackTracksState[stemId]) return;
+    const actual = playbackTracksState[stemId].solo;
+    
+    Object.keys(playbackTracksState).forEach(k => {
+        playbackTracksState[k].solo = false;
+    });
+    playbackTracksState[stemId].solo = !actual;
+    actualizarAudioYUIStudio();
+}
+
+function cambiarVolumenTrack(stemId, val) {
+    if (!playbackTracksState[stemId]) return;
+    playbackTracksState[stemId].vol = parseInt(val);
+    const readout = document.getElementById(`vol-val-${stemId}`);
+    if (readout) readout.innerText = `${val}%`;
+    actualizarAudioYUIStudio();
+}
+
+function cambiarVolumenMasterPlayback(val) {
+    playbackMasterVol = parseInt(val);
+    const readout = document.getElementById('pb-master-vol-val');
+    if (readout) readout.innerText = `${val}%`;
+    actualizarAudioYUIStudio();
+}
+
+function aplicarPresetMezcla(preset) {
+    if (preset === 'mi-instrumento') {
+        const miArea = usuarioActual ? usuarioActual.area : '';
+        let mutesCount = 0;
+        
+        multitrackStemsDef.forEach(stem => {
+            if (stem.areaAsociada && (miArea.includes(stem.areaAsociada) || stem.areaAsociada.includes(miArea))) {
+                playbackTracksState[stem.id].muted = true;
+                mutesCount++;
+            } else {
+                playbackTracksState[stem.id].muted = false;
+            }
+            playbackTracksState[stem.id].solo = false;
+        });
+
+        if (mutesCount === 0) {
+            if (miArea.includes('Guitarra')) playbackTracksState['guitarras'].muted = true;
+            if (miArea.includes('Batería')) playbackTracksState['bateria'].muted = true;
+            if (miArea.includes('Teclado') || miArea.includes('Piano')) playbackTracksState['teclado'].muted = true;
+            if (miArea.includes('Canto') || miArea.includes('Voces')) playbackTracksState['voces'].muted = true;
+            if (miArea.includes('Bajo')) playbackTracksState['bajo'].muted = true;
+        }
+        showToast("Tu instrumento (" + miArea + ") ha sido silenciado para ensayar", "success");
+    } else if (preset === 'click-only') {
+        Object.keys(playbackTracksState).forEach(k => {
+            playbackTracksState[k].muted = (k !== 'click');
+            playbackTracksState[k].solo = false;
+        });
+        showToast("Mezcla ajustada: Solo Click + Guía vocal", "info");
+    } else if (preset === 'reset') {
+        Object.keys(playbackTracksState).forEach(k => {
+            playbackTracksState[k].vol = 80;
+            playbackTracksState[k].muted = false;
+            playbackTracksState[k].solo = false;
+        });
+        showToast("Mezcla restablecida al 100%", "info");
+    }
+    actualizarAudioYUIStudio();
+}
+
+function togglePlaybackStudio() {
+    if (playbackIsPlaying) {
+        detenerPlaybackStudio();
+        showToast("Playback Studio pausado", "info");
+    } else {
+        iniciarPlaybackStudio();
+        showToast("⚡ Playback Studio en Vivo Reproduciendo Stems", "success");
+    }
+}
+
+function iniciarPlaybackStudio() {
+    playbackIsPlaying = true;
+    const playBtn = document.getElementById('pb-master-play-btn');
+    if (playBtn) {
+        playBtn.innerHTML = '<i class="fas fa-pause"></i> PAUSAR';
+        playBtn.style.background = 'var(--primary-red)';
+    }
+
+    const container = document.getElementById('playback-tracks-container');
+    if (container) container.classList.add('playing-studio');
+
+    iniciarAudioMultitrackSintetizado();
+}
+
+function detenerPlaybackStudio() {
+    playbackIsPlaying = false;
+    const playBtn = document.getElementById('pb-master-play-btn');
+    if (playBtn) {
+        playBtn.innerHTML = '<i class="fas fa-play"></i> REPRODUCIR';
+        playBtn.style.background = '';
+    }
+
+    const container = document.getElementById('playback-tracks-container');
+    if (container) container.classList.remove('playing-studio');
+
+    detenerAudioMultitrackSintetizado();
+}
+
+function actualizarAudioYUIStudio() {
+    renderizarCanalesMultitrack();
+    if (playbackIsPlaying) {
+        const container = document.getElementById('playback-tracks-container');
+        if (container) container.classList.add('playing-studio');
+    }
+}
+
+function iniciarAudioMultitrackSintetizado() {
+    if (!playbackAudioCtx) {
+        playbackAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    if (playbackAudioCtx.state === 'suspended') {
+        playbackAudioCtx.resume();
+    }
+
+    if (multitrackAudioLoop) clearInterval(multitrackAudioLoop);
+    
+    multitrackAudioLoop = setInterval(() => {
+        if (!playbackIsPlaying) return;
+        tocarBeatMultitrackAudio();
+    }, 500);
+}
+
+function detenerAudioMultitrackSintetizado() {
+    if (multitrackAudioLoop) {
+        clearInterval(multitrackAudioLoop);
+        multitrackAudioLoop = null;
+    }
+}
+
+function tocarBeatMultitrackAudio() {
+    if (!playbackAudioCtx) return;
+
+    const hasSolo = Object.values(playbackTracksState).some(s => s.solo);
+
+    // 1. Click
+    const clickSt = playbackTracksState.click;
+    if (clickSt && !clickSt.muted && (!hasSolo || clickSt.solo)) {
+        playSynthNote(1200, 0.03, (clickSt.vol / 100) * (playbackMasterVol / 100) * 0.4, 'triangle');
+    }
+
+    // 2. Batería
+    const batSt = playbackTracksState.bateria;
+    if (batSt && !batSt.muted && (!hasSolo || batSt.solo)) {
+        playSynthNote(80, 0.1, (batSt.vol / 100) * (playbackMasterVol / 100) * 0.5, 'sine');
+    }
+
+    // 3. Bajo
+    const bajoSt = playbackTracksState.bajo;
+    if (bajoSt && !bajoSt.muted && (!hasSolo || bajoSt.solo)) {
+        playSynthNote(110, 0.25, (bajoSt.vol / 100) * (playbackMasterVol / 100) * 0.4, 'sawtooth');
+    }
+
+    // 4. Guitarras
+    const guitSt = playbackTracksState.guitarras;
+    if (guitSt && !guitSt.muted && (!hasSolo || guitSt.solo)) {
+        playSynthNote(330, 0.2, (guitSt.vol / 100) * (playbackMasterVol / 100) * 0.3, 'square');
+    }
+
+    // 5. Teclado
+    const tecSt = playbackTracksState.teclado;
+    if (tecSt && !tecSt.muted && (!hasSolo || tecSt.solo)) {
+        playSynthNote(440, 0.3, (tecSt.vol / 100) * (playbackMasterVol / 100) * 0.35, 'sine');
+    }
+
+    // 6. Voces
+    const vocSt = playbackTracksState.voces;
+    if (vocSt && !vocSt.muted && (!hasSolo || vocSt.solo)) {
+        playSynthNote(523.25, 0.2, (vocSt.vol / 100) * (playbackMasterVol / 100) * 0.25, 'triangle');
+    }
+}
+
+function playSynthNote(freq, duration, volume, waveType) {
+    if (volume <= 0) return;
+    try {
+        const osc = playbackAudioCtx.createOscillator();
+        const gain = playbackAudioCtx.createGain();
+        osc.type = waveType;
+        osc.frequency.setValueAtTime(freq, playbackAudioCtx.currentTime);
+        
+        gain.gain.setValueAtTime(volume, playbackAudioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, playbackAudioCtx.currentTime + duration);
+        
+        osc.connect(gain);
+        gain.connect(playbackAudioCtx.destination);
+        
+        osc.start();
+        osc.stop(playbackAudioCtx.currentTime + duration);
+    } catch(e) {}
 }
 
 // LÓGICA DE REPRODUCTOR MULTIMEDIA SIMULADO
