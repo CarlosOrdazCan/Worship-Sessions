@@ -1222,6 +1222,12 @@ function eliminarNotaPastoral(index) {
 let subvistaAdminActual = 'panel';
 function cambiarSubvistaAdmin(subVista, pushHistory = true) {
     subvistaAdminActual = subVista || 'panel';
+    
+    // Activar vista principal de Admin
+    document.querySelectorAll('.app-view').forEach(v => { v.style.display = 'none'; v.classList.remove('active'); });
+    const mainView = document.getElementById('view-admin');
+    if (mainView) { mainView.style.display = 'block'; mainView.classList.add('active'); }
+
     document.querySelectorAll('.admin-subview').forEach(sv => { sv.style.display = 'none'; sv.classList.remove('active'); });
     document.querySelectorAll('#dynamic-menu .nav-link').forEach(link => link.classList.remove('active'));
     const targetNav = document.getElementById('nav-admin-' + subVista);
@@ -1241,6 +1247,12 @@ function cambiarSubvistaAdmin(subVista, pushHistory = true) {
 let subvistaPastorActual = 'alertas';
 function cambiarSubvistaPastor(subVista, pushHistory = true) {
     subvistaPastorActual = subVista || 'alertas';
+    
+    // Activar vista principal de Pastor
+    document.querySelectorAll('.app-view').forEach(v => { v.style.display = 'none'; v.classList.remove('active'); });
+    const mainView = document.getElementById('view-pastor');
+    if (mainView) { mainView.style.display = 'block'; mainView.classList.add('active'); }
+
     document.querySelectorAll('.pastor-subview').forEach(sv => { sv.style.display = 'none'; sv.classList.remove('active'); });
     document.querySelectorAll('#dynamic-menu .nav-link').forEach(link => link.classList.remove('active'));
     const targetNav = document.getElementById('nav-pastor-' + subVista);
@@ -1257,9 +1269,15 @@ function cambiarSubvistaPastor(subVista, pushHistory = true) {
     renderizarPastor(getDB());
 }
 
-let subvistaProduccionActual = 'estatus';
+let subvistaProduccionActual = 'colegiaturas';
 function cambiarSubvistaProduccion(subVista, pushHistory = true) {
-    subvistaProduccionActual = subVista || 'estatus';
+    subvistaProduccionActual = subVista || 'colegiaturas';
+    
+    // Activar vista principal de Producción / Administración
+    document.querySelectorAll('.app-view').forEach(v => { v.style.display = 'none'; v.classList.remove('active'); });
+    const mainView = document.getElementById('view-produccion') || document.getElementById('view-administracion');
+    if (mainView) { mainView.style.display = 'block'; mainView.classList.add('active'); }
+
     document.querySelectorAll('.produccion-subview').forEach(sv => { sv.style.display = 'none'; sv.classList.remove('active'); });
     document.querySelectorAll('#dynamic-menu .nav-link').forEach(link => link.classList.remove('active'));
     const targetNav = document.getElementById('nav-produccion-' + subVista);
@@ -1287,7 +1305,7 @@ function abrirModuloAdministracionDesdeMenu(subvista = 'colegiaturas') {
         targetView.classList.add('active');
     }
     document.querySelectorAll('#dynamic-menu .nav-link').forEach(link => link.classList.remove('active'));
-    const activeNav = document.getElementById('nav-pastor-colegiaturas') || document.getElementById('nav-admin-colegiaturas') || document.getElementById('nav-produccion-colegiaturas');
+    const activeNav = document.getElementById('nav-admin-colegiaturas') || document.getElementById('nav-produccion-colegiaturas');
     if (activeNav) activeNav.classList.add('active');
 
     cambiarSubvistaProduccion(subvista);
@@ -1296,6 +1314,12 @@ function abrirModuloAdministracionDesdeMenu(subvista = 'colegiaturas') {
 let subvistaAdoracionActual = 'control';
 function cambiarSubvistaAdoracion(subVista, pushHistory = true) {
     subvistaAdoracionActual = subVista || 'control';
+    
+    // Activar vista principal de Adoración
+    document.querySelectorAll('.app-view').forEach(v => { v.style.display = 'none'; v.classList.remove('active'); });
+    const mainView = document.getElementById('view-adoracion');
+    if (mainView) { mainView.style.display = 'block'; mainView.classList.add('active'); }
+
     document.querySelectorAll('.adoracion-subview').forEach(sv => { sv.style.display = 'none'; sv.classList.remove('active'); });
     document.querySelectorAll('#dynamic-menu .nav-link').forEach(link => link.classList.remove('active'));
     const targetNav = document.getElementById('nav-adoracion-' + subVista);
@@ -1315,6 +1339,12 @@ function cambiarSubvistaAdoracion(subVista, pushHistory = true) {
 let subvistaEstudianteActual = 'classroom';
 function cambiarSubvistaEstudiante(subVista, pushHistory = true) {
     subvistaEstudianteActual = subVista || 'classroom';
+    
+    // Activar vista principal de Estudiante
+    document.querySelectorAll('.app-view').forEach(v => { v.style.display = 'none'; v.classList.remove('active'); });
+    const mainView = document.getElementById('view-estudiante');
+    if (mainView) { mainView.style.display = 'block'; mainView.classList.add('active'); }
+
     document.querySelectorAll('.estudiante-subview').forEach(sv => { sv.style.display = 'none'; sv.classList.remove('active'); });
     document.querySelectorAll('#dynamic-menu .nav-link').forEach(link => link.classList.remove('active'));
     const targetNav = document.getElementById('nav-estudiante-' + subVista);
@@ -1339,6 +1369,11 @@ let subvistaMaestroActual = 'dashboard';
 function cambiarSubvistaMaestro(subVista, pushHistory = true) {
     subvistaMaestroActual = subVista || 'dashboard';
     
+    // Activar vista principal del Maestro
+    document.querySelectorAll('.app-view').forEach(v => { v.style.display = 'none'; v.classList.remove('active'); });
+    const mainView = document.getElementById('view-maestro');
+    if (mainView) { mainView.style.display = 'block'; mainView.classList.add('active'); }
+
     document.querySelectorAll('.maestro-subview').forEach(sv => {
         sv.style.display = 'none';
         sv.classList.remove('active');
