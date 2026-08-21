@@ -25,7 +25,7 @@
                 id="btn-alabanza"
                 onclick="window.location.href='./alabanza/index.html'">
                 <div class="choice-card-content">
-                    <span class="choice-card-icon"><i class="fas fa-fire-alt"></i></span>
+                    <img src="img/can-logo.png" alt="C.A.N." class="choice-can-logo">
                     <h2 class="choice-card-title">C.A.N ALABANZA</h2>
                     <p class="choice-card-subtitle">Plataforma de canciones, acordes y cifrados</p>
                     <span class="choice-card-action">ACCEDER A CANCIONES <i class="fas fa-arrow-right"></i></span>
@@ -39,7 +39,6 @@
                 onclick="mostrarPantalla('login-screen')">
                 <div class="choice-card-content">
                     <img src="img/worship-sessions-logo.png" alt="Worship Sessions" class="choice-ws-graphic-logo">
-                    <h2 class="choice-card-title">WORSHIP SESSIONS</h2>
                     <p class="choice-card-subtitle">Plataforma de formación y gestión académica</p>
                     <span class="choice-card-action">INGRESAR A PLATAFORMA <i class="fas fa-arrow-right"></i></span>
                 </div>
@@ -79,7 +78,10 @@
                 </div>
             </form>
             
-            <div class="login-footer">
+            <div class="login-footer" style="display:flex; flex-direction:column; align-items:center; gap:10px;">
+                <button type="button" onclick="mostrarPantalla('app-choice-screen')" style="background:rgba(255,255,255,0.06); border:1px solid var(--border-color); color:var(--text-light); padding:8px 16px; border-radius:9999px; font-size:0.8rem; cursor:pointer; display:inline-flex; align-items:center; gap:8px; font-weight:700; transition:all 0.2s ease;">
+                    <i class="fas fa-arrow-left"></i> Cambiar de Plataforma / Inicio
+                </button>
                 <p>Usa tus credenciales asignadas de Maestro, Alumno o Admin.</p>
                 <span class="version-tag">v3.0.0 Enterprise</span>
             </div>
@@ -88,6 +90,9 @@
 
     <!-- ================= PANTALLA INTRO HIGH-END (BIENVENIDA CON RUIDO & GRADIENTE DE MALLA) ================= -->
     <div id="worship-intro-screen" class="screen" style="display:none;">
+        <button onclick="mostrarPantalla('app-choice-screen')" style="position:absolute; top:24px; left:24px; z-index:10001; background:rgba(0,0,0,0.6); backdrop-filter:blur(10px); border:1px solid rgba(255,255,255,0.2); color:white; padding:8px 18px; border-radius:9999px; font-size:0.8rem; font-weight:700; cursor:pointer; display:flex; align-items:center; gap:8px; transition:all 0.2s ease;">
+            <i class="fas fa-arrow-left"></i> Cambiar Plataforma
+        </button>
         <div id="intro-bg-instrument-layer" class="intro-bg-instrument-layer"></div>
         <div class="highend-noise-overlay"></div>
         <div class="highend-mesh-orb orb-orange"></div>
@@ -170,6 +175,9 @@
                 </ul>
                 
                 <div class="sidebar-footer">
+                    <button class="btn-change-app" onclick="mostrarPantalla('app-choice-screen')" style="width:100%; background:rgba(255,255,255,0.06); border:1px solid var(--border-color); color:var(--text-light); padding:10px; border-radius:12px; font-weight:700; font-size:0.8rem; margin-bottom:10px; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px; transition:all 0.2s ease;">
+                        <i class="fas fa-th-large" style="color:var(--primary-red);"></i> Cambiar de App
+                    </button>
                     <button class="logout-btn" onclick="cerrarSesion()">
                         <i class="fas fa-sign-out-alt"></i> Cerrar Sesión
                     </button>
