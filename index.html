@@ -320,20 +320,6 @@
                 <div id="view-pastor" class="app-view">
                     <!-- SUBVISTA 1: VISIÓN & MÉTRICAS GLOBALES -->
                     <div id="pastor-subview-alertas" class="pastor-subview">
-                        <!-- BANNER DIAGNÓSTICO PASTORAL -->
-                        <div style="background: linear-gradient(135deg, rgba(229,9,20,0.12) 0%, rgba(20,20,30,0.95) 100%); border: 1px solid rgba(229,9,20,0.4); border-radius: 20px; padding: 20px 24px; margin-bottom: 1.8rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 15px;">
-                            <div>
-                                <div style="display:flex; align-items:center; gap:10px; margin-bottom:6px;">
-                                    <i class="fas fa-cross" style="color:var(--primary-red); font-size:1.4rem;"></i>
-                                    <h3 style="color:white; margin:0; font-size:1.2rem;">Panel Pastoral & Dirección Académica</h3>
-                                </div>
-                                <p style="color:var(--text-light); margin:0; font-size:0.88rem;">Monitoreo en tiempo real del crecimiento, retención y salud integral de los alumnos de Worship Sessions.</p>
-                            </div>
-                            <span class="badge badge-rol" style="background:rgba(229,9,20,0.25); color:#ff6b6b; border:1px solid rgba(229,9,20,0.5); font-size:0.82rem; padding:8px 14px;">
-                                <i class="fas fa-eye"></i> Cobertura Activa
-                            </span>
-                        </div>
-
                         <div class="dashboard-grid">
                             <div class="card">
                                 <div class="card-icon"><i class="fas fa-user-graduate"></i></div>
@@ -450,17 +436,17 @@
                             <div class="panel-header">
                                 <h3><i class="fas fa-id-card"></i> Expedientes de Alumnos y Reporte Académico</h3>
                             </div>
-                            <p class="text-muted">Vista panorámica sobre calificaciones de teoría y práctica de los alumnos reportados por los maestros.</p>
+                            <p class="text-muted">Consulta la ficha médica pastoral, observaciones redactadas por maestros y estatus de asistencia.</p>
                             <div class="table-container">
                                 <table class="table-custom">
                                     <thead>
                                         <tr>
                                             <th>Alumno</th>
                                             <th>Teoría</th>
-                                            <th>Práctica / Técnica</th>
+                                            <th>Técnica</th>
                                             <th>Asistencia</th>
                                             <th>Colegiatura</th>
-                                            <th>Observaciones Académicas</th>
+                                            <th>Ficha Pastoral</th>
                                         </tr>
                                     </thead>
                                     <tbody id="pastor-summary-tbody">
@@ -1102,22 +1088,25 @@
                         </div>
                     </div>
 
-                    <!-- SUBVISTA 2: COLEGIATURAS & PAGOS -->
+                    <!-- SUBVISTA 2: COLEGIATURAS & PAGOS (MÓDULO DE ADMINISTRACIÓN) -->
                     <div id="produccion-subview-colegiaturas" class="produccion-subview" style="display: none;">
                         <div class="panel-box">
                             <div class="panel-header">
-                                <h3><i class="fas fa-file-invoice-dollar"></i> Control de Colegiaturas y Pagos de Alumnos</h3>
+                                <h3><i class="fas fa-file-invoice-dollar"></i> Módulo de Administración & Control Financiero de Colegiaturas</h3>
                                 <span class="badge badge-rol" id="prod-billing-summary-badge">0 Solventes</span>
                             </div>
-                            <p class="text-muted">Administra y actualiza el estado de pago de los alumnos de la academia.</p>
+                            <p class="text-muted">Gestión de pagos, control de asistencias, registro de notas de warning por mora y desbloqueo autorizado por dirección pastoral.</p>
                             <div class="table-container" style="margin-top: 1rem;">
                                 <table class="table-custom">
                                     <thead>
                                         <tr>
-                                            <th>Alumno</th>
-                                            <th>Instrumento / Área</th>
-                                            <th>Estado de Colegiatura</th>
-                                            <th>Acción de Producción</th>
+                                            <th>Alumno / Usuario</th>
+                                            <th>Instrumento</th>
+                                            <th>Asistencia</th>
+                                            <th>Estado Colegiatura</th>
+                                            <th>Alerta / Motivo de No Pago (Notas Pastor)</th>
+                                            <th>Estado de Acceso</th>
+                                            <th>Acciones de Administración</th>
                                         </tr>
                                     </thead>
                                     <tbody id="prod-billing-tbody">
@@ -1779,6 +1768,123 @@
                     <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Guardar Nota de Examen</button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <!-- MODAL: EXPEDIENTE COMPLETO DEL ALUMNO (FICHA PASTORAL CON FOTO Y NOTAS DE MAESTRO) -->
+    <div id="modal-expediente-alumno" class="modal-overlay">
+        <div class="modal-card" style="max-width: 650px;">
+            <div class="modal-header">
+                <h3><i class="fas fa-id-card" style="color:var(--primary-red);"></i> Expediente Integral del Estudiante</h3>
+                <button class="modal-close-btn" onclick="cerrarModalExpediente()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <!-- CABECERA FICHA CON FOTO -->
+                <div class="expediente-profile-header" style="display:flex; align-items:center; gap:20px; background:rgba(255,255,255,0.03); padding:16px; border-radius:16px; border:1px solid var(--border-color); margin-bottom:1.2rem;">
+                    <img id="exp-student-avatar" src="" alt="Foto Alumno" style="width:85px; height:85px; border-radius:50%; object-fit:cover; border:3px solid var(--primary-red); box-shadow:0 6px 15px rgba(0,0,0,0.4);">
+                    <div style="flex:1;">
+                        <h3 id="exp-student-name" style="color:white; margin:0 0 4px 0; font-size:1.3rem; font-weight:800;">Cargando...</h3>
+                        <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-bottom:6px;">
+                            <span class="badge badge-area" id="exp-student-instrument">Teclado</span>
+                            <span class="badge badge-rol" id="exp-student-username">@alumno</span>
+                        </div>
+                        <small class="text-muted" id="exp-student-status-tag"><i class="fas fa-shield-alt"></i> Estatus en Plataforma</small>
+                    </div>
+                </div>
+
+                <!-- MÉTRICAS EN TARJETAS -->
+                <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap:10px; margin-bottom:1.2rem;">
+                    <div style="background:rgba(255,255,255,0.02); border:1px solid var(--border-color); padding:12px; border-radius:12px; text-align:center;">
+                        <small class="text-muted" style="display:block; font-size:0.75rem;">Teoría</small>
+                        <strong id="exp-note-teoria" style="font-size:1.3rem; color:white;">-</strong>
+                    </div>
+                    <div style="background:rgba(255,255,255,0.02); border:1px solid var(--border-color); padding:12px; border-radius:12px; text-align:center;">
+                        <small class="text-muted" style="display:block; font-size:0.75rem;">Técnica</small>
+                        <strong id="exp-note-tecnica" style="font-size:1.3rem; color:white;">-</strong>
+                    </div>
+                    <div style="background:rgba(255,255,255,0.02); border:1px solid var(--border-color); padding:12px; border-radius:12px; text-align:center;">
+                        <small class="text-muted" style="display:block; font-size:0.75rem;">Asistencia</small>
+                        <strong id="exp-asistencia-pct" style="font-size:1.3rem; color:#10b981;">100%</strong>
+                    </div>
+                    <div style="background:rgba(255,255,255,0.02); border:1px solid var(--border-color); padding:12px; border-radius:12px; text-align:center;">
+                        <small class="text-muted" style="display:block; font-size:0.75rem;">Colegiatura</small>
+                        <strong id="exp-colegiatura-badge" style="font-size:0.9rem; color:white;">Solvente</strong>
+                    </div>
+                </div>
+
+                <!-- OBSERVACIONES DEL MAESTRO -->
+                <div style="background:rgba(229,9,20,0.06); border:1px solid rgba(229,9,20,0.3); padding:14px 18px; border-radius:14px; margin-bottom:1.2rem;">
+                    <h4 style="color:white; margin:0 0 6px 0; font-size:0.95rem;"><i class="fas fa-comment-dots" style="color:var(--primary-red);"></i> Descripción y Observaciones del Maestro</h4>
+                    <p id="exp-observaciones-maestro" style="color:var(--text-light); margin:0; font-size:0.88rem; font-style:italic;">"Sin anotaciones docentes registradas aún."</p>
+                </div>
+
+                <!-- BITÁCORA PASTORAL & MOTIVO DE WARNING -->
+                <div id="exp-warning-container" style="display:none; background:rgba(245, 158, 11, 0.08); border:1px solid rgba(245, 158, 11, 0.3); padding:12px 16px; border-radius:14px;">
+                    <h4 style="color:#f59e0b; margin:0 0 4px 0; font-size:0.9rem;"><i class="fas fa-exclamation-triangle"></i> Reporte Administrativo de Colegiatura Pendiente</h4>
+                    <p id="exp-warning-text" style="color:white; margin:0; font-size:0.85rem;"></p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="cerrarModalExpediente()">Cerrar Expediente</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: REGISTRAR / EDITAR MOTIVO DE NO PAGO (ADMINISTRACIÓN) -->
+    <div id="modal-motivo-nopago" class="modal-overlay">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3><i class="fas fa-exclamation-circle" style="color:#f59e0b;"></i> Registrar Motivo de Colegiatura Pendiente</h3>
+                <button class="modal-close-btn" onclick="cerrarModalMotivoNoPago()">&times;</button>
+            </div>
+            <form onsubmit="guardarMotivoNoPago(event)">
+                <div class="modal-body">
+                    <p id="motivo-student-tag" style="font-weight:700; color:white; margin-bottom:12px;"></p>
+                    <div class="form-group">
+                        <label for="motivo-meses-adeudo">Meses de Colegiatura Pendientes</label>
+                        <select id="motivo-meses-adeudo" class="form-control" required>
+                            <option value="0">0 - Solvente (Al día)</option>
+                            <option value="1">1 Mes Pendiente (Alerta / Warning)</option>
+                            <option value="2">2 Meses Pendientes (Bloqueo Automático)</option>
+                            <option value="3">3+ Meses Pendientes (Bloqueo Crítico)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="motivo-texto">Motivo / Explicación del No Pago (Nota para el Pastor)</label>
+                        <textarea id="motivo-texto" class="form-control" rows="3" placeholder="Ej. El alumno solicita prórroga de 15 días por situación económica familiar..." required></textarea>
+                        <small class="text-muted" style="display:block; margin-top:5px;">El pastor revisará esta explicación para autorizar o no la estadía del alumno.</small>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="cerrarModalMotivoNoPago()">Cancelar</button>
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Guardar Alerta</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- PANTALLA / OVERLAY: ALUMNO BLOQUEADO POR COLEGIATURA PENDIENTE -->
+    <div id="modal-bloqueo-alumno" class="modal-overlay" style="z-index: 99999;">
+        <div class="modal-card" style="max-width: 480px; text-align: center; border: 2px solid var(--primary-red); box-shadow: 0 0 50px rgba(229, 9, 20, 0.4);">
+            <div style="font-size: 3.5rem; color: var(--primary-red); margin-bottom: 1rem; animation: pulseGlow 1.5s infinite;">
+                <i class="fas fa-lock"></i>
+            </div>
+            <h2 style="color: white; font-family: 'Space Grotesk', sans-serif; font-size: 1.5rem; font-weight: 800; margin-bottom: 10px;">
+                ACCESO SUSPENDIDO
+            </h2>
+            <div style="background: rgba(229, 9, 20, 0.12); border: 1px solid rgba(229, 9, 20, 0.3); padding: 14px 18px; border-radius: 14px; margin-bottom: 1.5rem;">
+                <p style="color: #ff8585; font-size: 1rem; font-weight: 700; margin: 0;">
+                    "Colegiatura pendiente, favor de comunicarte con administración"
+                </p>
+            </div>
+            <p style="color: var(--text-light); font-size: 0.88rem; margin-bottom: 1.8rem; line-height: 1.5;">
+                Tu cuenta registra <strong>2 o más colegiaturas pendientes</strong>. Para regularizar tu estatus o solicitar una autorización especial, por favor ponte en contacto con el equipo administrativo.
+            </p>
+            <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
+                <button type="button" class="btn btn-secondary" onclick="cerrarModalBloqueoYSalir()">
+                    <i class="fas fa-arrow-left"></i> Entendido / Salir
+                </button>
+            </div>
         </div>
     </div>
 

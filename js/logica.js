@@ -7,10 +7,10 @@ const defaultDB = {
         "maestro1": { password: "can2026**", rol: "maestro", nombre: "Juan Carlos (Teclado)", area: "Teclado" },
         "maestro2": { password: "can2026**", rol: "maestro", nombre: "Marcos (Batería)", area: "Batería" },
         "pablo": { password: "can2026**", rol: "adoracion", nombre: "Pablo Ensamble", area: "Ensamble" },
-        "alumno1": { password: "can2026**", rol: "estudiante", nombre: "Juan Pérez", area: "Teclado", pagoStatus: "solvente" },
-        "alumno2": { password: "can2026**", rol: "estudiante", nombre: "Ana Gómez", area: "Batería", pagoStatus: "pendiente" },
-        "alumno3": { password: "can2026**", rol: "estudiante", nombre: "Luis Flores", area: "Teclado", pagoStatus: "solvente" },
-        "alumno": { password: "can2026**", rol: "estudiante", nombre: "Alumno de Prueba", area: "Teclado", pagoStatus: "solvente" },
+        "alumno1": { password: "can2026**", rol: "estudiante", nombre: "Juan Pérez", area: "Teclado", pagoStatus: "solvente", mesesAdeudo: 0, motivoNoPago: "", observacionesMaestro: "Excelente dedicación en clase de teclado. Muy buen tempo." },
+        "alumno2": { password: "can2026**", rol: "estudiante", nombre: "Ana Gómez", area: "Batería", pagoStatus: "2_pendientes", mesesAdeudo: 2, motivoNoPago: "Solicita prórroga de 15 días por emergencia familiar.", observacionesMaestro: "Muestra gran avance en paradiddles pero requiere afianzar metrónomo." },
+        "alumno3": { password: "can2026**", rol: "estudiante", nombre: "Luis Flores", area: "Teclado", pagoStatus: "1_pendiente", mesesAdeudo: 1, motivoNoPago: "Pendiente pago de fin de mes.", observacionesMaestro: "Muy buena técnica de digitación y lectura a primera vista." },
+        "alumno": { password: "can2026**", rol: "estudiante", nombre: "Alumno de Prueba", area: "Teclado", pagoStatus: "solvente", mesesAdeudo: 0, motivoNoPago: "", observacionesMaestro: "Alumno activo y constante." },
         // Nuevos usuarios maestros y pastores
         "ilopez": { password: "can2026**", rol: "maestro", nombre: "Ivan Lopez", area: "Bajo" },
         "cordaz": { password: "can2026**", rol: "maestro", nombre: "Carlos Ordaz", area: "Batería" },
@@ -150,7 +150,7 @@ function initDB() {
         if (!db.ensambleAsignaciones) { db.ensambleAsignaciones = defaultDB.ensambleAsignaciones; modificado = true; }
         if (!db.notasPastorales) { db.notasPastorales = []; modificado = true; }
         
-        // Sanear y normalizar roles de todos los usuarios
+        // Sanear y normalizar roles y datos de colegiatura de todos los usuarios
         Object.keys(db.usuarios).forEach(uKey => {
             const uObj = db.usuarios[uKey];
             if (uObj && uObj.rol) {
@@ -159,6 +159,15 @@ function initDB() {
                     uObj.rol = normRol;
                     modificado = true;
                 }
+            }
+            if (uObj && normalizeRol(uObj.rol) === 'estudiante') {
+                if (uObj.mesesAdeudo === undefined) {
+                    uObj.mesesAdeudo = (uObj.pagoStatus === 'pendiente' || uObj.pagoStatus === '1_pendiente') ? 1 : (uObj.pagoStatus === '2_pendientes' ? 2 : 0);
+                    modificado = true;
+                }
+                if (uObj.motivoNoPago === undefined) { uObj.motivoNoPago = ""; modificado = true; }
+                if (uObj.desbloqueadoManual === undefined) { uObj.desbloqueadoManual = false; modificado = true; }
+                if (uObj.observacionesMaestro === undefined) { uObj.observacionesMaestro = "Alumno constante y activo en clase."; modificado = true; }
             }
         });
 
@@ -170,7 +179,11 @@ function initDB() {
                 nombre: "Alumno de Prueba",
                 area: "Teclado",
                 instrumento: "Teclado",
-                pagoStatus: "solvente"
+                pagoStatus: "solvente",
+                mesesAdeudo: 0,
+                motivoNoPago: "",
+                desbloqueadoManual: false,
+                observacionesMaestro: "Alumno de prueba activo."
             };
             modificado = true;
         }
@@ -188,6 +201,19 @@ function initDB() {
             localStorage.setItem('worship_sessions_db', JSON.stringify(db));
         }
     }
+}
+
+function esAlumnoBloqueado(username) {
+    const db = getDB();
+    if (!db || !db.usuarios || !db.usuarios[username]) return false;
+    const u = db.usuarios[username];
+    if (normalizeRol(u.rol) !== 'estudiante') return false;
+    const meses = typeof u.mesesAdeudo === 'number' ? u.mesesAdeudo : (u.pagoStatus === 'pendiente' || u.pagoStatus === '1_pendiente' ? 1 : (u.pagoStatus === '2_pendientes' ? 2 : 0));
+    const esAdeudoCritico = meses >= 2 || u.pagoStatus === '2_pendientes';
+    if (esAdeudoCritico && !u.desbloqueadoManual) {
+        return true;
+    }
+    return false;
 }
 
 function getDB() {
@@ -436,6 +462,15 @@ function iniciarSesion(event) {
     
     if (db.usuarios[inputUser] && db.usuarios[inputUser].password === inputPass) {
         errorMsg.style.display = 'none';
+        
+        // Interceptar bloqueo automático por 2 colegiaturas pendientes sin autorización
+        if (esAlumnoBloqueado(inputUser)) {
+            const modalBloqueo = document.getElementById('modal-bloqueo-alumno');
+            if (modalBloqueo) modalBloqueo.classList.add('active');
+            showToast("Colegiatura pendiente, favor de comunicarte con administración", "error");
+            return;
+        }
+
         usuarioActual = { ...db.usuarios[inputUser], username: inputUser };
         usuarioActual.rol = normalizeRol(usuarioActual.rol);
         
@@ -451,6 +486,14 @@ function iniciarSesion(event) {
         setTimeout(() => { errorMsg.style.animation = ''; }, 300);
         showToast("Error de credenciales", 'error');
     }
+}
+
+function cerrarModalBloqueoYSalir() {
+    const modalBloqueo = document.getElementById('modal-bloqueo-alumno');
+    if (modalBloqueo) modalBloqueo.classList.remove('active');
+    document.getElementById('login-user').value = '';
+    document.getElementById('login-pass').value = '';
+    mostrarPantalla('app-choice-screen');
 }
 
 function entrarAlDashboard() {
@@ -947,9 +990,15 @@ function renderizarPastor(db) {
                     const asistPct = asistenciasTotales > 0 ? Math.round((presentes / asistenciasTotales) * 100) : 'N/A';
                     
                     const tr = document.createElement('tr');
+                    const meses = typeof user.mesesAdeudo === 'number' ? user.mesesAdeudo : (user.pagoStatus === 'pendiente' ? 1 : 0);
+                    let badgeColegiaturaClass = 'presente';
+                    let badgeColegiaturaLabel = 'SOLVENTE';
+                    if (meses === 1) { badgeColegiaturaClass = 'ausente'; badgeColegiaturaLabel = '1 MES PENDIENTE'; }
+                    if (meses >= 2) { badgeColegiaturaClass = 'ausente'; badgeColegiaturaLabel = user.desbloqueadoManual ? '2 ADEUDOS (AUTORIZADO)' : '2 ADEUDOS (SUSPENDIDO)'; }
+
                     tr.innerHTML = `
                         <td>
-                            <strong class="user-realname">${user.nombre}</strong>
+                            <strong class="user-realname" style="color:white;">${user.nombre}</strong><br>
                             <small class="text-muted">${user.area} - @${username}</small>
                         </td>
                         <td>
@@ -964,13 +1013,17 @@ function renderizarPastor(db) {
                             </div>
                             <span>${notasObj.tecnica}</span>
                         </td>
-                        <td><strong class="asist-pct-text">${asistPct !== 'N/A' ? asistPct + '%' : 'S/R'}</strong></td>
+                        <td><strong class="asist-pct-text" style="color:${asistPct >= 80 ? '#10b981' : '#ef4444'};">${asistPct !== 'N/A' ? asistPct + '%' : 'S/R'}</strong></td>
                         <td>
-                            <span class="badge badge-estado ${user.pagoStatus === 'pendiente' ? 'ausente' : 'presente'}">
-                                ${(user.pagoStatus || 'solvente').toUpperCase()}
+                            <span class="badge badge-estado ${badgeColegiaturaClass}">
+                                ${badgeColegiaturaLabel}
                             </span>
                         </td>
-                        <td><em class="text-muted text-truncate" style="max-width: 200px; display: inline-block;">${notasObj.notas}</em></td>
+                        <td>
+                            <button class="btn btn-sm btn-primary" onclick="abrirModalExpediente('${username}')">
+                                <i class="fas fa-id-card"></i> Ver expediente
+                            </button>
+                        </td>
                     `;
                     tbody.appendChild(tr);
                 }
@@ -1741,7 +1794,7 @@ function renderizarProduccion(db) {
             }
         }
 
-        // Tabla Control de Colegiaturas de Alumnos
+        // Tabla Control de Colegiaturas de Alumnos (Módulo de Administración)
         const billingTbody = document.getElementById('prod-billing-tbody');
         if (billingTbody) {
             billingTbody.innerHTML = '';
@@ -1750,16 +1803,53 @@ function renderizarProduccion(db) {
                 .map(uKey => ({ ...usuariosObj[uKey], username: uKey }))
                 .filter(u => normalizeRol(u.rol) === 'estudiante');
 
-            const solventesCount = alumnos.filter(u => u.pagoStatus !== 'pendiente').length;
+            const solventesCount = alumnos.filter(u => (typeof u.mesesAdeudo === 'number' ? u.mesesAdeudo === 0 : u.pagoStatus !== 'pendiente')).length;
             
             const badgeSummary = document.getElementById('prod-billing-summary-badge');
             if (badgeSummary) badgeSummary.innerText = `${solventesCount} de ${alumnos.length} Solventes`;
 
             if (alumnos.length === 0) {
-                billingTbody.innerHTML = `<tr><td colspan="4" style="text-align:center;" class="text-muted">No hay alumnos registrados en la academia.</td></tr>`;
+                billingTbody.innerHTML = `<tr><td colspan="7" style="text-align:center;" class="text-muted">No hay alumnos registrados en la academia.</td></tr>`;
             } else {
                 alumnos.forEach(u => {
-                    const isSolvente = u.pagoStatus !== 'pendiente';
+                    const meses = typeof u.mesesAdeudo === 'number' ? u.mesesAdeudo : (u.pagoStatus === 'pendiente' ? 1 : 0);
+                    const isSolvente = meses === 0;
+
+                    // Asistencia %
+                    const asistenciasAlumno = (db.asistencia && db.asistencia[u.username]) || {};
+                    const asistenciasTotales = Object.values(asistenciasAlumno).length;
+                    const presentes = Object.values(asistenciasAlumno).filter(val => val === 'presente').length;
+                    const asistPct = asistenciasTotales > 0 ? Math.round((presentes / asistenciasTotales) * 100) : 100;
+
+                    // Estado Colegiatura
+                    let badgeClass = 'presente';
+                    let badgeLabel = 'SOLVENTE (AL DÍA)';
+                    if (meses === 1) { badgeClass = 'ausente'; badgeLabel = '1 MES PENDIENTE'; }
+                    if (meses >= 2) { badgeClass = 'ausente'; badgeLabel = `${meses} MESES PENDIENTES`; }
+
+                    // Estado de Acceso
+                    let accesoHtml = `<span style="color:#10b981; font-weight:700; font-size:0.85rem;"><i class="fas fa-check-circle"></i> ACCESO OK</span>`;
+                    if (meses >= 2) {
+                        if (u.desbloqueadoManual) {
+                            accesoHtml = `<span style="color:#f59e0b; font-weight:700; font-size:0.85rem;"><i class="fas fa-unlock"></i> AUTORIZADO (PASTOR)</span>`;
+                        } else {
+                            accesoHtml = `<span style="color:#ef4444; font-weight:700; font-size:0.85rem;"><i class="fas fa-lock"></i> SUSPENDIDO</span>`;
+                        }
+                    }
+
+                    // Warning Motivo No Pago
+                    let warningHtml = `<small class="text-muted">Sin nota</small> <button class="btn btn-sm btn-secondary" style="padding:2px 8px; font-size:0.75rem;" onclick="abrirModalMotivoNoPago('${u.username}')"><i class="fas fa-edit"></i> Motivo</button>`;
+                    if (u.motivoNoPago) {
+                        warningHtml = `
+                            <div style="background:rgba(245, 158, 11, 0.1); border:1px solid rgba(245, 158, 11, 0.4); padding:6px 10px; border-radius:8px; font-size:0.8rem; color:#f59e0b;">
+                                <i class="fas fa-exclamation-triangle"></i> <strong>Warning:</strong> "${u.motivoNoPago}"
+                            </div>
+                            <button class="btn btn-sm btn-secondary" style="padding:2px 8px; font-size:0.75rem; margin-top:4px;" onclick="abrirModalMotivoNoPago('${u.username}')">
+                                <i class="fas fa-edit"></i> Editar Motivo
+                            </button>
+                        `;
+                    }
+
                     const tr = document.createElement('tr');
                     tr.innerHTML = `
                         <td>
@@ -1767,15 +1857,24 @@ function renderizarProduccion(db) {
                             <small class="text-muted">@${u.username}</small>
                         </td>
                         <td><span class="badge badge-rol">${u.area || 'Estudiante'}</span></td>
+                        <td><strong style="color:${asistPct >= 80 ? '#10b981' : '#ef4444'};">${asistPct}%</strong></td>
+                        <td><span class="badge badge-estado ${badgeClass}">${badgeLabel}</span></td>
+                        <td style="max-width:220px;">${warningHtml}</td>
+                        <td>${accesoHtml}</td>
                         <td>
-                            <span class="badge badge-estado ${isSolvente ? 'presente' : 'ausente'}">
-                                ${isSolvente ? 'SOLVENTE (AL DÍA)' : 'PAGO PENDIENTE'}
-                            </span>
-                        </td>
-                        <td>
-                            <button class="btn btn-sm ${isSolvente ? 'btn-deactivate' : 'btn-activate'}" onclick="alternarPagoAlumnoProduccion('${u.username}')">
-                                ${isSolvente ? '<i class="fas fa-exclamation-triangle"></i> Marcar Pendiente' : '<i class="fas fa-check-circle"></i> Marcar Solvente'}
-                            </button>
+                            <div style="display:flex; gap:6px; flex-wrap:wrap;">
+                                <button class="btn btn-sm btn-primary" onclick="registrarPagoColegiatura('${u.username}')" title="Registrar pago al corriente (desbloqueo inmediato)">
+                                    <i class="fas fa-check-circle"></i> Registrar Pago
+                                </button>
+                                <button class="btn btn-sm btn-secondary" onclick="agregarAdeudoColegiatura('${u.username}')" title="Sumar 1 mes de adeudo">
+                                    <i class="fas fa-plus-circle"></i> +1 Adeudo
+                                </button>
+                                ${meses >= 2 ? `
+                                    <button class="btn btn-sm ${u.desbloqueadoManual ? 'btn-deactivate' : 'btn-activate'}" onclick="alternarDesbloqueoManual('${u.username}')" title="Autorización del Pastor para permitir o revocar acceso">
+                                        ${u.desbloqueadoManual ? '<i class="fas fa-lock"></i> Bloquear Acceso' : '<i class="fas fa-unlock"></i> Desbloquear (Pastor)'}
+                                    </button>
+                                ` : ''}
+                            </div>
                         </td>
                     `;
                     billingTbody.appendChild(tr);
@@ -1785,6 +1884,174 @@ function renderizarProduccion(db) {
     } catch(err) {
         console.error("Error en renderizarProduccion:", err);
     }
+}
+
+// -------------------------------------------------------------
+// FUNCIONES ADMINISTRATIVAS DE COLEGIATURAS Y EXPEDIENTES
+// -------------------------------------------------------------
+function registrarPagoColegiatura(username) {
+    const db = getDB();
+    if (db.usuarios && db.usuarios[username]) {
+        db.usuarios[username].mesesAdeudo = 0;
+        db.usuarios[username].pagoStatus = 'solvente';
+        db.usuarios[username].motivoNoPago = '';
+        db.usuarios[username].desbloqueadoManual = false;
+        saveDB(db);
+        showToast(`Pago registrado para @${username}. El usuario se ha desbloqueado automáticamente.`, "success");
+        renderizarDatosVista(usuarioActual ? usuarioActual.rol : 'produccion');
+    }
+}
+
+function agregarAdeudoColegiatura(username) {
+    const db = getDB();
+    if (db.usuarios && db.usuarios[username]) {
+        const actual = typeof db.usuarios[username].mesesAdeudo === 'number' ? db.usuarios[username].mesesAdeudo : 0;
+        const nuevo = actual + 1;
+        db.usuarios[username].mesesAdeudo = nuevo;
+        if (nuevo === 1) db.usuarios[username].pagoStatus = '1_pendiente';
+        if (nuevo >= 2) db.usuarios[username].pagoStatus = '2_pendientes';
+        saveDB(db);
+        showToast(`Se registró 1 mes adicional de adeudo a @${username} (Total: ${nuevo} meses).`, "info");
+        renderizarDatosVista(usuarioActual ? usuarioActual.rol : 'produccion');
+    }
+}
+
+function alternarDesbloqueoManual(username) {
+    const db = getDB();
+    if (db.usuarios && db.usuarios[username]) {
+        const actual = db.usuarios[username].desbloqueadoManual || false;
+        db.usuarios[username].desbloqueadoManual = !actual;
+        saveDB(db);
+        showToast(db.usuarios[username].desbloqueadoManual ? `Autorización Pastoral concedida: @${username} ha sido DESBLOQUEADO.` : `Acceso de @${username} SUSPENDIDO nuevamente por adeudo.`, "success");
+        renderizarDatosVista(usuarioActual ? usuarioActual.rol : 'produccion');
+    }
+}
+
+let usuarioMotivoSeleccionado = null;
+function abrirModalMotivoNoPago(username) {
+    usuarioMotivoSeleccionado = username;
+    const db = getDB();
+    const u = db.usuarios[username];
+    if (!u) return;
+
+    const tag = document.getElementById('motivo-student-tag');
+    if (tag) tag.innerText = `Alumno: ${u.nombre} (@${username})`;
+
+    const selectMeses = document.getElementById('motivo-meses-adeudo');
+    if (selectMeses) selectMeses.value = typeof u.mesesAdeudo === 'number' ? u.mesesAdeudo : (u.pagoStatus === 'pendiente' ? 1 : 0);
+
+    const txtMotivo = document.getElementById('motivo-texto');
+    if (txtMotivo) txtMotivo.value = u.motivoNoPago || '';
+
+    const modal = document.getElementById('modal-motivo-nopago');
+    if (modal) modal.classList.add('active');
+}
+
+function cerrarModalMotivoNoPago() {
+    const modal = document.getElementById('modal-motivo-nopago');
+    if (modal) modal.classList.remove('active');
+}
+
+function guardarMotivoNoPago(event) {
+    event.preventDefault();
+    if (!usuarioMotivoSeleccionado) return;
+
+    const meses = parseInt(document.getElementById('motivo-meses-adeudo').value) || 0;
+    const motivo = document.getElementById('motivo-texto').value.trim();
+
+    const db = getDB();
+    if (db.usuarios && db.usuarios[usuarioMotivoSeleccionado]) {
+        db.usuarios[usuarioMotivoSeleccionado].mesesAdeudo = meses;
+        db.usuarios[usuarioMotivoSeleccionado].motivoNoPago = motivo;
+        if (meses === 0) db.usuarios[usuarioMotivoSeleccionado].pagoStatus = 'solvente';
+        if (meses === 1) db.usuarios[usuarioMotivoSeleccionado].pagoStatus = '1_pendiente';
+        if (meses >= 2) db.usuarios[usuarioMotivoSeleccionado].pagoStatus = '2_pendientes';
+        saveDB(db);
+        cerrarModalMotivoNoPago();
+        showToast("Alerta y motivo de no pago guardados con éxito", "success");
+        renderizarDatosVista(usuarioActual ? usuarioActual.rol : 'produccion');
+    }
+}
+
+// -------------------------------------------------------------
+// EXPEDIENTES INTEGRALES DE ALUMNOS (MODAL CON FOTO Y NOTAS DOCENTES)
+// -------------------------------------------------------------
+function abrirModalExpediente(username) {
+    const db = getDB();
+    const user = db.usuarios[username];
+    if (!user) return;
+
+    const nombre = user.nombre || username;
+    const area = user.area || 'Teclado';
+    const avatarImg = document.getElementById('exp-student-avatar');
+    const nameEl = document.getElementById('exp-student-name');
+    const instEl = document.getElementById('exp-student-instrument');
+    const userEl = document.getElementById('exp-student-username');
+    const statusTag = document.getElementById('exp-student-status-tag');
+    const noteTeoria = document.getElementById('exp-note-teoria');
+    const noteTecnica = document.getElementById('exp-note-tecnica');
+    const asistPct = document.getElementById('exp-asistencia-pct');
+    const colBadge = document.getElementById('exp-colegiatura-badge');
+    const obsMaestro = document.getElementById('exp-observaciones-maestro');
+    const warnBox = document.getElementById('exp-warning-container');
+    const warnTxt = document.getElementById('exp-warning-text');
+
+    if (avatarImg) avatarImg.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(nombre)}&background=d90429&color=fff&bold=true`;
+    if (nameEl) nameEl.innerText = nombre;
+    if (instEl) instEl.innerText = area;
+    if (userEl) userEl.innerText = `@${username}`;
+
+    const meses = typeof user.mesesAdeudo === 'number' ? user.mesesAdeudo : (user.pagoStatus === 'pendiente' ? 1 : 0);
+    const estaBloqueado = esAlumnoBloqueado(username);
+
+    if (statusTag) {
+        statusTag.innerHTML = estaBloqueado 
+            ? `<span style="color:#ef4444; font-weight:700;"><i class="fas fa-lock"></i> Acceso Suspendido (2+ Adeudos)</span>`
+            : `<span style="color:#10b981; font-weight:700;"><i class="fas fa-check-circle"></i> Alumno Activo en Plataforma</span>`;
+    }
+
+    const cal = (db.calificaciones && db.calificaciones[username]) || {};
+    if (noteTeoria) noteTeoria.innerText = cal.teoria !== undefined ? cal.teoria : '-';
+    if (noteTecnica) noteTecnica.innerText = cal.tecnica !== undefined ? cal.tecnica : '-';
+
+    // Asistencia
+    const asistencias = (db.asistencia && db.asistencia[username]) || {};
+    const tot = Object.values(asistencias).length;
+    const pres = Object.values(asistencias).filter(v => v === 'presente').length;
+    const pctVal = tot > 0 ? Math.round((pres / tot) * 100) : 100;
+    if (asistPct) {
+        asistPct.innerText = pctVal + "%";
+        asistPct.style.color = pctVal >= 80 ? '#10b981' : '#ef4444';
+    }
+
+    if (colBadge) {
+        colBadge.innerText = meses === 0 ? 'Solvente' : `${meses} Mes${meses > 1 ? 'es' : ''} Pendiente${meses > 1 ? 's' : ''}`;
+        colBadge.style.color = meses === 0 ? '#10b981' : '#ef4444';
+    }
+
+    // Observaciones del maestro
+    if (obsMaestro) {
+        const textoObs = user.observacionesMaestro || cal.notas || "Sin anotaciones del profesor registradas aún.";
+        obsMaestro.innerText = `"${textoObs}"`;
+    }
+
+    // Warning por no pago
+    if (warnBox && warnTxt) {
+        if (meses > 0 && user.motivoNoPago) {
+            warnBox.style.display = 'block';
+            warnTxt.innerText = `Motivo registrado por Administración: "${user.motivoNoPago}"`;
+        } else {
+            warnBox.style.display = 'none';
+        }
+    }
+
+    const modal = document.getElementById('modal-expediente-alumno');
+    if (modal) modal.classList.add('active');
+}
+
+function cerrarModalExpediente() {
+    const modal = document.getElementById('modal-expediente-alumno');
+    if (modal) modal.classList.remove('active');
 }
 
 function alternarPagoAlumnoProduccion(username) {
@@ -1919,6 +2186,9 @@ function guardarCalificacion(event) {
     
     const db = getDB();
     db.calificaciones[maestroAlumnoSeleccionado] = { teoria, tecnica, notas };
+    if (db.usuarios && db.usuarios[maestroAlumnoSeleccionado]) {
+        db.usuarios[maestroAlumnoSeleccionado].observacionesMaestro = notas;
+    }
     
     saveDB(db);
     cerrarModalCalificar();
