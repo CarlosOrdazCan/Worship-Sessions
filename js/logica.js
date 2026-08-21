@@ -1157,24 +1157,69 @@ function renderizarMaestro(db) {
             selectSong.innerHTML = '<option value="">-- Seleccionar Canción --</option>';
             ((db && db.canciones) || []).filter(c => c.activo).forEach(c => {
                 const opt = document.createElement('option');
-                        <strong style="color:white;">${song.titulo}</strong><br>
-                        <small class="text-muted">Tempo: ${item.tempo} | Tono: ${item.tono} | Compás: ${item.compas}</small>
-                    </td>
-                    <td>
-                        <strong style="color:white;">${student.nombre}</strong><br>
-                        <small class="text-muted">${student.area}</small>
-                    </td>
-                    <td><span class="badge-level ${lvlClass}">${item.nivel}</span></td>
-                    <td>
-                        ${item.playthroughUrl ? `<a href="${item.playthroughUrl}" target="_blank" class="submission-video-link"><i class="fab fa-youtube"></i> Playthrough ↗</a>` : '<span class="text-muted">Sin Video</span>'}
-                    </td>
-                    <td>
-                        <button class="btn btn-sm btn-delete" onclick="eliminarAsignacionEnsamble('${k}')"><i class="fas fa-trash-alt"></i></button>
-                    </td>
-                `;
-                ensTbody.appendChild(tr);
+                opt.value = c.id;
+                opt.innerText = `${c.titulo} - ${c.autor} (${c.tono})`;
+                selectSong.appendChild(opt);
+            });
+
+            selectStudent.innerHTML = '<option value="">-- Seleccionar Alumno --</option>';
+            Object.keys(usuariosObj).forEach(uname => {
+                const u = usuariosObj[uname];
+                if (normalizeRol(u.rol) === 'estudiante' && (usuarioActual.rol === 'admin' || u.area === areaMaestro)) {
+                    const opt = document.createElement('option');
+                    opt.value = uname;
+                    opt.innerText = `${u.nombre || uname} (${u.area || 'Estudiante'}) - @${uname}`;
+                    selectStudent.appendChild(opt);
+                }
             });
         }
+
+        // Tabla Asignaciones de Ensamble
+        const ensTbody = document.getElementById('maestro-ensamble-assignments-tbody');
+        if (ensTbody) {
+            ensTbody.innerHTML = '';
+            const asignaciones = (db && db.ensambleAsignaciones) || {};
+            const keys = Object.keys(asignaciones);
+            
+            let filteredKeys = keys;
+            if (usuarioActual.rol !== 'admin') {
+                filteredKeys = keys.filter(k => {
+                    const u = usuariosObj[asignaciones[k].username];
+                    return u && u.area === areaMaestro;
+                });
+            }
+
+            if (filteredKeys.length === 0) {
+                ensTbody.innerHTML = `<tr><td colspan="5" style="text-align:center;" class="text-muted">No has asignado alumnos de tu área a canciones de ensamble todavía.</td></tr>`;
+            } else {
+                filteredKeys.forEach(k => {
+                    const item = asignaciones[k];
+                    const student = usuariosObj[item.username] || { nombre: item.username, area: areaMaestro };
+                    const song = ((db && db.canciones) || []).find(c => c.id === item.songId) || { titulo: 'Canción' };
+                    
+                    let lvlClass = 'basico';
+                    if (item.nivel === 'Avanzado') lvlClass = 'avanzado';
+                    if (item.nivel === 'Intermedio') lvlClass = 'intermedio';
+                    if (item.nivel === 'Junior') lvlClass = 'junior';
+
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td><strong>${song.titulo}</strong><br><small class="text-muted">Tempo: ${item.tempo || 'N/A'} | Tono: ${item.tono || 'N/A'} | Compás: ${item.compas || '4/4'}</small></td>
+                        <td><strong>${student.nombre || item.username}</strong><br><small class="text-muted">@${item.username}</small></td>
+                        <td><span class="badge-level ${lvlClass}">${item.nivel || 'Intermedio'}</span></td>
+                        <td>
+                            ${item.playthroughUrl ? `<a href="${item.playthroughUrl}" target="_blank" class="submission-video-link"><i class="fab fa-youtube"></i> Playthrough ↗</a>` : '<span class="text-muted">Sin video</span>'}
+                        </td>
+                        <td>
+                            <button class="btn btn-sm btn-delete" onclick="eliminarAsignacionEnsambleMaestro('${k}')"><i class="fas fa-trash-alt"></i></button>
+                        </td>
+                    `;
+                    ensTbody.appendChild(tr);
+                });
+            }
+        }
+    } catch(err) {
+        console.error("Error en renderizarMaestro:", err);
     }
 }
 
