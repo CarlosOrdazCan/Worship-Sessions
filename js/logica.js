@@ -453,8 +453,10 @@ function actualizarFondoIntroPorInstrumento(usuario) {
     
     let bgUrl = 'img/inst-staff.jpg';
     
-    // Para Maestros, Producción, Pastor y Admin -> Usar la foto grupal de ensamble/staff (inst-staff.jpg)
-    if (rol === 'maestro' || rol === 'produccion' || rol === 'pastor' || rol === 'admin' || rol === 'adoracion') {
+    // Para Pastor -> Usar la biblioteca / estudio pastoral (inst-pastor.jpg)
+    if (rol === 'pastor') {
+        bgUrl = 'img/inst-pastor.jpg';
+    } else if (rol === 'maestro' || rol === 'produccion' || rol === 'admin' || rol === 'adoracion') {
         bgUrl = 'img/inst-staff.jpg';
     } else {
         // Alumnos según su instrumento
