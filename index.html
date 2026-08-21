@@ -17,6 +17,7 @@
     <!-- ================= PANTALLA 0: SELECCIÓN DE APP ================= -->
     <div id="app-choice-screen" class="screen active">
         <div class="highend-noise-overlay"></div>
+        <div class="choice-mouse-layer"></div>
 
         <div class="choice-buttons-standalone">
             <!-- BOTÓN 1: C.A.N ALABANZA -->
@@ -48,12 +49,20 @@
 
     <!-- LOGIN SCREEN (se mostrará después de la selección) -->
     <div id="login-screen" class="screen" style="display:none;">
+        <button type="button" class="btn-top-back-choice" onclick="mostrarPantalla('app-choice-screen')">
+            <i class="fas fa-arrow-left"></i> <span>Volver a Selección de Plataforma</span>
+        </button>
+
         <div class="login-decorations">
             <div class="glow-orb red-glow-1"></div>
             <div class="glow-orb red-glow-2"></div>
         </div>
         
         <div class="login-card">
+            <button type="button" class="btn-card-back-choice" onclick="mostrarPantalla('app-choice-screen')">
+                <i class="fas fa-arrow-left"></i> <span>Cambiar de Plataforma / Inicio</span>
+            </button>
+
             <div class="login-brand">
                 <img src="img/worship-sessions-logo.png" alt="WORSHIP SESSIONS" class="login-graphic-logo">
                 <p>Centro de Avivamiento Naucalpan</p>
@@ -78,10 +87,7 @@
                 </div>
             </form>
             
-            <div class="login-footer" style="display:flex; flex-direction:column; align-items:center; gap:10px;">
-                <button type="button" onclick="mostrarPantalla('app-choice-screen')" style="background:rgba(255,255,255,0.06); border:1px solid var(--border-color); color:var(--text-light); padding:8px 16px; border-radius:9999px; font-size:0.8rem; cursor:pointer; display:inline-flex; align-items:center; gap:8px; font-weight:700; transition:all 0.2s ease;">
-                    <i class="fas fa-arrow-left"></i> Cambiar de Plataforma / Inicio
-                </button>
+            <div class="login-footer">
                 <p>Usa tus credenciales asignadas de Maestro, Alumno o Admin.</p>
                 <span class="version-tag">v3.0.0 Enterprise</span>
             </div>

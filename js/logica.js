@@ -3284,6 +3284,30 @@ function iniciarEleccionApp() {
     }
 };
 
+// CONTROL DE CAPA DE GRADIENTE AZUL/GRIS INTERACTIVO AL MOVER EL MOUSE (SELECCIÓN DE APP)
+document.addEventListener('mousemove', (e) => {
+    const choiceScreen = document.getElementById('app-choice-screen');
+    if (choiceScreen && choiceScreen.classList.contains('active')) {
+        const rect = choiceScreen.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        choiceScreen.style.setProperty('--mouse-x', `${x}px`);
+        choiceScreen.style.setProperty('--mouse-y', `${y}px`);
+    }
+});
+
+document.addEventListener('touchmove', (e) => {
+    const choiceScreen = document.getElementById('app-choice-screen');
+    if (choiceScreen && choiceScreen.classList.contains('active') && e.touches.length > 0) {
+        const touch = e.touches[0];
+        const rect = choiceScreen.getBoundingClientRect();
+        const x = touch.clientX - rect.left;
+        const y = touch.clientY - rect.top;
+        choiceScreen.style.setProperty('--mouse-x', `${x}px`);
+        choiceScreen.style.setProperty('--mouse-y', `${y}px`);
+    }
+});
+
 window.onload = function() {
     initDB();
     iniciarEleccionApp();
