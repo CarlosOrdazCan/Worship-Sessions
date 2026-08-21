@@ -397,14 +397,27 @@ function iniciarSesion(event) {
         // Guardar sesión persistente
         localStorage.setItem('ws_user_session', JSON.stringify(usuarioActual));
         
-        mostrarPantalla('app-screen');
         configurarInterfaz(usuarioActual);
+        mostrarPantalla('worship-intro-screen');
         showToast(`¡Bienvenido de vuelta, ${usuarioActual.nombre}!`, 'success');
     } else {
         errorMsg.style.display = 'block';
         errorMsg.style.animation = 'shake 0.3s ease';
         setTimeout(() => { errorMsg.style.animation = ''; }, 300);
         showToast("Error de credenciales", 'error');
+    }
+}
+
+function entrarAlDashboard() {
+    const introScreen = document.getElementById('worship-intro-screen');
+    if (introScreen) {
+        introScreen.style.animation = 'fadeOutScreen 0.4s ease forwards';
+        setTimeout(() => {
+            mostrarPantalla('app-screen');
+            introScreen.style.animation = '';
+        }, 400);
+    } else {
+        mostrarPantalla('app-screen');
     }
 }
 
@@ -3022,8 +3035,8 @@ window.onload = function() {
             const db = getDB();
             if (parsedSession && parsedSession.username && db.usuarios[parsedSession.username]) {
                 usuarioActual = { ...db.usuarios[parsedSession.username], username: parsedSession.username };
-                mostrarPantalla('app-screen');
                 configurarInterfaz(usuarioActual);
+                mostrarPantalla('worship-intro-screen');
             }
         }
     } catch(e) {
