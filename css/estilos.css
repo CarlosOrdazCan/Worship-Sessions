@@ -454,7 +454,7 @@ body {
     overflow: hidden;
 }
 
-/* CAPA DE ANIMACIÓN DE LUCES ROJAS TIPO ESCENARIO / VIDEO (PULSACIÓN MUCHO MÁS LENTA DE NEGRO A ROJO) */
+/* CAPA DE ANIMACIÓN DE LUCES ROJAS TIPO ESCENARIO / VIDEO (PULSACIÓN MUUUUCHOS MÁS LENTA DE NEGRO A ROJO: 40s) */
 .choice-video-mesh-layer {
     position: absolute;
     top: -15%;
@@ -469,7 +469,7 @@ body {
         radial-gradient(ellipse at 50% 50%, rgba(255, 69, 0, 0.55) 0%, transparent 50%),
         radial-gradient(ellipse at 80% 20%, rgba(139, 0, 0, 0.65) 0%, transparent 55%);
     mix-blend-mode: screen;
-    animation: stageRedFade 14s ease-in-out infinite alternate;
+    animation: stageRedFade 40s ease-in-out infinite alternate;
 }
 
 @keyframes stageRedFade {
@@ -500,7 +500,7 @@ body {
     }
 }
 
-/* LENTE DEL CURSOR ULTRA SUAVE Y DIFUMINADO (SIN FORMA RÍGIDA, DISOLUCIÓN PROGRESIVA B&W) */
+/* LENTE DEL CURSOR DE ALTO CONTRASTE (AZUL CIAN ELÉCTRICO / TURQUESA VIBRANTE CON INTENSIDAD RESPIRATORIA Y DIFUMINADO ULTRA SUAVE) */
 .choice-mouse-layer {
     position: absolute;
     top: 0;
@@ -510,29 +510,29 @@ body {
     pointer-events: none;
     z-index: 2;
     background: radial-gradient(
-        180px circle at var(--mouse-x, 50%) var(--mouse-y, 50%),
-        rgba(220, 220, 220, 0.25) 0%,
-        rgba(150, 150, 150, 0.12) 35%,
-        rgba(80, 80, 80, 0.04) 65%,
+        220px circle at var(--mouse-x, 50%) var(--mouse-y, 50%),
+        rgba(6, 182, 212, 0.65) 0%,        /* High contrast Electric Cyan core */
+        rgba(56, 189, 248, 0.38) 30%,      /* Neon Sky Blue glow */
+        rgba(2, 132, 199, 0.12) 65%,       /* Soft cyan aura */
         transparent 100%
     );
-    backdrop-filter: grayscale(0.85) contrast(1.18) brightness(1.1);
-    -webkit-backdrop-filter: grayscale(0.85) contrast(1.18) brightness(1.1);
-    mask-image: radial-gradient(
-        180px circle at var(--mouse-x, 50%) var(--mouse-y, 50%),
-        black 0%,
-        rgba(0, 0, 0, 0.6) 30%,
-        rgba(0, 0, 0, 0.2) 65%,
-        transparent 100%
-    );
-    -webkit-mask-image: radial-gradient(
-        180px circle at var(--mouse-x, 50%) var(--mouse-y, 50%),
-        black 0%,
-        rgba(0, 0, 0, 0.6) 30%,
-        rgba(0, 0, 0, 0.2) 65%,
-        transparent 100%
-    );
-    transition: background 0.04s ease-out;
+    mix-blend-mode: screen;
+    animation: cursorPulse 7s ease-in-out infinite alternate;
+}
+
+@keyframes cursorPulse {
+    0% {
+        opacity: 0.35;
+        filter: brightness(0.85) contrast(1.1);
+    }
+    50% {
+        opacity: 0.95;
+        filter: brightness(1.5) contrast(1.4);
+    }
+    100% {
+        opacity: 0.4;
+        filter: brightness(0.9) contrast(1.15);
+    }
 }
 
 /* BOTONES PROMINENTES PARA REGRESAR EN PANTALLA DE LOGIN */
