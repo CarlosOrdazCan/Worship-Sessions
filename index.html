@@ -312,6 +312,32 @@
                                     <i class="fas fa-upload"></i> Restaurar Respaldo
                                 </button>
                             </div>
+                    <!-- SUBVISTA 4: ADMINISTRACIÓN & COLEGIATURAS -->
+                    <div id="admin-subview-colegiaturas" class="admin-subview" style="display: none;">
+                        <div class="panel-box">
+                            <div class="panel-header">
+                                <h3><i class="fas fa-file-invoice-dollar"></i> Módulo de Administración & Control de Colegiaturas</h3>
+                                <span class="badge badge-rol" id="admin-billing-summary-badge">0 Solventes</span>
+                            </div>
+                            <p class="text-muted">Gestión de solvencia de colegiaturas de alumnos, asignación de avisos de mora (warning) y autorización de acceso pastoral.</p>
+                            <div class="table-container" style="margin-top: 1rem;">
+                                <table class="table-custom">
+                                    <thead>
+                                        <tr>
+                                            <th>Alumno / Usuario</th>
+                                            <th>Instrumento</th>
+                                            <th>Asistencia %</th>
+                                            <th>Estado Colegiatura</th>
+                                            <th>Alerta / Motivo (Warning)</th>
+                                            <th>Estado Acceso</th>
+                                            <th>Acciones Administración</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="admin-billing-tbody">
+                                        <!-- Cargado por JavaScript -->
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -1545,9 +1571,10 @@
                     </div>
                     <div class="form-group">
                         <label for="user-rol">Rol en el Sistema</label>
-                        <select id="user-rol" class="form-control">
+                        <select id="user-rol" class="form-control" onchange="actualizarAreaSegunRol()">
                             <option value="estudiante">Estudiante</option>
                             <option value="maestro">Maestro de Instrumento</option>
+                            <option value="produccion">Producción & Staff</option>
                             <option value="adoracion">Director de Adoración / Ensamble</option>
                             <option value="pastor">Pastor</option>
                             <option value="admin">Administrador de Sistemas</option>
@@ -1563,6 +1590,9 @@
                             <option value="Guitarra Acústica">Guitarra Acústica</option>
                             <option value="Bajo Eléctrico">Bajo Eléctrico</option>
                             <option value="Canto / Voces">Canto / Voces</option>
+                            <option value="Producción / Staff">Producción / Staff</option>
+                            <option value="Dirección / Pastoral">Dirección / Pastoral</option>
+                            <option value="Administración / Sistemas">Administración / Sistemas</option>
                         </select>
                     </div>
                     <!-- CAMPO DINÁMICO DE PAGO -->

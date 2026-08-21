@@ -772,6 +772,107 @@ function renderizarAdmin(db) {
 
     document.getElementById('admin-total-staff').innerText = totalStaff;
     document.getElementById('admin-total-students').innerText = totalAlumnos;
+
+    // Tabla Control de Colegiaturas de Alumnos (En Vista Admin)
+    const adminBillingTbody = document.getElementById('admin-billing-tbody');
+    if (adminBillingTbody) {
+        adminBillingTbody.innerHTML = '';
+        const alumnos = Object.keys(db.usuarios)
+            .map(uKey => ({ ...db.usuarios[uKey], username: uKey }))
+            .filter(u => normalizeRol(u.rol) === 'estudiante');
+
+        const solventesCount = alumnos.filter(u => obtenerEstatusColegiatura(u).status === 'solvente').length;
+        const badgeSummary = document.getElementById('admin-billing-summary-badge');
+        if (badgeSummary) badgeSummary.innerText = `${solventesCount} de ${alumnos.length} Solventes`;
+
+        if (alumnos.length === 0) {
+            adminBillingTbody.innerHTML = `<tr><td colspan="7" style="text-align:center;" class="text-muted">No hay alumnos registrados en la academia.</td></tr>`;
+        } else {
+            alumnos.forEach(u => {
+                const infoCol = obtenerEstatusColegiatura(u);
+
+                // Asistencia %
+                const asistenciasAlumno = (db.asistencia && db.asistencia[u.username]) || {};
+                const asistenciasTotales = Object.values(asistenciasAlumno).length;
+                const presentes = Object.values(asistenciasAlumno).filter(val => val === 'presente').length;
+                const asistPct = asistenciasTotales > 0 ? Math.round((presentes / asistenciasTotales) * 100) : 100;
+
+                // Estado de Acceso
+                let accesoHtml = `<span style="color:#10b981; font-weight:700; font-size:0.85rem;"><i class="fas fa-check-circle"></i> ACCESO OK</span>`;
+                if (infoCol.status === 'no_pagado') {
+                    if (u.desbloqueadoManual) {
+                        accesoHtml = `<span style="color:#f59e0b; font-weight:700; font-size:0.85rem;"><i class="fas fa-unlock"></i> AUTORIZADO (PASTOR)</span>`;
+                    } else {
+                        accesoHtml = `<span style="color:#ef4444; font-weight:700; font-size:0.85rem;"><i class="fas fa-lock"></i> SUSPENDIDO</span>`;
+                    }
+                } else if (infoCol.status === 'pendiente') {
+                    accesoHtml = `<span style="color:#f59e0b; font-weight:700; font-size:0.85rem;"><i class="fas fa-clock"></i> EN PERIODO / TOLERANCIA</span>`;
+                }
+
+                // Warning Motivo No Pago
+                let warningHtml = `<small class="text-muted">Sin nota</small> <button class="btn btn-sm btn-secondary" style="padding:2px 8px; font-size:0.75rem;" onclick="abrirModalMotivoNoPago('${u.username}')"><i class="fas fa-edit"></i> Motivo</button>`;
+                if (u.motivoNoPago) {
+                    warningHtml = `
+                        <div style="background:rgba(245, 158, 11, 0.1); border:1px solid rgba(245, 158, 11, 0.4); padding:6px 10px; border-radius:8px; font-size:0.8rem; color:#f59e0b;">
+                            <i class="fas fa-exclamation-triangle"></i> <strong>Warning:</strong> "${u.motivoNoPago}"
+                        </div>
+                        <button class="btn btn-sm btn-secondary" style="padding:2px 8px; font-size:0.75rem; margin-top:4px;" onclick="abrirModalMotivoNoPago('${u.username}')">
+                            <i class="fas fa-edit"></i> Editar Motivo
+                        </button>
+                    `;
+                }
+
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>
+                        <strong style="color:white;">${u.nombre || u.username}</strong><br>
+                        <small class="text-muted">@${u.username}</small>
+                    </td>
+                    <td><span class="badge badge-rol">${u.area || 'Estudiante'}</span></td>
+                    <td><strong style="color:${asistPct >= 80 ? '#10b981' : '#ef4444'};">${asistPct}%</strong></td>
+                    <td><span class="badge badge-estado ${infoCol.badgeClass}">${infoCol.label}</span></td>
+                    <td style="max-width:220px;">${warningHtml}</td>
+                    <td>${accesoHtml}</td>
+                    <td>
+                        <div style="display:flex; gap:6px; flex-wrap:wrap;">
+                            <button class="btn btn-sm btn-primary" onclick="marcarEstadoColegiaturaAdmin('${u.username}', 'solvente')" title="Registrar pago completo al corriente">
+                                <i class="fas fa-check-circle"></i> Solvente
+                            </button>
+                            <button class="btn btn-sm btn-secondary" onclick="marcarEstadoColegiaturaAdmin('${u.username}', 'no_pagado')" title="Marcar como No Pagado / Suspendido">
+                                <i class="fas fa-times-circle"></i> No Pagado
+                            </button>
+                            ${infoCol.status === 'no_pagado' ? `
+                                <button class="btn btn-sm ${u.desbloqueadoManual ? 'btn-deactivate' : 'btn-activate'}" onclick="alternarDesbloqueoManual('${u.username}')" title="Autorización del Pastor para permitir o revocar acceso">
+                                    ${u.desbloqueadoManual ? '<i class="fas fa-lock"></i> Revocar Acceso' : '<i class="fas fa-unlock"></i> Autorizar (Pastor)'}
+                                </button>
+                            ` : ''}
+                        </div>
+                    </td>
+                `;
+                adminBillingTbody.appendChild(tr);
+            });
+        }
+    }
+}
+
+function actualizarAreaSegunRol() {
+    const selectRol = document.getElementById('user-rol');
+    const selectArea = document.getElementById('user-area');
+    const pGroup = document.getElementById('user-pago-group');
+    if (!selectRol || !selectArea) return;
+    
+    const rol = selectRol.value;
+    if (pGroup) {
+        pGroup.style.display = (rol === 'estudiante') ? 'block' : 'none';
+    }
+    
+    if (rol === 'produccion') {
+        selectArea.value = 'Producción / Staff';
+    } else if (rol === 'pastor') {
+        selectArea.value = 'Dirección / Pastoral';
+    } else if (rol === 'admin') {
+        selectArea.value = 'Administración / Sistemas';
+    }
 }
 
 // TOGGLE PAGOS DIRECTAMENTE
@@ -802,14 +903,8 @@ function abrirModalUsuario(username = null) {
         document.getElementById('user-nombre').value = user.nombre;
         document.getElementById('user-pass').value = user.password;
         document.getElementById('user-rol').value = user.rol;
-        document.getElementById('user-area').value = user.area;
+        document.getElementById('user-area').value = user.area || 'Producción / Staff';
         document.getElementById('user-pago').value = user.pagoStatus || 'solvente';
-        
-        if(user.rol === 'estudiante') {
-            pGroup.style.display = 'block';
-        } else {
-            pGroup.style.display = 'none';
-        }
     } else {
         editandoUsuarioUsername = null;
         document.getElementById('modal-user-title').innerText = "Nuevo Usuario";
@@ -820,24 +915,17 @@ function abrirModalUsuario(username = null) {
         document.getElementById('user-rol').value = 'estudiante';
         document.getElementById('user-area').value = 'Teclado';
         document.getElementById('user-pago').value = 'solvente';
-        pGroup.style.display = 'block'; // por defecto es estudiante
     }
     
+    actualizarAreaSegunRol();
     modal.classList.add('active');
 }
 
-// Escucha cambios de rol en el formulario de registro para ocultar/mostrar campo pago
+// Escucha cambios de rol en el formulario de registro
 document.addEventListener('DOMContentLoaded', () => {
     const selectRol = document.getElementById('user-rol');
     if (selectRol) {
-        selectRol.addEventListener('change', (e) => {
-            const pGroup = document.getElementById('user-pago-group');
-            if (e.target.value === 'estudiante') {
-                pGroup.style.display = 'block';
-            } else {
-                pGroup.style.display = 'none';
-            }
-        });
+        selectRol.addEventListener('change', actualizarAreaSegunRol);
     }
 });
 
