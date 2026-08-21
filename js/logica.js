@@ -297,8 +297,28 @@ const menusConfig = {
     `,
     maestro: `
         <li class="nav-item">
-            <a href="#" class="nav-link active" onclick="cambiarVista('maestro'); return false;">
-                <i class="fas fa-chalkboard-teacher"></i> Mi Especialidad & Classroom
+            <a href="#" class="nav-link active" id="nav-maestro-classroom" onclick="cambiarSubvistaMaestro('classroom'); return false;">
+                <i class="fas fa-tasks"></i> Classroom & Tareas
+            </a>
+        </li>
+        <li class="nav-item">
+            <a href="#" class="nav-link" id="nav-maestro-alumnos" onclick="cambiarSubvistaMaestro('alumnos'); return false;">
+                <i class="fas fa-user-graduate"></i> Evaluaciones & Asistencia
+            </a>
+        </li>
+        <li class="nav-item">
+            <a href="#" class="nav-link" id="nav-maestro-ensambles" onclick="cambiarSubvistaMaestro('ensambles'); return false;">
+                <i class="fas fa-layer-group"></i> Asignación de Ensambles
+            </a>
+        </li>
+        <li class="nav-item">
+            <a href="#" class="nav-link" id="nav-maestro-materiales" onclick="cambiarSubvistaMaestro('materiales'); return false;">
+                <i class="fas fa-folder-open"></i> Materiales & Guías
+            </a>
+        </li>
+        <li class="nav-item">
+            <a href="#" class="nav-link" id="nav-maestro-anuncios" onclick="cambiarSubvistaMaestro('anuncios'); return false;">
+                <i class="fas fa-bullhorn"></i> Muro de Anuncios
             </a>
         </li>
     `,
@@ -413,6 +433,10 @@ function cambiarVista(rolVista) {
     if (targetView) {
         targetView.style.display = 'block';
         targetView.classList.add('active');
+        if (rol === 'maestro') {
+            cambiarSubvistaMaestro(subvistaMaestroActual || 'classroom');
+            return;
+        }
     }
     
     renderizarDatosVista(rol);
@@ -804,233 +828,335 @@ function renderizarPastor(db) {
     });
 }
 
-function filtrarPastorData() {
-    const db = getDB();
-    renderizarPastor(db);
-}
-
 // -------------------------------------------------------------
-// RENDER DE ROL: MAESTRO (MATERIALES, TAREAS CLASSROOM Y ANUNCIOS)
+// RENDER DE ROL: MAESTRO & DOCENTES
 // -------------------------------------------------------------
-function renderizarMaestro(db) {
-    const areaMaestro = usuarioActual.area;
-    document.getElementById('area-maestro').innerText = areaMaestro;
+let subvistaMaestroActual = 'classroom';
 
-    // 1. Cargar Comunicados de Staff Producción para Maestros
-    const staffBannerContainer = document.getElementById('maestro-staff-announcements-banner');
-    if (staffBannerContainer) {
-        staffBannerContainer.innerHTML = '';
-        const comunicados = db.anunciosStaff || [];
-        if (comunicados.length > 0) {
-            comunicados.forEach(s => {
-                const div = document.createElement('div');
-                div.className = 'announcement-banner';
-                div.style.borderColor = 'var(--primary-red)';
-                div.innerHTML = `
-                    <div class="announcement-banner-header">
-                        <strong style="color:var(--primary-red);"><i class="fas fa-bullhorn"></i> COMUNICADO DEL STAFF PRODUCCIÓN: ${s.titulo}</strong>
-                        <small>${s.fecha}</small>
-                    </div>
-                    <p>${s.contenido}</p>
-                    <span class="announcement-author">Emitido por: ${s.autor}</span>
-                `;
-                staffBannerContainer.appendChild(div);
-            });
-        }
-    }
-
-    // 2. Cargar Tabla de Tareas Entregadas en Video por Alumnos
-    const hwSubTbody = document.getElementById('maestro-homework-submissions-tbody');
-    if (hwSubTbody) {
-        hwSubTbody.innerHTML = '';
-        const entregas = db.entregasTareas || {};
-        const tareasMaestro = (db.tareas || []).filter(t => usuarioActual.rol === 'admin' || t.area === areaMaestro);
-        const tareaIdsMaestro = tareasMaestro.map(t => t.id);
-        
-        const entregasFiltradas = Object.keys(entregas).filter(k => tareaIdsMaestro.includes(entregas[k].tareaId));
-        
-        if (entregasFiltradas.length === 0) {
-            hwSubTbody.innerHTML = `<tr><td colspan="4" style="text-align:center;" class="text-muted">No hay videos entregados por alumnos aún.</td></tr>`;
-        } else {
-            entregasFiltradas.forEach(key => {
-                const e = entregas[key];
-                const student = db.usuarios[e.username] || { nombre: e.username };
-                const tObj = (db.tareas || []).find(t => t.id === e.tareaId) || { titulo: 'Tarea' };
-                
-                const tr = document.createElement('tr');
-                const isCalificado = e.estado === 'calificado';
-                const statusBadge = isCalificado 
-                    ? `<span class="task-status-pill calificado">${e.calificacion}/100</span>`
-                    : `<span class="task-status-pill entregado">Por Calificar</span>`;
-                
-                tr.innerHTML = `
-                    <td>
-                        <strong style="color:white;">${student.nombre}</strong><br>
-                        <small class="text-muted">${tObj.titulo} (Entregado: ${e.fechaEntrega})</small>
-                    </td>
-                    <td>
-                        <a href="${e.videoUrl}" target="_blank" class="submission-video-link">
-                            <i class="fab fa-youtube"></i> Ver Video ↗
-                        </a>
-                    </td>
-                    <td>${statusBadge}</td>
-                    <td>
-                        <button class="btn btn-sm btn-primary" onclick="abrirModalEvaluarTarea('${key}')">
-                            <i class="fas fa-check-circle"></i> Evaluar
-                        </button>
-                    </td>
-                `;
-                hwSubTbody.appendChild(tr);
-            });
-        }
-    }
+function cambiarSubvistaMaestro(subVista) {
+    subvistaMaestroActual = subVista || 'classroom';
     
-    // Tabla Alumnos
-    const tbody = document.getElementById('maestro-students-tbody');
-    tbody.innerHTML = '';
-    
-    let count = 0;
-    Object.keys(db.usuarios).forEach(username => {
-        const user = db.usuarios[username];
-        if (user.rol === 'estudiante' && (usuarioActual.rol === 'admin' || user.area === areaMaestro)) {
-            count++;
-            
-            const notasObj = db.calificaciones[username] || { teoria: 'Sin calificar', tecnica: 'Sin calificar', notas: '' };
-            const asistenciasAlumno = db.asistencia[username] || {};
-            const asistenciasTotales = Object.values(asistenciasAlumno).length;
-            const presentes = Object.values(asistenciasAlumno).filter(val => val === 'presente').length;
-            const asistPct = asistenciasTotales > 0 ? Math.round((presentes / asistenciasTotales) * 100) : 0;
-            
-            const tr = document.createElement('tr');
-            tr.innerHTML = `
-                <td>
-                    <div class="user-cell">
-                        <span class="user-icon-badge accent">${user.nombre.charAt(0)}</span>
-                        <div>
-                            <strong>${user.nombre}</strong><br>
-                            <small class="text-muted">Asistencia: ${asistPct}% | ${user.pagoStatus === 'pendiente' ? 'Deuda' : 'Solvente'}</small>
-                        </div>
-                    </div>
-                </td>
-                <td><strong class="note-pill">${notasObj.teoria}</strong></td>
-                <td><strong class="note-pill">${notasObj.tecnica}</strong></td>
-                <td style="max-width: 200px;"><span class="text-muted text-truncate-custom">${notasObj.notas || 'Sin anotaciones'}</span></td>
-                <td>
-                    <button class="btn btn-sm btn-primary" onclick="abrirModalCalificar('${username}')"><i class="fas fa-edit"></i> Evaluar</button>
-                    <button class="btn btn-sm btn-secondary" onclick="abrirModalAsistencia('${username}')"><i class="fas fa-calendar-check"></i> Asistencia</button>
-                </td>
-            `;
-            tbody.appendChild(tr);
-        }
+    document.querySelectorAll('.maestro-subview').forEach(sv => {
+        sv.style.display = 'none';
+        sv.classList.remove('active');
     });
     
-    document.getElementById('maestro-students-count').innerText = count;
-
-    // Tabla Materiales Cargados
-    const materialsTbody = document.getElementById('maestro-materials-tbody');
-    materialsTbody.innerHTML = '';
-    const materialesFiltrados = db.materiales.filter(m => usuarioActual.rol === 'admin' || m.area === areaMaestro);
+    document.querySelectorAll('#dynamic-menu .nav-link').forEach(link => {
+        link.classList.remove('active');
+    });
     
-    if (materialesFiltrados.length === 0) {
-        materialsTbody.innerHTML = `<tr><td colspan="3" style="text-align: center;" class="text-muted">No has subido ningún material didáctico todavía.</td></tr>`;
-    } else {
-        materialesFiltrados.forEach(m => {
-            const tr = document.createElement('tr');
-            tr.innerHTML = `
-                <td><strong>${m.titulo}</strong><br><small class="text-muted">${m.descripcion}</small></td>
-                <td><a href="${m.enlace}" target="_blank" class="cancion-link"><i class="fas fa-external-link-alt"></i> Descargar</a></td>
-                <td>
-                    <button class="btn btn-sm btn-delete" onclick="eliminarMaterial('${m.id}')"><i class="fas fa-trash-alt"></i></button>
-                </td>
-            `;
-            materialsTbody.appendChild(tr);
-        });
-    }
-
-    // Tabla Anuncios Publicados
-    const bulletinsTbody = document.getElementById('maestro-bulletins-tbody');
-    bulletinsTbody.innerHTML = '';
-    const anunciosFiltrados = db.anuncios.filter(a => usuarioActual.rol === 'admin' || a.area === areaMaestro);
+    const targetNav = document.getElementById('nav-maestro-' + subVista);
+    if (targetNav) targetNav.classList.add('active');
     
-    if (anunciosFiltrados.length === 0) {
-        bulletinsTbody.innerHTML = `<tr><td colspan="3" style="text-align: center;" class="text-muted">No has publicado avisos informativos.</td></tr>`;
-    } else {
-        anunciosFiltrados.forEach(a => {
-            const tr = document.createElement('tr');
-            tr.innerHTML = `
-                <td><strong>${a.contenido}</strong><br><small class="text-muted">Subido: ${a.fecha}</small></td>
-                <td>
-                    <button class="btn btn-sm btn-delete" onclick="eliminarAnuncio('${a.id}')"><i class="fas fa-trash-alt"></i></button>
-                </td>
-            `;
-            bulletinsTbody.appendChild(tr);
-        });
+    const targetSub = document.getElementById('maestro-subview-' + subVista);
+    if (targetSub) {
+        targetSub.style.display = 'block';
+        targetSub.classList.add('active');
     }
-
-    // 3. Cargar Módulo Asignaciones de Ensamble para el Maestro
-    const isEnsambleActivo = db.ensambleActivo || usuarioActual.rol === 'admin';
-    const statusBadge = document.getElementById('maestro-ensamble-status-badge');
-    if (statusBadge) {
-        statusBadge.innerText = db.ensambleActivo ? "🟢 ETAPA DE ENSAMBLES ACTIVA" : "🔴 ETAPA INACTIVA (MITAD DE CICLO)";
-        statusBadge.style.background = db.ensambleActivo ? "rgba(16, 185, 129, 0.15)" : "rgba(239, 68, 68, 0.15)";
-        statusBadge.style.color = db.ensambleActivo ? "#10b981" : "#ef4444";
-    }
-
-    const selectSong = document.getElementById('ens-assign-song');
-    const selectStudent = document.getElementById('ens-assign-student');
     
-    if (selectSong && selectStudent) {
-        selectSong.innerHTML = '<option value="">-- Seleccionar Canción --</option>';
-        (db.canciones || []).filter(c => c.activo).forEach(c => {
-            const opt = document.createElement('option');
-            opt.value = c.id;
-            opt.innerText = `${c.titulo} - ${c.autor} (${c.tono})`;
-            selectSong.appendChild(opt);
-        });
+    const db = getDB();
+    renderizarMaestro(db);
+}
 
-        selectStudent.innerHTML = '<option value="">-- Seleccionar Alumno --</option>';
-        Object.keys(db.usuarios).forEach(uname => {
-            const u = db.usuarios[uname];
-            if (u.rol === 'estudiante' && (usuarioActual.rol === 'admin' || u.area === areaMaestro)) {
-                const opt = document.createElement('option');
-                opt.value = uname;
-                opt.innerText = `${u.nombre} (${u.area}) - @${uname}`;
-                selectStudent.appendChild(opt);
-            }
-        });
+function usarPlantillaTarea(tipo) {
+    const tTitulo = document.getElementById('tarea-titulo');
+    const tDesc = document.getElementById('tarea-desc');
+    const tFecha = document.getElementById('tarea-fecha-limite');
+    
+    const nextSat = new Date();
+    nextSat.setDate(nextSat.getDate() + ((6 - nextSat.getDay() + 7) % 7 || 7));
+    const nextSatStr = nextSat.toISOString().split('T')[0];
+
+    if (tipo === 'escala') {
+        if (tTitulo) tTitulo.value = "Grabar Escala Mayor a 2 Manos (90 BPM)";
+        if (tDesc) tDesc.value = "Graba un video de 30 a 60 segundos ejecutando la escala mayor de tu especialidad en 2 octavas limpias a 90 BPM con metrónomo.";
+    } else if (tipo === 'rudimento') {
+        if (tTitulo) tTitulo.value = "Ejecución de Rudimentos / Técnica Fundamental";
+        if (tDesc) tDesc.value = "Graba 1 minuto continuo ejecutando los ejercicios técnicos y de digitación recomendados en clase a velocidad constante.";
+    } else if (tipo === 'ensamble') {
+        if (tTitulo) tTitulo.value = "Montaje Verso 1 y Coro de Canción de Ensamble";
+        if (tDesc) tDesc.value = "Graba tu ejecución sobre la pista/click de la canción asignada de ensamble. Revisa el tempo y tono especificado en tu panel.";
     }
+    if (tFecha) tFecha.value = nextSatStr;
+    showToast("Plantilla de tarea cargada", "info");
+}
 
-    // Tabla Asignaciones de Ensamble
-    const ensTbody = document.getElementById('maestro-ensamble-assignments-tbody');
-    if (ensTbody) {
-        ensTbody.innerHTML = '';
-        const asignaciones = db.ensambleAsignaciones || {};
-        const keys = Object.keys(asignaciones);
+function usarPlantillaAnuncio(tipo) {
+    const contentEl = document.getElementById('bulletin-content');
+    if (!contentEl) return;
+    
+    if (tipo === 'partituras') {
+        contentEl.value = "📜 Estimados alumnos: Recuerden traer impresas sus partituras y guías cifradas para la clase de este sábado. ¡Sean puntuales!";
+    } else if (tipo === 'examen') {
+        contentEl.value = "📝 Recordatorio: Este sábado tendremos evaluación práctica y teórica del material visto en el mes. Practiquen con metrónomo.";
+    } else if (tipo === 'horario') {
+        contentEl.value = "⏰ Importante: La clase iniciará puntualmente a las 10:00 AM. Favor de llegar 10 minutos antes con su instrumento preparado.";
+    }
+    showToast("Plantilla de aviso cargada", "info");
+}
+
+function guardarAsistenciaMaestro(event) {
+    event.preventDefault();
+    const fecha = document.getElementById('asistencia-fecha').value;
+    if (!fecha) {
+        showToast("Selecciona una fecha para la asistencia", "warning");
+        return;
+    }
+    
+    const db = getDB();
+    if (!db.asistencia) db.asistencia = {};
+    
+    let countGuardados = 0;
+    const checks = document.querySelectorAll('.asistencia-student-checkbox');
+    checks.forEach(chk => {
+        const username = chk.dataset.username;
+        if (!db.asistencia[username]) db.asistencia[username] = {};
+        db.asistencia[username][fecha] = chk.checked ? 'presente' : 'ausente';
+        countGuardados++;
+    });
+    
+    saveDB(db);
+    showToast(`Asistencia de ${countGuardados} alumnos registrada para el ${fecha}`, "success");
+    renderizarDatosVista('maestro');
+}
+
+function renderizarMaestro(db) {
+    try {
+        const areaMaestro = usuarioActual ? (usuarioActual.area || 'Teclado') : 'Teclado';
         
-        let filteredKeys = keys;
-        if (usuarioActual.rol !== 'admin') {
-            filteredKeys = keys.filter(k => {
-                const u = db.usuarios[asignaciones[k].username];
-                return u && u.area === areaMaestro;
-            });
+        const areaEl = document.getElementById('area-maestro');
+        if (areaEl) areaEl.innerText = areaMaestro;
+
+        // 1. Cargar Comunicados del Staff Producción
+        const staffBannerContainer = document.getElementById('maestro-staff-announcements-banner');
+        if (staffBannerContainer) {
+            staffBannerContainer.innerHTML = '';
+            const anunciosStaff = (db && db.anunciosStaff) || [];
+            if (anunciosStaff.length > 0) {
+                anunciosStaff.forEach(s => {
+                    const div = document.createElement('div');
+                    div.className = 'announcement-banner';
+                    div.style.borderColor = 'rgba(229,9,20,0.4)';
+                    div.innerHTML = `
+                        <div class="announcement-banner-header">
+                            <strong style="color:var(--primary-red);"><i class="fas fa-bullhorn"></i> COMUNICADO DEL STAFF PRODUCCIÓN: ${s.titulo || 'Aviso'}</strong>
+                            <small>${s.fecha || ''}</small>
+                        </div>
+                        <p>${s.contenido || ''}</p>
+                        <span class="announcement-author">Emitido por: ${s.autor || 'Staff'}</span>
+                    `;
+                    staffBannerContainer.appendChild(div);
+                });
+            }
         }
 
-        if (filteredKeys.length === 0) {
-            ensTbody.innerHTML = `<tr><td colspan="5" style="text-align:center;" class="text-muted">No has asignado alumnos de tu área a canciones de ensamble todavía.</td></tr>`;
-        } else {
-            filteredKeys.forEach(k => {
-                const item = asignaciones[k];
-                const student = db.usuarios[item.username] || { nombre: item.username, area: areaMaestro };
-                const song = (db.canciones || []).find(c => c.id === item.songId) || { titulo: 'Canción' };
-                
-                let lvlClass = 'basico';
-                if (item.nivel === 'Avanzado') lvlClass = 'avanzado';
-                if (item.nivel === 'Intermedio') lvlClass = 'intermedio';
-                if (item.nivel === 'Junior') lvlClass = 'junior';
+        // Tareas del maestro y estadísticas
+        const tareasMaestro = ((db && db.tareas) || []).filter(t => usuarioActual.rol === 'admin' || t.area === areaMaestro);
+        const tareaCountEl = document.getElementById('maestro-tasks-count');
+        if (tareaCountEl) tareaCountEl.innerText = tareasMaestro.length;
 
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td>
+        const entregas = (db && db.entregasTareas) || {};
+        const tareaIdsMaestro = tareasMaestro.map(t => t.id);
+        const entregasFiltradas = Object.keys(entregas).filter(k => tareaIdsMaestro.includes(entregas[k].tareaId));
+
+        const subCountEl = document.getElementById('maestro-submissions-count');
+        if (subCountEl) subCountEl.innerText = entregasFiltradas.length;
+
+        // Tabla de Tareas Entregadas en Video
+        const hwSubTbody = document.getElementById('maestro-homework-submissions-tbody');
+        if (hwSubTbody) {
+            hwSubTbody.innerHTML = '';
+            if (entregasFiltradas.length === 0) {
+                hwSubTbody.innerHTML = `<tr><td colspan="4" style="text-align:center;" class="text-muted">No hay videos entregados por alumnos aún.</td></tr>`;
+            } else {
+                entregasFiltradas.forEach(key => {
+                    const e = entregas[key];
+                    const student = (db.usuarios && db.usuarios[e.username]) || { nombre: e.username };
+                    const tObj = ((db && db.tareas) || []).find(t => t.id === e.tareaId) || { titulo: 'Tarea' };
+                    
+                    const tr = document.createElement('tr');
+                    const isCalificado = e.estado === 'calificado';
+                    const statusBadge = isCalificado 
+                        ? `<span class="task-status-pill calificado">${e.calificacion || 0}/100</span>`
+                        : `<span class="task-status-pill entregado">Por Calificar</span>`;
+                    
+                    tr.innerHTML = `
+                        <td>
+                            <strong style="color:white;">${student.nombre || e.username}</strong><br>
+                            <small class="text-muted">${tObj.titulo} (${e.fechaEntrega || 'Fecha N/A'})</small>
+                        </td>
+                        <td>
+                            <a href="${e.videoUrl || '#'}" target="_blank" class="submission-video-link">
+                                <i class="fab fa-youtube"></i> Ver Video ↗
+                            </a>
+                        </td>
+                        <td>${statusBadge}</td>
+                        <td>
+                            <button class="btn btn-sm btn-primary" onclick="abrirModalEvaluarTarea('${key}')">
+                                <i class="fas fa-check-circle"></i> Evaluar
+                            </button>
+                        </td>
+                    `;
+                    hwSubTbody.appendChild(tr);
+                });
+            }
+        }
+        
+        // Cargar Lista de Alumnos del Maestro
+        const tbody = document.getElementById('maestro-students-tbody');
+        const asistListContainer = document.getElementById('maestro-asistencia-list-container');
+        
+        if (tbody) tbody.innerHTML = '';
+        if (asistListContainer) asistListContainer.innerHTML = '';
+        
+        let count = 0;
+        let sumaNotas = 0;
+        let alumnosConNota = 0;
+        
+        const todayStr = new Date().toISOString().split('T')[0];
+        const dateInput = document.getElementById('asistencia-fecha');
+        if (dateInput && !dateInput.value) dateInput.value = todayStr;
+
+        const usuariosObj = (db && db.usuarios) || {};
+        Object.keys(usuariosObj).forEach(username => {
+            const user = usuariosObj[username];
+            if (normalizeRol(user.rol) === 'estudiante' && (usuarioActual.rol === 'admin' || user.area === areaMaestro)) {
+                count++;
+                
+                const notasObj = ((db && db.calificaciones) || {})[username] || { teoria: 'Sin calificar', tecnica: 'Sin calificar', notas: '' };
+                const asistenciasAlumno = ((db && db.asistencia) || {})[username] || {};
+                const asistenciasTotales = Object.values(asistenciasAlumno).length;
+                const presentes = Object.values(asistenciasAlumno).filter(val => val === 'presente').length;
+                const asistPct = asistenciasTotales > 0 ? Math.round((presentes / asistenciasTotales) * 100) : 0;
+                
+                if (typeof notasObj.teoria === 'number') {
+                    sumaNotas += (notasObj.teoria + (typeof notasObj.tecnica === 'number' ? notasObj.tecnica : notasObj.teoria)) / 2;
+                    alumnosConNota++;
+                }
+
+                if (tbody) {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td>
+                            <div class="user-cell">
+                                <span class="user-icon-badge accent">${(user.nombre || username).charAt(0)}</span>
+                                <div>
+                                    <strong>${user.nombre || username}</strong><br>
+                                    <small class="text-muted">Asistencia: ${asistPct}% | ${user.pagoStatus === 'pendiente' ? 'Deuda' : 'Solvente'}</small>
+                                </div>
+                            </div>
+                        </td>
+                        <td><strong class="note-pill">${notasObj.teoria}</strong></td>
+                        <td><strong class="note-pill">${notasObj.tecnica}</strong></td>
+                        <td style="max-width: 200px;"><span class="text-muted text-truncate-custom">${notasObj.notas || 'Sin anotaciones'}</span></td>
+                        <td>
+                            <button class="btn btn-sm btn-primary" onclick="abrirModalCalificar('${username}')"><i class="fas fa-edit"></i> Evaluar</button>
+                            <button class="btn btn-sm btn-secondary" onclick="abrirModalAsistencia('${username}')"><i class="fas fa-calendar-check"></i> Historial</button>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                }
+
+                // Generar ítem de asistencia rápida
+                if (asistListContainer) {
+                    const isPresente = asistenciasAlumno[dateInput ? dateInput.value : todayStr] !== 'ausente';
+                    const itemDiv = document.createElement('div');
+                    itemDiv.style.background = 'rgba(255,255,255,0.03)';
+                    itemDiv.style.border = '1px solid var(--border-color)';
+                    itemDiv.style.padding = '10px 14px';
+                    itemDiv.style.borderRadius = '10px';
+                    itemDiv.style.display = 'flex';
+                    itemDiv.style.justifyContent = 'space-between';
+                    itemDiv.style.alignItems = 'center';
+
+                    itemDiv.innerHTML = `
+                        <div>
+                            <strong style="color:white; font-size:0.9rem;">${user.nombre || username}</strong>
+                            <small class="text-muted" style="display:block; font-size:0.75rem;">@${username}</small>
+                        </div>
+                        <label class="switch-container" style="display:flex; align-items:center; gap:6px; cursor:pointer;">
+                            <input type="checkbox" class="asistencia-student-checkbox" data-username="${username}" ${isPresente ? 'checked' : ''}>
+                            <span style="font-size:0.8rem; font-weight:700; color:${isPresente ? 'var(--green-accent)' : '#ef4444'};">Presente</span>
+                        </label>
+                    `;
+                    asistListContainer.appendChild(itemDiv);
+                }
+            }
+        });
+        
+        const countEl1 = document.getElementById('maestro-students-count');
+        const countEl2 = document.getElementById('maestro-students-count-page');
+        if (countEl1) countEl1.innerText = count;
+        if (countEl2) countEl2.innerText = count;
+
+        const avgEl = document.getElementById('maestro-group-avg');
+        if (avgEl) {
+            const promGeneral = alumnosConNota > 0 ? Math.round(sumaNotas / alumnosConNota) : 0;
+            avgEl.innerText = promGeneral + "/100";
+        }
+
+        // Tabla Materiales Cargados
+        const materialsTbody = document.getElementById('maestro-materials-tbody');
+        if (materialsTbody) {
+            materialsTbody.innerHTML = '';
+            const materialesFiltrados = ((db && db.materiales) || []).filter(m => usuarioActual.rol === 'admin' || !m.area || m.area === areaMaestro);
+            
+            if (materialesFiltrados.length === 0) {
+                materialsTbody.innerHTML = `<tr><td colspan="4" style="text-align: center;" class="text-muted">No has subido ningún material didáctico todavía.</td></tr>`;
+            } else {
+                materialesFiltrados.forEach(m => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td><strong>${m.titulo || 'Material'}</strong></td>
+                        <td><small class="text-muted">${m.descripcion || ''}</small></td>
+                        <td><a href="${m.enlace || '#'}" target="_blank" class="cancion-link"><i class="fas fa-external-link-alt"></i> Descargar / Ver ↗</a></td>
+                        <td>
+                            <button class="btn btn-sm btn-delete" onclick="eliminarMaterial('${m.id}')"><i class="fas fa-trash-alt"></i></button>
+                        </td>
+                    `;
+                    materialsTbody.appendChild(tr);
+                });
+            }
+        }
+
+        // Tabla Anuncios Publicados
+        const bulletinsTbody = document.getElementById('maestro-bulletins-tbody');
+        if (bulletinsTbody) {
+            bulletinsTbody.innerHTML = '';
+            const anunciosFiltrados = ((db && db.anuncios) || []).filter(a => usuarioActual.rol === 'admin' || !a.area || a.area === areaMaestro);
+            
+            if (anunciosFiltrados.length === 0) {
+                bulletinsTbody.innerHTML = `<tr><td colspan="2" style="text-align: center;" class="text-muted">No has publicado avisos informativos.</td></tr>`;
+            } else {
+                anunciosFiltrados.forEach(a => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td><strong>${a.contenido || ''}</strong><br><small class="text-muted">Subido: ${a.fecha || ''}</small></td>
+                        <td>
+                            <button class="btn btn-sm btn-delete" onclick="eliminarAnuncio('${a.id}')"><i class="fas fa-trash-alt"></i></button>
+                        </td>
+                    `;
+                    bulletinsTbody.appendChild(tr);
+                });
+            }
+        }
+
+        // Cargar Módulo Asignaciones de Ensamble para el Maestro
+        const statusBadge = document.getElementById('maestro-ensamble-status-badge');
+        if (statusBadge) {
+            const isActivo = db && db.ensambleActivo;
+            statusBadge.innerText = isActivo ? "🟢 ETAPA DE ENSAMBLES ACTIVA" : "🔴 ETAPA INACTIVA (MITAD DE CICLO)";
+            statusBadge.style.background = isActivo ? "rgba(16, 185, 129, 0.15)" : "rgba(239, 68, 68, 0.15)";
+            statusBadge.style.color = isActivo ? "#10b981" : "#ef4444";
+        }
+
+        const selectSong = document.getElementById('ens-assign-song');
+        const selectStudent = document.getElementById('ens-assign-student');
+        
+        if (selectSong && selectStudent) {
+            selectSong.innerHTML = '<option value="">-- Seleccionar Canción --</option>';
+            ((db && db.canciones) || []).filter(c => c.activo).forEach(c => {
+                const opt = document.createElement('option');
                         <strong style="color:white;">${song.titulo}</strong><br>
                         <small class="text-muted">Tempo: ${item.tempo} | Tono: ${item.tono} | Compás: ${item.compas}</small>
                     </td>

@@ -362,182 +362,269 @@
 
                 <!-- ================= VISTA: MAESTRO DE INSTRUMENTO ================= -->
                 <div id="view-maestro" class="app-view">
-                    <div class="dashboard-grid">
-                        <div class="card">
-                            <div class="card-icon"><i class="fas fa-guitar"></i></div>
-                            <div>
-                                <h3>Especialidad Activa</h3>
-                                <div class="stat-val" id="area-maestro">Cargando...</div>
-                                <small class="text-muted">Instructor de Curso</small>
+
+                    <!-- SUB-VISTA 1: CLASSROOM & TAREAS -->
+                    <div id="maestro-subview-classroom" class="maestro-subview">
+                        <div class="dashboard-grid">
+                            <div class="card">
+                                <div class="card-icon"><i class="fas fa-guitar"></i></div>
+                                <div>
+                                    <h3>Especialidad Activa</h3>
+                                    <div class="stat-val" id="area-maestro">Cargando...</div>
+                                    <small class="text-muted">Instructor de Curso</small>
+                                </div>
+                            </div>
+                            <div class="card">
+                                <div class="card-icon red-variant"><i class="fas fa-tasks"></i></div>
+                                <div>
+                                    <h3>Tareas Publicadas</h3>
+                                    <div class="stat-val" id="maestro-tasks-count">0</div>
+                                    <small class="text-muted">En Google Classroom</small>
+                                </div>
+                            </div>
+                            <div class="card">
+                                <div class="card-icon"><i class="fas fa-video"></i></div>
+                                <div>
+                                    <h3>Videos Entregados</h3>
+                                    <div class="stat-val" id="maestro-submissions-count">0</div>
+                                    <small class="text-muted">Por revisar o calificados</small>
+                                </div>
                             </div>
                         </div>
-                        <div class="card">
-                            <div class="card-icon red-variant"><i class="fas fa-address-book"></i></div>
-                            <div>
-                                <h3>Mis Alumnos</h3>
-                                <div class="stat-val" id="maestro-students-count">0</div>
-                                <small class="text-muted">Asignados a mi especialidad</small>
+
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 1.5rem;">
+                            <!-- PUBLICAR NUEVA TAREA -->
+                            <div class="panel-box">
+                                <div class="panel-header">
+                                    <h3><i class="fas fa-plus-circle"></i> Asignar Tarea (Google Classroom)</h3>
+                                </div>
+                                <!-- Plantillas Rápidas -->
+                                <div style="margin-bottom: 1rem; background: rgba(255,255,255,0.03); padding: 10px 14px; border-radius: 10px; border: 1px solid var(--border-color);">
+                                    <small class="text-muted" style="display:block; margin-bottom: 6px; font-weight:700;"><i class="fas fa-magic"></i> Plantillas Rápidas de Tarea:</small>
+                                    <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                                        <button type="button" class="btn btn-sm btn-secondary" onclick="usarPlantillaTarea('escala')">🎵 Escala Mayor</button>
+                                        <button type="button" class="btn btn-sm btn-secondary" onclick="usarPlantillaTarea('rudimento')">🥁 Rudimentos</button>
+                                        <button type="button" class="btn btn-sm btn-secondary" onclick="usarPlantillaTarea('ensamble')">🎸 Ensamble</button>
+                                    </div>
+                                </div>
+
+                                <form onsubmit="guardarTareaMaestro(event)" style="display: flex; flex-direction: column; gap: 12px;">
+                                    <div class="form-group" style="margin-bottom: 0;">
+                                        <label for="tarea-titulo">Título de la Tarea</label>
+                                        <input type="text" id="tarea-titulo" class="form-control" placeholder="Ej. Grabar Escala de Sol Mayor" required>
+                                    </div>
+                                    <div class="form-group" style="margin-bottom: 0;">
+                                        <label for="tarea-desc">Instrucciones / Requisitos</label>
+                                        <textarea id="tarea-desc" class="form-control" rows="3" placeholder="Ej. Graba un video de 30s ejecutando la escala a 90 BPM..." required></textarea>
+                                    </div>
+                                    <div class="form-group" style="margin-bottom: 0;">
+                                        <label for="tarea-fecha-limite">Fecha Límite de Entrega</label>
+                                        <input type="date" id="tarea-fecha-limite" class="form-control" required>
+                                    </div>
+                                    <button type="submit" class="btn btn-primary" style="justify-content: center;"><i class="fas fa-paper-plane"></i> Publicar Tarea</button>
+                                </form>
+                            </div>
+
+                            <!-- VIDEOS ENTREGADOS POR ALUMNOS -->
+                            <div class="panel-box">
+                                <div class="panel-header">
+                                    <h3><i class="fas fa-video"></i> Videos Entregados por Alumnos</h3>
+                                </div>
+                                <p class="text-muted">Revisa y califica las tareas en video enviadas por tus estudiantes.</p>
+                                <div class="table-container" style="margin-top: 1rem;">
+                                    <table class="table-custom">
+                                        <thead>
+                                            <tr>
+                                                <th>Alumno / Tarea</th>
+                                                <th>Video enviado</th>
+                                                <th>Estado / Nota</th>
+                                                <th>Acción</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="maestro-homework-submissions-tbody">
+                                            <!-- Cargado por JS -->
+                                        </tbody>
+                                    </table>
+                                </div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- BANNER COMUNICADOS DE STAFF PRODUCCIÓN PARA MAESTROS -->
-                    <div id="maestro-staff-announcements-banner" class="announcements-wall-container" style="margin-bottom: 2rem;">
-                        <!-- Cargado por JS -->
-                    </div>
+                    <!-- SUB-VISTA 2: EVALUACIONES & ASISTENCIA -->
+                    <div id="maestro-subview-alumnos" class="maestro-subview" style="display: none;">
+                        <div class="dashboard-grid">
+                            <div class="card">
+                                <div class="card-icon red-variant"><i class="fas fa-users"></i></div>
+                                <div>
+                                    <h3>Mis Alumnos</h3>
+                                    <div class="stat-val" id="maestro-students-count-page">0</div>
+                                    <small class="text-muted">Matriculados en mi especialidad</small>
+                                </div>
+                            </div>
+                            <div class="card">
+                                <div class="card-icon"><i class="fas fa-star"></i></div>
+                                <div>
+                                    <h3>Promedio Grupo</h3>
+                                    <div class="stat-val" id="maestro-group-avg">0/100</div>
+                                    <small class="text-muted">Rendimiento Teórico/Técnico</small>
+                                </div>
+                            </div>
+                        </div>
 
-                    <!-- MÓDULO GOOGLE CLASSROOM PARA MAESTROS: CREAR TAREAS & EVALUAR VIDEOS -->
-                    <div class="maestro-panels-grid">
-                        <!-- CREAR NUEVA TAREA -->
-                        <div class="panel-box">
+                        <!-- MÓDULO REGISTRO RÁPIDO DE ASISTENCIA SEMANAL -->
+                        <div class="panel-box" style="margin-bottom: 1.8rem;">
                             <div class="panel-header">
-                                <h3><i class="fas fa-plus-circle"></i> Asignar Tarea (Google Classroom)</h3>
+                                <h3><i class="fas fa-clipboard-check"></i> Tomar Asistencia de Clase Presencial</h3>
+                                <span class="badge badge-rol"><i class="fas fa-calendar-alt"></i> Control Semanal</span>
                             </div>
-                            <form onsubmit="guardarTareaMaestro(event)" style="display: flex; flex-direction: column; gap: 12px;">
-                                <div class="form-group" style="margin-bottom: 0;">
-                                    <label for="tarea-titulo">Título de la Tarea</label>
-                                    <input type="text" id="tarea-titulo" class="form-control" placeholder="Ej. Grabar Escala de Sol Mayor" required>
+                            <p class="text-muted">Marca la asistencia de los alumnos de tu especialidad para la clase presencial.</p>
+                            <form onsubmit="guardarAsistenciaMaestro(event)" style="margin-top: 1rem;">
+                                <div style="display: flex; gap: 15px; align-items: center; margin-bottom: 1rem; flex-wrap: wrap;">
+                                    <label for="asistencia-fecha" style="font-weight: 700;">Fecha de Clase:</label>
+                                    <input type="date" id="asistencia-fecha" class="form-control" style="width: auto; max-width: 200px;" required>
                                 </div>
-                                <div class="form-group" style="margin-bottom: 0;">
-                                    <label for="tarea-desc">Instrucciones / Requisitos</label>
-                                    <textarea id="tarea-desc" class="form-control" rows="3" placeholder="Ej. Graba un video de 30s ejecutando la escala a 90 BPM..." required></textarea>
+                                <div id="maestro-asistencia-list-container" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; margin-bottom: 1.2rem;">
+                                    <!-- Cargado por JS -->
                                 </div>
-                                <div class="form-group" style="margin-bottom: 0;">
-                                    <label for="tarea-fecha-limite">Fecha Límite de Entrega</label>
-                                    <input type="date" id="tarea-fecha-limite" class="form-control" required>
-                                </div>
-                                <button type="submit" class="btn btn-primary" style="justify-content: center;"><i class="fas fa-paper-plane"></i> Publicar Tarea</button>
+                                <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Guardar Registro de Asistencia</button>
                             </form>
                         </div>
 
-                        <!-- EVALUACIÓN DE TAREAS ENTREGADAS EN VIDEO -->
+                        <!-- LISTA Y EVALUACIONES DE ALUMNOS -->
                         <div class="panel-box">
                             <div class="panel-header">
-                                <h3><i class="fas fa-video"></i> Videos Entregados por Alumnos</h3>
+                                <h3><i class="fas fa-graduation-cap"></i> Evaluaciones Teórica y Técnica de Alumnos</h3>
                             </div>
-                            <p class="text-muted">Videos enviados por estudiantes para revisión y calificación.</p>
-                            <div class="table-container" style="margin-top: 1rem;">
+                            <div class="table-container">
                                 <table class="table-custom">
                                     <thead>
                                         <tr>
-                                            <th>Alumno / Tarea</th>
-                                            <th>Video</th>
-                                            <th>Estado / Nota</th>
-                                            <th></th>
+                                            <th>Alumno</th>
+                                            <th>Teoría (0-100)</th>
+                                            <th>Técnica (0-100)</th>
+                                            <th>Comentarios del Profesor</th>
+                                            <th>Acciones Académicas</th>
                                         </tr>
                                     </thead>
-                                    <tbody id="maestro-homework-submissions-tbody">
-                                        <!-- Cargado por JavaScript -->
+                                    <tbody id="maestro-students-tbody">
+                                        <!-- Cargado por JS -->
                                     </tbody>
                                 </table>
                             </div>
                         </div>
-                    <!-- MÓDULO DE ASIGNACIÓN DE ENSAMBLES POR CICLO (SÓLO SI ESTÁ ACTIVO O MAESTROS/ADMIN) -->
-                    <div class="panel-box" style="margin-bottom: 2rem;">
-                        <div class="panel-header">
-                            <h3><i class="fas fa-layer-group"></i> Asignar Alumnos a Canciones de Ensamble (Niveles y Playthrough)</h3>
-                            <span class="badge badge-rol" id="maestro-ensamble-status-badge">Etapa de Ensamble</span>
-                        </div>
-                        <p class="text-muted">Asigna a los estudiantes de tu especialidad a las canciones del ensamble activo, especificando su nivel y agregando tu video de apoyo (Playthrough).</p>
-                        
-                        <form onsubmit="guardarAsignacionEnsambleMaestro(event)" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-top: 1rem; align-items: flex-end;">
-                            <div class="form-group" style="margin-bottom: 0;">
-                                <label for="ens-assign-song">Canción de Ensamble</label>
-                                <select id="ens-assign-song" class="form-control" onchange="cargarDetallesCancionEnsamble(this.value)" required>
-                                    <!-- Cargado por JS -->
-                                </select>
-                            </div>
-                            <div class="form-group" style="margin-bottom: 0;">
-                                <label for="ens-assign-student">Alumno de tu Especialidad</label>
-                                <select id="ens-assign-student" class="form-control" required>
-                                    <!-- Cargado por JS -->
-                                </select>
-                            </div>
-                            <div class="form-group" style="margin-bottom: 0;">
-                                <label for="ens-assign-level">Nivel Asignado</label>
-                                <select id="ens-assign-level" class="form-control" required>
-                                    <option value="Avanzado">🔴 Avanzado</option>
-                                    <option value="Intermedio" selected>🟡 Intermedio</option>
-                                    <option value="Básico">🟢 Básico</option>
-                                    <option value="Junior">🟣 Junior</option>
-                                </select>
-                            </div>
-                            <div class="form-group" style="margin-bottom: 0;">
-                                <label for="ens-assign-tempo">Tempo (BPM)</label>
-                                <input type="text" id="ens-assign-tempo" class="form-control" placeholder="Ej. 120 BPM">
-                            </div>
-                            <div class="form-group" style="margin-bottom: 0;">
-                                <label for="ens-assign-tono">Tono Principal</label>
-                                <input type="text" id="ens-assign-tono" class="form-control" placeholder="Ej. Sol (G)">
-                            </div>
-                            <div class="form-group" style="margin-bottom: 0;">
-                                <label for="ens-assign-compas">Compás</label>
-                                <select id="ens-assign-compas" class="form-control">
-                                    <option value="4/4">4/4</option>
-                                    <option value="6/8">6/8</option>
-                                    <option value="3/4">3/4</option>
-                                    <option value="2/4">2/4</option>
-                                </select>
-                            </div>
-                            <div class="form-group" style="margin-bottom: 0; grid-column: 1 / -1;">
-                                <label for="ens-assign-playthrough">Video Playthrough del Profesor (YouTube / Drive Link)</label>
-                                <input type="url" id="ens-assign-playthrough" class="form-control" placeholder="https://www.youtube.com/watch?v=...">
-                            </div>
-                            <div class="form-group" style="margin-bottom: 0; grid-column: 1 / -1;">
-                                <label for="ens-assign-notes">Indicaciones Técnicas para el Alumno</label>
-                                <input type="text" id="ens-assign-notes" class="form-control" placeholder="Ej. Revisa la entrada del Coro 2 a 120 BPM en corcheas limpios...">
-                            </div>
-                            <button type="submit" class="btn btn-primary" style="grid-column: 1 / -1; justify-content: center;"><i class="fas fa-save"></i> Guardar Asignación de Ensamble</button>
-                        </form>
-
-                        <div class="table-container" style="margin-top: 1.5rem;">
-                            <table class="table-custom">
-                                <thead>
-                                    <tr>
-                                        <th>Canción</th>
-                                        <th>Alumno Asignado</th>
-                                        <th>Puesto / Nivel</th>
-                                        <th>Recursos / Playthrough</th>
-                                        <th>Acciones</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="maestro-ensamble-assignments-tbody">
-                                    <!-- Cargado por JS -->
-                                </tbody>
-                            </table>
-                        </div>
                     </div>
 
-                    <!-- REJILLA MAESTRO: CARGA DE MATERIALES Y PUBLICACIÓN DE AVISOS -->
-                    <div class="maestro-panels-grid">
-                        <!-- SUBIR MATERIAL DIDÁCTICO -->
+                    <!-- SUB-VISTA 3: ASIGNACIÓN DE ENSAMBLES -->
+                    <div id="maestro-subview-ensambles" class="maestro-subview" style="display: none;">
                         <div class="panel-box">
                             <div class="panel-header">
-                                <h3><i class="fas fa-file-upload"></i> Subir Guías y Material</h3>
+                                <h3><i class="fas fa-layer-group"></i> Asignar Alumnos a Canciones de Ensamble (Niveles y Playthrough)</h3>
+                                <span class="badge badge-rol" id="maestro-ensamble-status-badge">Etapa de Ensamble</span>
                             </div>
-                            <form onsubmit="guardarMaterial(event)" style="display: flex; flex-direction: column; gap: 12px;">
+                            <p class="text-muted">Asigna a los estudiantes de tu especialidad a las canciones del ensamble activo, especificando su nivel y agregando tu video de apoyo (Playthrough).</p>
+                            
+                            <form onsubmit="guardarAsignacionEnsambleMaestro(event)" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-top: 1rem; align-items: flex-end;">
                                 <div class="form-group" style="margin-bottom: 0;">
-                                    <label for="mat-titulo">Título del Material</label>
-                                    <input type="text" id="mat-titulo" class="form-control" placeholder="Ej. Escalas menores PDF" required>
+                                    <label for="ens-assign-song">Canción de Ensamble</label>
+                                    <select id="ens-assign-song" class="form-control" onchange="cargarDetallesCancionEnsamble(this.value)" required>
+                                        <!-- Cargado por JS -->
+                                    </select>
                                 </div>
                                 <div class="form-group" style="margin-bottom: 0;">
-                                    <label for="mat-desc">Descripción Breve</label>
-                                    <input type="text" id="mat-desc" class="form-control" placeholder="Ej. Ejercicio semanal en PDF">
+                                    <label for="ens-assign-student">Alumno de tu Especialidad</label>
+                                    <select id="ens-assign-student" class="form-control" required>
+                                        <!-- Cargado por JS -->
+                                    </select>
                                 </div>
                                 <div class="form-group" style="margin-bottom: 0;">
-                                    <label for="mat-url">Enlace del Material (YouTube, Drive...)</label>
-                                    <input type="url" id="mat-url" class="form-control" placeholder="https://drive.google.com/..." required>
+                                    <label for="ens-assign-level">Nivel Asignado</label>
+                                    <select id="ens-assign-level" class="form-control" required>
+                                        <option value="Avanzado">🔴 Avanzado</option>
+                                        <option value="Intermedio" selected>🟡 Intermedio</option>
+                                        <option value="Básico">🟢 Básico</option>
+                                        <option value="Junior">🟣 Junior</option>
+                                    </select>
                                 </div>
-                                <button type="submit" class="btn btn-primary" style="justify-content: center; width: 100%;"><i class="fas fa-cloud-upload-alt"></i> Publicar Material</button>
+                                <div class="form-group" style="margin-bottom: 0;">
+                                    <label for="ens-assign-tempo">Tempo (BPM)</label>
+                                    <input type="text" id="ens-assign-tempo" class="form-control" placeholder="Ej. 120 BPM">
+                                </div>
+                                <div class="form-group" style="margin-bottom: 0;">
+                                    <label for="ens-assign-tono">Tono Principal</label>
+                                    <input type="text" id="ens-assign-tono" class="form-control" placeholder="Ej. Sol (G)">
+                                </div>
+                                <div class="form-group" style="margin-bottom: 0;">
+                                    <label for="ens-assign-compas">Compás</label>
+                                    <select id="ens-assign-compas" class="form-control">
+                                        <option value="4/4">4/4</option>
+                                        <option value="6/8">6/8</option>
+                                        <option value="3/4">3/4</option>
+                                        <option value="2/4">2/4</option>
+                                    </select>
+                                </div>
+                                <div class="form-group" style="margin-bottom: 0; grid-column: 1 / -1;">
+                                    <label for="ens-assign-playthrough">Video Playthrough del Profesor (YouTube / Drive Link)</label>
+                                    <input type="url" id="ens-assign-playthrough" class="form-control" placeholder="https://www.youtube.com/watch?v=...">
+                                </div>
+                                <div class="form-group" style="margin-bottom: 0; grid-column: 1 / -1;">
+                                    <label for="ens-assign-notes">Indicaciones Técnicas para el Alumno</label>
+                                    <input type="text" id="ens-assign-notes" class="form-control" placeholder="Ej. Revisa la entrada del Coro 2 a 120 BPM en corcheas limpios...">
+                                </div>
+                                <button type="submit" class="btn btn-primary" style="grid-column: 1 / -1; justify-content: center;"><i class="fas fa-save"></i> Guardar Asignación de Ensamble</button>
                             </form>
 
-                            <div class="table-container" style="margin-top: 1.2rem;">
+                            <div class="table-container" style="margin-top: 1.5rem;">
                                 <table class="table-custom">
                                     <thead>
                                         <tr>
-                                            <th>Material</th>
-                                            <th>Enlace</th>
-                                            <th></th>
+                                            <th>Canción</th>
+                                            <th>Alumno Asignado</th>
+                                            <th>Puesto / Nivel</th>
+                                            <th>Recursos / Playthrough</th>
+                                            <th>Acciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="maestro-ensamble-assignments-tbody">
+                                        <!-- Cargado por JS -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- SUB-VISTA 4: MATERIALES & GUÍAS -->
+                    <div id="maestro-subview-materiales" class="maestro-subview" style="display: none;">
+                        <div class="panel-box">
+                            <div class="panel-header">
+                                <h3><i class="fas fa-file-upload"></i> Subir Guías y Material Didáctico</h3>
+                            </div>
+                            <p class="text-muted">Sube partituras, métodos en PDF o videos tutoriales para que tus alumnos estudien durante la semana.</p>
+                            <form onsubmit="guardarMaterial(event)" style="display: flex; flex-direction: column; gap: 12px; margin-top: 1rem;">
+                                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px;">
+                                    <div class="form-group" style="margin-bottom: 0;">
+                                        <label for="mat-titulo">Título del Material</label>
+                                        <input type="text" id="mat-titulo" class="form-control" placeholder="Ej. Escalas menores PDF" required>
+                                    </div>
+                                    <div class="form-group" style="margin-bottom: 0;">
+                                        <label for="mat-desc">Descripción Breve</label>
+                                        <input type="text" id="mat-desc" class="form-control" placeholder="Ej. Ejercicio semanal en PDF">
+                                    </div>
+                                    <div class="form-group" style="margin-bottom: 0; grid-column: 1 / -1;">
+                                        <label for="mat-url">Enlace del Material (YouTube, Drive, Dropbox...)</label>
+                                        <input type="url" id="mat-url" class="form-control" placeholder="https://drive.google.com/..." required>
+                                    </div>
+                                </div>
+                                <button type="submit" class="btn btn-primary" style="justify-content: center; max-width: 250px;"><i class="fas fa-cloud-upload-alt"></i> Publicar Material</button>
+                            </form>
+
+                            <div class="table-container" style="margin-top: 1.5rem;">
+                                <table class="table-custom">
+                                    <thead>
+                                        <tr>
+                                            <th>Material Didáctico</th>
+                                            <th>Descripción</th>
+                                            <th>Enlace / Recurso</th>
+                                            <th>Acción</th>
                                         </tr>
                                     </thead>
                                     <tbody id="maestro-materials-tbody">
@@ -546,26 +633,44 @@
                                 </table>
                             </div>
                         </div>
+                    </div>
 
-                        <!-- PUBLICAR ANUNCIOS DE LA CLASE -->
+                    <!-- SUB-VISTA 5: MURO DE ANUNCIOS -->
+                    <div id="maestro-subview-anuncios" class="maestro-subview" style="display: none;">
+                        <!-- BANNER COMUNICADOS DE STAFF PRODUCCIÓN PARA MAESTROS -->
+                        <div id="maestro-staff-announcements-banner" class="announcements-wall-container" style="margin-bottom: 2rem;">
+                            <!-- Cargado por JS -->
+                        </div>
+
                         <div class="panel-box">
                             <div class="panel-header">
                                 <h3><i class="fas fa-bullhorn"></i> Muro de Anuncios de la Especialidad</h3>
                             </div>
+                            
+                            <!-- Plantillas Rápidas de Anuncio -->
+                            <div style="margin-bottom: 1rem; background: rgba(255,255,255,0.03); padding: 10px 14px; border-radius: 10px; border: 1px solid var(--border-color);">
+                                <small class="text-muted" style="display:block; margin-bottom: 6px; font-weight:700;"><i class="fas fa-magic"></i> Plantillas Rápidas de Anuncio:</small>
+                                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                                    <button type="button" class="btn btn-sm btn-secondary" onclick="usarPlantillaAnuncio('partituras')">📜 Traer Partituras Impresas</button>
+                                    <button type="button" class="btn btn-sm btn-secondary" onclick="usarPlantillaAnuncio('examen')">📝 Recordatorio de Examen</button>
+                                    <button type="button" class="btn btn-sm btn-secondary" onclick="usarPlantillaAnuncio('horario')">⏰ Puntualidad en Aula</button>
+                                </div>
+                            </div>
+
                             <form onsubmit="publicarAnuncio(event)" style="display: flex; flex-direction: column; gap: 12px;">
                                 <div class="form-group" style="margin-bottom: 0;">
                                     <label for="bulletin-content">Escribir Aviso para tus Alumnos</label>
                                     <textarea id="bulletin-content" class="form-control" rows="3" placeholder="Ej. Recuerden traer sus partituras y afinado su instrumento para este sábado..." required></textarea>
                                 </div>
-                                <button type="submit" class="btn btn-primary" style="justify-content: center;"><i class="fas fa-paper-plane"></i> Publicar Aviso</button>
+                                <button type="submit" class="btn btn-primary" style="justify-content: center; max-width: 250px;"><i class="fas fa-paper-plane"></i> Publicar Aviso</button>
                             </form>
 
-                            <div class="table-container" style="margin-top: 1.2rem;">
+                            <div class="table-container" style="margin-top: 1.5rem;">
                                 <table class="table-custom">
                                     <thead>
                                         <tr>
                                             <th>Aviso publicado</th>
-                                            <th></th>
+                                            <th>Acciones</th>
                                         </tr>
                                     </thead>
                                     <tbody id="maestro-bulletins-tbody">
@@ -576,28 +681,6 @@
                         </div>
                     </div>
 
-                    <!-- LISTA DE ALUMNOS -->
-                    <div class="panel-box">
-                        <div class="panel-header">
-                            <h3><i class="fas fa-tasks"></i> Lista de Alumnos e Evaluaciones</h3>
-                        </div>
-                        <div class="table-container">
-                            <table class="table-custom">
-                                <thead>
-                                    <tr>
-                                        <th>Alumno</th>
-                                        <th>Teoría</th>
-                                        <th>Técnica</th>
-                                        <th>Comentarios</th>
-                                        <th>Acciones Académicas</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="maestro-students-tbody">
-                                    <!-- Cargado por JavaScript -->
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
                 </div>
 
                 <!-- ================= VISTA: PRODUCCIÓN & STAFF ================= -->
