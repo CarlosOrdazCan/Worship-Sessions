@@ -2132,3 +2132,9 @@ textarea.form-control {
     min-width: 38px;
     text-align: right;
 }
+
+@media (max-width: 992px) {
+    .pastor-dashboard-flex {
+        grid-template-columns: 1fr !important;
+    }
+}

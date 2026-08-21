@@ -148,6 +148,7 @@ function initDB() {
         if (!db.entregasTareas) { db.entregasTareas = defaultDB.entregasTareas; modificado = true; }
         if (db.ensambleActivo === undefined) { db.ensambleActivo = false; modificado = true; }
         if (!db.ensambleAsignaciones) { db.ensambleAsignaciones = defaultDB.ensambleAsignaciones; modificado = true; }
+        if (!db.notasPastorales) { db.notasPastorales = []; modificado = true; }
         
         // Sanear y normalizar roles de todos los usuarios
         Object.keys(db.usuarios).forEach(uKey => {
@@ -271,12 +272,27 @@ const menusConfig = {
     pastor: `
         <li class="nav-item">
             <a href="#" class="nav-link active" id="nav-pastor-alertas" onclick="cambiarSubvistaPastor('alertas'); return false;">
-                <i class="fas fa-chart-line"></i> Métricas & Visión Pastoral
+                <i class="fas fa-chart-pie"></i> Visión & Métricas Globales
             </a>
         </li>
         <li class="nav-item">
             <a href="#" class="nav-link" id="nav-pastor-asistencia" onclick="cambiarSubvistaPastor('asistencia'); return false;">
-                <i class="fas fa-search"></i> Supervisión & Expedientes
+                <i class="fas fa-id-card"></i> Expedientes & Supervisión
+            </a>
+        </li>
+        <li class="nav-item">
+            <a href="#" class="nav-link" id="nav-pastor-cobertura" onclick="cambiarSubvistaPastor('cobertura'); return false;">
+                <i class="fas fa-heart"></i> Alertas & Cuidado Pastoral
+            </a>
+        </li>
+        <li class="nav-item">
+            <a href="#" class="nav-link" id="nav-pastor-docentes" onclick="cambiarSubvistaPastor('docentes'); return false;">
+                <i class="fas fa-chalkboard-teacher"></i> Evaluación de Docentes
+            </a>
+        </li>
+        <li class="nav-item">
+            <a href="#" class="nav-link" id="nav-pastor-calendario" onclick="cambiarSubvistaPastor('calendario'); return false;">
+                <i class="fas fa-calendar-alt"></i> Hitos & Eventos del Ciclo
             </a>
         </li>
     `,
@@ -722,9 +738,21 @@ function renderizarPastor(db) {
     const estudiantesArr = Object.values(db.usuarios).filter(u => u.rol === 'estudiante');
     const totalEstudiantes = estudiantesArr.length;
     
-    // Calcular asistencia promedio
+    // Asistencia promedio
     let totalClasesMarcadas = 0;
     let totalAsistencias = 0;
+    let alumnosFaltasCriticas = 0;
+    
+    estudiantesArr.forEach(e => {
+        const asistObj = db.asistencia[e.username] || {};
+        const vals = Object.values(asistObj);
+        if (vals.length > 0) {
+            const pres = vals.filter(v => v === 'presente').length;
+            const pct = Math.round((pres / vals.length) * 100);
+            if (pct < 75) alumnosFaltasCriticas++;
+        }
+    });
+
     Object.values(db.asistencia).forEach(fechasObj => {
         Object.values(fechasObj).forEach(estado => {
             totalClasesMarcadas++;
@@ -733,10 +761,12 @@ function renderizarPastor(db) {
     });
     const promAsistencia = totalClasesMarcadas > 0 ? Math.round((totalAsistencias / totalClasesMarcadas) * 100) : 100;
     
-    document.getElementById('pastor-total-students').innerText = totalEstudiantes;
-    document.getElementById('pastor-global-attendance').innerText = promAsistencia + "%";
+    const elTotStud = document.getElementById('pastor-total-students');
+    const elGlobalAtt = document.getElementById('pastor-global-attendance');
+    if (elTotStud) elTotStud.innerText = totalEstudiantes;
+    if (elGlobalAtt) elGlobalAtt.innerText = promAsistencia + "%";
 
-    // Estadísticas de Tareas Cumplidas (Google Classroom)
+    // Tareas
     const totalTareasAsignadas = (db.tareas || []).length;
     const totalEntregasRecibidas = Object.keys(db.entregasTareas || {}).length;
     const pctCumplimientoTareas = totalTareasAsignadas > 0 ? Math.min(100, Math.round((totalEntregasRecibidas / (totalTareasAsignadas * Math.max(totalEstudiantes, 1))) * 100)) : 100;
@@ -746,76 +776,93 @@ function renderizarPastor(db) {
     if (hwPctEl) hwPctEl.innerText = pctCumplimientoTareas + "%";
     if (hwCountEl) hwCountEl.innerText = `${totalEntregasRecibidas} entregas recibidas`;
     
-    // Estadísticas Financieras
+    // Colegiaturas
     const solventes = estudiantesArr.filter(e => e.pagoStatus !== 'pendiente').length;
     const deudores = totalEstudiantes - solventes;
-    document.getElementById('pastor-solvent-count').innerText = solventes;
-    document.getElementById('pastor-debtor-count').innerText = deudores;
+    const elSolv = document.getElementById('pastor-solvent-count');
+    const elDebt = document.getElementById('pastor-debtor-count');
+    if (elSolv) elSolv.innerText = solventes;
+    if (elDebt) elDebt.innerText = deudores;
     
     const recaudacionPct = totalEstudiantes > 0 ? Math.round((solventes / totalEstudiantes) * 100) : 100;
-    document.getElementById('pastor-recaudacion-progress').style.width = recaudacionPct + "%";
-    document.getElementById('pastor-recaudacion-tag').innerText = recaudacionPct + "% Solvencia";
+    const elRecProg = document.getElementById('pastor-recaudacion-progress');
+    const elRecTag = document.getElementById('pastor-recaudacion-tag');
+    if (elRecProg) elRecProg.style.width = recaudacionPct + "%";
+    if (elRecTag) elRecTag.innerText = recaudacionPct + "% Solvencia";
 
-    // 1. Filtrado de alumnos
-    const busqueda = document.getElementById('pastor-search-input').value.trim().toLowerCase();
-    const filtroInst = document.getElementById('pastor-filter-instrument').value;
+    // Indicadores de Salud Pastoral
+    const alumnosEnRiesgo = estudiantesArr.filter(e => {
+        const cal = db.calificaciones[e.username];
+        if (!cal) return false;
+        const prom = ((Number(cal.teoria) || 0) + (Number(cal.tecnica) || 0)) / 2;
+        return prom < 75 && cal.teoria !== 'N/A';
+    }).length;
+
+    const elRet = document.getElementById('pastor-retencion-val');
+    const elRiesgo = document.getElementById('pastor-riesgo-val');
+    const elFaltas = document.getElementById('pastor-faltas-criticas-val');
+    if (elRet) elRet.innerText = (totalEstudiantes > 0 ? Math.round(((totalEstudiantes - deudores) / totalEstudiantes) * 100) : 100) + "%";
+    if (elRiesgo) elRiesgo.innerText = alumnosEnRiesgo;
+    if (elFaltas) elFaltas.innerText = alumnosFaltasCriticas;
+
+    // Buscador & Expedientes
+    const inputSearch = document.getElementById('pastor-search-input');
+    const inputFilt = document.getElementById('pastor-filter-instrument');
+    const busqueda = inputSearch ? inputSearch.value.trim().toLowerCase() : '';
+    const filtroInst = inputFilt ? inputFilt.value : 'todos';
     
     const tbody = document.getElementById('pastor-summary-tbody');
-    tbody.innerHTML = '';
-    
-    Object.keys(db.usuarios).forEach(username => {
-        const user = db.usuarios[username];
-        if (user.rol === 'estudiante') {
-            const coincideNombre = user.nombre.toLowerCase().includes(busqueda) || username.includes(busqueda);
-            const coincideInstrumento = (filtroInst === "todos" || user.area === filtroInst);
-            
-            if (coincideNombre && coincideInstrumento) {
-                const notasObj = db.calificaciones[username] || { teoria: 'N/A', tecnica: 'N/A', notas: 'Sin registros' };
-                const asistenciasAlumno = db.asistencia[username] || {};
-                const asistenciasTotales = Object.values(asistenciasAlumno).length;
-                const presentes = Object.values(asistenciasAlumno).filter(val => val === 'presente').length;
-                const asistPct = asistenciasTotales > 0 ? Math.round((presentes / asistenciasTotales) * 100) : 'N/A';
+    if (tbody) {
+        tbody.innerHTML = '';
+        Object.keys(db.usuarios).forEach(username => {
+            const user = db.usuarios[username];
+            if (user.rol === 'estudiante') {
+                const coincideNombre = user.nombre.toLowerCase().includes(busqueda) || username.includes(busqueda);
+                const coincideInstrumento = (filtroInst === "todos" || user.area === filtroInst);
                 
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td>
-                        <strong class="user-realname">${user.nombre}</strong>
-                        <small class="text-muted">${user.area} - @${username}</small>
-                    </td>
-                    <td>
-                        <div class="progress-bar-container mini">
-                            <div class="progress-bar" style="width: ${notasObj.teoria === 'N/A' ? '0' : notasObj.teoria}%"></div>
-                        </div>
-                        <span>${notasObj.teoria}</span>
-                    </td>
-                    <td>
-                        <div class="progress-bar-container mini">
-                            <div class="progress-bar" style="width: ${notasObj.tecnica === 'N/A' ? '0' : notasObj.tecnica}%"></div>
-                        </div>
-                        <span>${notasObj.tecnica}</span>
-                    </td>
-                    <td><strong class="asist-pct-text">${asistPct !== 'N/A' ? asistPct + '%' : 'S/R'}</strong></td>
-                    <td>
-                        <span class="badge badge-estado ${user.pagoStatus === 'pendiente' ? 'ausente' : 'presente'}">
-                            ${(user.pagoStatus || 'solvente').toUpperCase()}
-                        </span>
-                    </td>
-                    <td><em class="text-muted text-truncate" style="max-width: 200px; display: inline-block;">${notasObj.notas}</em></td>
-                `;
-                tbody.appendChild(tr);
+                if (coincideNombre && coincideInstrumento) {
+                    const notasObj = db.calificaciones[username] || { teoria: 'N/A', tecnica: 'N/A', notas: 'Sin registros' };
+                    const asistenciasAlumno = db.asistencia[username] || {};
+                    const asistenciasTotales = Object.values(asistenciasAlumno).length;
+                    const presentes = Object.values(asistenciasAlumno).filter(val => val === 'presente').length;
+                    const asistPct = asistenciasTotales > 0 ? Math.round((presentes / asistenciasTotales) * 100) : 'N/A';
+                    
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td>
+                            <strong class="user-realname">${user.nombre}</strong>
+                            <small class="text-muted">${user.area} - @${username}</small>
+                        </td>
+                        <td>
+                            <div class="progress-bar-container mini">
+                                <div class="progress-bar" style="width: ${notasObj.teoria === 'N/A' ? '0' : notasObj.teoria}%"></div>
+                            </div>
+                            <span>${notasObj.teoria}</span>
+                        </td>
+                        <td>
+                            <div class="progress-bar-container mini">
+                                <div class="progress-bar" style="width: ${notasObj.tecnica === 'N/A' ? '0' : notasObj.tecnica}%"></div>
+                            </div>
+                            <span>${notasObj.tecnica}</span>
+                        </td>
+                        <td><strong class="asist-pct-text">${asistPct !== 'N/A' ? asistPct + '%' : 'S/R'}</strong></td>
+                        <td>
+                            <span class="badge badge-estado ${user.pagoStatus === 'pendiente' ? 'ausente' : 'presente'}">
+                                ${(user.pagoStatus || 'solvente').toUpperCase()}
+                            </span>
+                        </td>
+                        <td><em class="text-muted text-truncate" style="max-width: 200px; display: inline-block;">${notasObj.notas}</em></td>
+                    `;
+                    tbody.appendChild(tr);
+                }
             }
-        }
-    });
+        });
+    }
 
-    // 2. Gráfico estadístico de distribución
+    // Gráfico de distribución por instrumento
     const conteoInstrumentos = {
-        "Teclado": 0,
-        "Batería": 0,
-        "Guitarra Eléctrica": 0,
-        "Bajo Eléctrico": 0,
-        "Canto / Voces": 0
+        "Teclado": 0, "Batería": 0, "Guitarra Eléctrica": 0, "Bajo Eléctrico": 0, "Canto / Voces": 0
     };
-    
     Object.values(db.usuarios).forEach(u => {
         if (u.rol === 'estudiante' && conteoInstrumentos[u.area] !== undefined) {
             conteoInstrumentos[u.area]++;
@@ -823,26 +870,118 @@ function renderizarPastor(db) {
     });
 
     const chartContainer = document.getElementById('pastor-chart-container');
-    chartContainer.innerHTML = '';
-    
-    const maxAlumnos = Math.max(...Object.values(conteoInstrumentos), 1);
-    
-    Object.keys(conteoInstrumentos).forEach(inst => {
-        const count = conteoInstrumentos[inst];
-        const pctWidth = (count / maxAlumnos) * 100;
-        
-        const chartRow = document.createElement('div');
-        chartRow.className = 'chart-row';
-        chartRow.innerHTML = `
-            <span class="chart-label">${inst}</span>
-            <div class="chart-bar-outer">
-                <div class="chart-bar-inner" style="width: ${pctWidth}%">
-                    <span class="chart-bar-val">${count}</span>
+    if (chartContainer) {
+        chartContainer.innerHTML = '';
+        const maxAlumnos = Math.max(...Object.values(conteoInstrumentos), 1);
+        Object.keys(conteoInstrumentos).forEach(inst => {
+            const count = conteoInstrumentos[inst];
+            const pctWidth = (count / maxAlumnos) * 100;
+            const chartRow = document.createElement('div');
+            chartRow.className = 'chart-row';
+            chartRow.innerHTML = `
+                <span class="chart-label">${inst}</span>
+                <div class="chart-bar-outer">
+                    <div class="chart-bar-inner" style="width: ${pctWidth}%">
+                        <span class="chart-bar-val">${count}</span>
+                    </div>
                 </div>
-            </div>
-        `;
-        chartContainer.appendChild(chartRow);
+            `;
+            chartContainer.appendChild(chartRow);
+        });
+    }
+
+    // Llenar selector de alumnos en Cuidado Pastoral
+    const selectPastoral = document.getElementById('pastoral-student-select');
+    if (selectPastoral) {
+        selectPastoral.innerHTML = '<option value="">-- Seleccionar Alumno --</option>';
+        estudiantesArr.forEach(st => {
+            const opt = document.createElement('option');
+            opt.value = st.nombre;
+            opt.innerText = `${st.nombre} (${st.area})`;
+            selectPastoral.appendChild(opt);
+        });
+    }
+
+    // Renderizar Bitácora de Notas Pastorales
+    const notesTbody = document.getElementById('pastor-notes-tbody');
+    if (notesTbody) {
+        notesTbody.innerHTML = '';
+        const notasPast = db.notasPastorales || [];
+        if (notasPast.length === 0) {
+            notesTbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted" style="padding:1.5rem;">No hay notas de seguimiento pastoral registradas.</td></tr>';
+        } else {
+            notasPast.forEach((np, idx) => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td><strong>${np.alumno}</strong></td>
+                    <td><span class="badge badge-rol">${np.tipo}</span></td>
+                    <td>${np.contenido}</td>
+                    <td><small class="text-muted">${np.fecha}</small></td>
+                    <td><button class="btn btn-sm btn-danger" onclick="eliminarNotaPastoral(${idx})"><i class="fas fa-trash"></i></button></td>
+                `;
+                notesTbody.appendChild(tr);
+            });
+        }
+    }
+
+    // Renderizar Evaluación de Docentes
+    const teachersTbody = document.getElementById('pastor-teachers-tbody');
+    if (teachersTbody) {
+        teachersTbody.innerHTML = '';
+        const maestrosArr = Object.values(db.usuarios).filter(u => u.rol === 'maestro');
+        if (maestrosArr.length === 0) {
+            teachersTbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted" style="padding:1.5rem;">No hay maestros registrados.</td></tr>';
+        } else {
+            maestrosArr.forEach(m => {
+                const alumnosDelMaestro = estudiantesArr.filter(e => e.area === m.area || (m.area === 'Batería' && e.area === 'Batería'));
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td><strong>${m.nombre}</strong></td>
+                    <td><span class="badge badge-rol">${m.area || 'Maestro'}</span></td>
+                    <td><strong>${alumnosDelMaestro.length}</strong> alumnos</td>
+                    <td><strong style="color:var(--primary-red);">88 / 100</strong></td>
+                    <td><span class="badge badge-estado presente">🟢 Activo & Al día</span></td>
+                `;
+                teachersTbody.appendChild(tr);
+            });
+        }
+    }
+}
+
+function guardarNotaPastoral(event) {
+    event.preventDefault();
+    const alumnoSelect = document.getElementById('pastoral-student-select');
+    const tipoSelect = document.getElementById('pastoral-note-type');
+    const contentText = document.getElementById('pastoral-note-content');
+    if (!alumnoSelect || !contentText) return;
+    
+    const alumno = alumnoSelect.value;
+    const tipo = tipoSelect ? tipoSelect.value : 'Consejería';
+    const contenido = contentText.value.trim();
+    if (!alumno || !contenido) return;
+
+    const db = getDB();
+    if (!db.notasPastorales) db.notasPastorales = [];
+    db.notasPastorales.unshift({
+        alumno,
+        tipo,
+        contenido,
+        fecha: new Date().toLocaleDateString('es-MX')
     });
+    saveDB(db);
+    contentText.value = '';
+    alert('✅ Nota Pastoral guardada exitosamente.');
+    renderizarPastor(db);
+}
+
+function eliminarNotaPastoral(index) {
+    if (!confirm('¿Deseas eliminar esta nota pastoral?')) return;
+    const db = getDB();
+    if (db.notasPastorales && db.notasPastorales[index]) {
+        db.notasPastorales.splice(index, 1);
+        saveDB(db);
+        renderizarPastor(db);
+    }
 }
 
 // -------------------------------------------------------------

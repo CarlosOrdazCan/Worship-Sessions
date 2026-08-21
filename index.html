@@ -265,15 +265,29 @@
 
                 <!-- ================= VISTA: PASTOR ================= -->
                 <div id="view-pastor" class="app-view">
-                    <!-- SUBVISTA 1: MÉTRICAS & VISIÓN PASTORAL -->
+                    <!-- SUBVISTA 1: VISIÓN & MÉTRICAS GLOBALES -->
                     <div id="pastor-subview-alertas" class="pastor-subview">
+                        <!-- BANNER DIAGNÓSTICO PASTORAL -->
+                        <div style="background: linear-gradient(135deg, rgba(229,9,20,0.12) 0%, rgba(20,20,30,0.95) 100%); border: 1px solid rgba(229,9,20,0.4); border-radius: 20px; padding: 20px 24px; margin-bottom: 1.8rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 15px;">
+                            <div>
+                                <div style="display:flex; align-items:center; gap:10px; margin-bottom:6px;">
+                                    <i class="fas fa-cross" style="color:var(--primary-red); font-size:1.4rem;"></i>
+                                    <h3 style="color:white; margin:0; font-size:1.2rem;">Panel Pastoral & Dirección Académica</h3>
+                                </div>
+                                <p style="color:var(--text-light); margin:0; font-size:0.88rem;">Monitoreo en tiempo real del crecimiento, retención y salud integral de los alumnos de Worship Sessions.</p>
+                            </div>
+                            <span class="badge badge-rol" style="background:rgba(229,9,20,0.25); color:#ff6b6b; border:1px solid rgba(229,9,20,0.5); font-size:0.82rem; padding:8px 14px;">
+                                <i class="fas fa-eye"></i> Cobertura Activa
+                            </span>
+                        </div>
+
                         <div class="dashboard-grid">
                             <div class="card">
                                 <div class="card-icon"><i class="fas fa-user-graduate"></i></div>
                                 <div>
                                     <h3>Alumnos Inscritos</h3>
                                     <div class="stat-val" id="pastor-total-students">0</div>
-                                    <small class="text-muted">Academia Worship Sessions</small>
+                                    <small class="text-muted">Matrícula Activa</small>
                                 </div>
                             </div>
                             <div class="card">
@@ -308,18 +322,53 @@
                             </div>
                         </div>
 
-                        <!-- DISTRIBUCIÓN POR INSTRUMENTO -->
-                        <div class="panel-box" style="margin-top: 1.5rem;">
-                            <div class="panel-header">
-                                <h3><i class="fas fa-guitar"></i> Distribución de Alumnos por Instrumento</h3>
+                        <!-- SALUD PASTORAL Y DISTRIBUCIÓN -->
+                        <div class="pastor-dashboard-flex" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.8rem; margin-top: 1.8rem;">
+                            <!-- TARJETAS DE SALUD PASTORAL -->
+                            <div class="panel-box">
+                                <div class="panel-header">
+                                    <h3><i class="fas fa-heartbeat"></i> Indicadores de Salud Pastoral</h3>
+                                </div>
+                                <div style="display: flex; flex-direction: column; gap: 14px; margin-top: 10px;">
+                                    <div style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.3); padding: 14px 18px; border-radius: 14px; display: flex; justify-content: space-between; align-items: center;">
+                                        <div>
+                                            <strong style="color:#10b981; font-size:0.92rem; display:block;"><i class="fas fa-check-circle"></i> Retención Académica</strong>
+                                            <small class="text-muted">Alumnos constantes y al corriente</small>
+                                        </div>
+                                        <span id="pastor-retencion-val" style="font-size:1.4rem; font-weight:800; color:white;">94%</span>
+                                    </div>
+
+                                    <div style="background: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.3); padding: 14px 18px; border-radius: 14px; display: flex; justify-content: space-between; align-items: center;">
+                                        <div>
+                                            <strong style="color:#f59e0b; font-size:0.92rem; display:block;"><i class="fas fa-exclamation-triangle"></i> Alumnos en Seguimiento Académico</strong>
+                                            <small class="text-muted">Promedio de calificación &lt; 75 pts</small>
+                                        </div>
+                                        <span id="pastor-riesgo-val" style="font-size:1.4rem; font-weight:800; color:white;">0</span>
+                                    </div>
+
+                                    <div style="background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.3); padding: 14px 18px; border-radius: 14px; display: flex; justify-content: space-between; align-items: center;">
+                                        <div>
+                                            <strong style="color:#ef4444; font-size:0.92rem; display:block;"><i class="fas fa-phone-slash"></i> Faltas Críticas de Asistencia</strong>
+                                            <small class="text-muted">Alumnos con asistencia &lt; 75%</small>
+                                        </div>
+                                        <span id="pastor-faltas-criticas-val" style="font-size:1.4rem; font-weight:800; color:white;">0</span>
+                                    </div>
+                                </div>
                             </div>
-                            <div class="pastor-chart-container" id="pastor-chart-container">
-                                <!-- Cargado por JavaScript -->
+
+                            <!-- DISTRIBUCIÓN POR INSTRUMENTO -->
+                            <div class="panel-box">
+                                <div class="panel-header">
+                                    <h3><i class="fas fa-guitar"></i> Distribución por Instrumento</h3>
+                                </div>
+                                <div class="pastor-chart-container" id="pastor-chart-container">
+                                    <!-- Cargado por JavaScript -->
+                                </div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- SUBVISTA 2: SUPERVISIÓN & EXPEDIENTES -->
+                    <!-- SUBVISTA 2: EXPEDIENTES & SUPERVISIÓN -->
                     <div id="pastor-subview-asistencia" class="pastor-subview" style="display: none;">
                         <div class="panel-box" style="margin-bottom: 1.5rem;">
                             <div class="panel-header">
@@ -346,7 +395,7 @@
 
                         <div class="panel-box">
                             <div class="panel-header">
-                                <h3><i class="fas fa-chart-line"></i> Reporte y Supervisión Académica</h3>
+                                <h3><i class="fas fa-id-card"></i> Expedientes de Alumnos y Reporte Académico</h3>
                             </div>
                             <p class="text-muted">Vista panorámica sobre calificaciones de teoría y práctica de los alumnos reportados por los maestros.</p>
                             <div class="table-container">
@@ -365,6 +414,115 @@
                                         <!-- Cargado por JavaScript -->
                                     </tbody>
                                 </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- SUBVISTA 3: ALERTAS & CUIDADO PASTORAL -->
+                    <div id="pastor-subview-cobertura" class="pastor-subview" style="display: none;">
+                        <div class="panel-box" style="margin-bottom: 1.8rem;">
+                            <div class="panel-header">
+                                <h3><i class="fas fa-heart"></i> Módulo de Cuidado & Acompañamiento Pastoral</h3>
+                            </div>
+                            <p class="text-muted">Regitras notas privadas de apoyo, consejería o seguimiento para los alumnos de la academia.</p>
+                            <form onsubmit="guardarNotaPastoral(event)" style="display: flex; flex-direction: column; gap: 12px; margin-top: 1rem;">
+                                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px;">
+                                    <div class="form-group" style="margin-bottom: 0;">
+                                        <label for="pastoral-student-select">Seleccionar Alumno</label>
+                                        <select id="pastoral-student-select" class="form-control" required></select>
+                                    </div>
+                                    <div class="form-group" style="margin-bottom: 0;">
+                                        <label for="pastoral-note-type">Tipo de Seguimiento</label>
+                                        <select id="pastoral-note-type" class="form-control">
+                                            <option value="Beca / Apoyo">Beca / Apoyo Económico</option>
+                                            <option value="Consejería">Consejería / Acompañamiento</option>
+                                            <option value="Llamada de Faltas">Llamada por Faltas</option>
+                                            <option value="Reconocimiento">Reconocimiento / Destacado</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group" style="margin-bottom: 0; grid-column: 1 / -1;">
+                                        <label for="pastoral-note-content">Nota Privada de Consejería</label>
+                                        <textarea id="pastoral-note-content" class="form-control" rows="3" placeholder="Escribe aquí los detalles del seguimiento pastoral..." required></textarea>
+                                    </div>
+                                </div>
+                                <button type="submit" class="btn btn-primary" style="justify-content: center; max-width: 250px;"><i class="fas fa-save"></i> Guardar Nota Pastoral</button>
+                            </form>
+                        </div>
+
+                        <div class="panel-box">
+                            <div class="panel-header">
+                                <h3><i class="fas fa-list-alt"></i> Bitácora de Acompañamiento Pastoral</h3>
+                            </div>
+                            <div class="table-container" style="margin-top: 1rem;">
+                                <table class="table-custom">
+                                    <thead>
+                                        <tr>
+                                            <th>Alumno</th>
+                                            <th>Categoría</th>
+                                            <th>Nota Pastoral</th>
+                                            <th>Fecha</th>
+                                            <th>Acción</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="pastor-notes-tbody">
+                                        <!-- Cargado por JS -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- SUBVISTA 4: EVALUACIÓN DE DOCENTES -->
+                    <div id="pastor-subview-docentes" class="pastor-subview" style="display: none;">
+                        <div class="panel-box">
+                            <div class="panel-header">
+                                <h3><i class="fas fa-chalkboard-teacher"></i> Desempeño y Cobertura de Maestros</h3>
+                            </div>
+                            <p class="text-muted">Supervisión sobre el rendimiento del equipo docente, promedio de alumnos y entrega de evaluaciones.</p>
+                            <div class="table-container" style="margin-top: 1rem;">
+                                <table class="table-custom">
+                                    <thead>
+                                        <tr>
+                                            <th>Profesor / Especialidad</th>
+                                            <th>Área Responsable</th>
+                                            <th>Alumnos a Cargo</th>
+                                            <th>Promedio de Grupo</th>
+                                            <th>Estatus del Grupo</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="pastor-teachers-tbody">
+                                        <!-- Cargado por JS -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- SUBVISTA 5: HITOS & EVENTOS DEL CICLO -->
+                    <div id="pastor-subview-calendario" class="pastor-subview" style="display: none;">
+                        <div class="panel-box" style="margin-bottom: 1.8rem;">
+                            <div class="panel-header">
+                                <h3><i class="fas fa-calendar-alt"></i> Cronograma de Hitos del Ciclo Escolar</h3>
+                                <button type="button" class="btn btn-secondary" onclick="window.print()"><i class="fas fa-print"></i> Imprimir Reporte Pastoral</button>
+                            </div>
+                            <p class="text-muted">Calendario institucional de evaluaciones, conciertos de ensamble y graduaciones.</p>
+
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 15px; margin-top: 1.5rem;">
+                                <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); border-left: 4px solid var(--primary-red); padding: 16px; border-radius: 12px;">
+                                    <span style="font-size:0.75rem; color:var(--primary-red); font-weight:700;">FASE 1</span>
+                                    <h4 style="color:white; margin:4px 0;">Evaluación Parcial</h4>
+                                    <p style="font-size:0.85rem; color:var(--text-muted); margin:0;">Revisión de avances teóricos y entrega de tareas de técnica.</p>
+                                </div>
+                                <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); border-left: 4px solid #f59e0b; padding: 16px; border-radius: 12px;">
+                                    <span style="font-size:0.75rem; color:#f59e0b; font-weight:700;">FASE 2</span>
+                                    <h4 style="color:white; margin:4px 0;">Apertura de Ensambles</h4>
+                                    <p style="font-size:0.85rem; color:var(--text-muted); margin:0;">Asignación de canciones y videos playthrough a mitad del ciclo.</p>
+                                </div>
+                                <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); border-left: 4px solid #10b981; padding: 16px; border-radius: 12px;">
+                                    <span style="font-size:0.75rem; color:#10b981; font-weight:700;">FASE 3</span>
+                                    <h4 style="color:white; margin:4px 0;">Concierto de Graduación</h4>
+                                    <p style="font-size:0.85rem; color:var(--text-muted); margin:0;">Presentación de ensambles y entrega de diplomas de acreditación.</p>
+                                </div>
                             </div>
                         </div>
                     </div>
