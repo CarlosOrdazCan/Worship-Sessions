@@ -42,6 +42,19 @@ body {
     display: flex;
 }
 
+/* SUBVISTAS DE NAVEGACIÓN LATERAL PARA TODOS LOS ROLES */
+.admin-subview, .pastor-subview, .maestro-subview, .produccion-subview, .adoracion-subview, .estudiante-subview {
+    display: none;
+    animation: fadeInSubview 0.25s ease-in-out forwards;
+}
+.admin-subview.active, .pastor-subview.active, .maestro-subview.active, .produccion-subview.active, .adoracion-subview.active, .estudiante-subview.active {
+    display: block;
+}
+@keyframes fadeInSubview {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
 /* ============================================================
    PANTALLA DE SELECCIÓN DE APP
    ============================================================ */

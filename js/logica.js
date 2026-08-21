@@ -253,45 +253,30 @@ function mostrarPantalla(idPantalla) {
 const menusConfig = {
     admin: `
         <li class="nav-item">
-            <a href="#" class="nav-link active" onclick="cambiarVista('admin'); return false;">
-                <i class="fas fa-user-shield"></i> Administrador
+            <a href="#" class="nav-link active" id="nav-admin-panel" onclick="cambiarSubvistaAdmin('panel'); return false;">
+                <i class="fas fa-chart-pie"></i> Panel & Estadísticas
             </a>
         </li>
         <li class="nav-item">
-            <a href="#" class="nav-link" onclick="cambiarVista('pastor'); return false;">
-                <i class="fas fa-chart-bar"></i> Reportes Pastorales
+            <a href="#" class="nav-link" id="nav-admin-usuarios" onclick="cambiarSubvistaAdmin('usuarios'); return false;">
+                <i class="fas fa-users-cog"></i> Gestión de Usuarios
             </a>
         </li>
         <li class="nav-item">
-            <a href="#" class="nav-link" onclick="cambiarVista('maestro'); return false;">
-                <i class="fas fa-chalkboard-teacher"></i> Mis Alumnos (Maestro)
-            </a>
-        </li>
-        <li class="nav-item">
-            <a href="#" class="nav-link" onclick="cambiarVista('produccion'); return false;">
-                <i class="fas fa-sliders-h"></i> Staff Producción
-            </a>
-        </li>
-        <li class="nav-item">
-            <a href="#" class="nav-link" onclick="cambiarVista('adoracion'); return false;">
-                <i class="fas fa-music"></i> Director de Adoración
-            </a>
-        </li>
-        <li class="nav-item">
-            <a href="#" class="nav-link" onclick="cambiarVista('estudiante'); return false;">
-                <i class="fas fa-graduation-cap"></i> Vista Estudiante
+            <a href="#" class="nav-link" id="nav-admin-respaldos" onclick="cambiarSubvistaAdmin('respaldos'); return false;">
+                <i class="fas fa-database"></i> Respaldos & Sistema
             </a>
         </li>
     `,
     pastor: `
         <li class="nav-item">
-            <a href="#" class="nav-link active" onclick="cambiarVista('pastor'); return false;">
-                <i class="fas fa-chart-line"></i> Dashboard Pastoral
+            <a href="#" class="nav-link active" id="nav-pastor-alertas" onclick="cambiarSubvistaPastor('alertas'); return false;">
+                <i class="fas fa-chart-line"></i> Métricas & Visión Pastoral
             </a>
         </li>
         <li class="nav-item">
-            <a href="#" class="nav-link" onclick="cambiarVista('adoracion'); return false;">
-                <i class="fas fa-music"></i> Setlist y Ensamble
+            <a href="#" class="nav-link" id="nav-pastor-asistencia" onclick="cambiarSubvistaPastor('asistencia'); return false;">
+                <i class="fas fa-search"></i> Supervisión & Expedientes
             </a>
         </li>
     `,
@@ -324,22 +309,52 @@ const menusConfig = {
     `,
     produccion: `
         <li class="nav-item">
-            <a href="#" class="nav-link active" onclick="cambiarVista('produccion'); return false;">
-                <i class="fas fa-sliders-h"></i> Staff Producción
+            <a href="#" class="nav-link active" id="nav-produccion-estatus" onclick="cambiarSubvistaProduccion('estatus'); return false;">
+                <i class="fas fa-calendar-day"></i> Estatus de Clases & Avisos
+            </a>
+        </li>
+        <li class="nav-item">
+            <a href="#" class="nav-link" id="nav-produccion-colegiaturas" onclick="cambiarSubvistaProduccion('colegiaturas'); return false;">
+                <i class="fas fa-file-invoice-dollar"></i> Colegiaturas & Pagos
             </a>
         </li>
     `,
     adoracion: `
         <li class="nav-item">
-            <a href="#" class="nav-link active" onclick="cambiarVista('adoracion'); return false;">
-                <i class="fas fa-music"></i> Ensamble & Setlist
+            <a href="#" class="nav-link active" id="nav-adoracion-control" onclick="cambiarSubvistaAdoracion('control'); return false;">
+                <i class="fas fa-toggle-on"></i> Etapa de Ensambles & Servicios
+            </a>
+        </li>
+        <li class="nav-item">
+            <a href="#" class="nav-link" id="nav-adoracion-repertorio" onclick="cambiarSubvistaAdoracion('repertorio'); return false;">
+                <i class="fas fa-list-ul"></i> Repertorio & Setlist General
             </a>
         </li>
     `,
     estudiante: `
         <li class="nav-item">
-            <a href="#" class="nav-link active" onclick="cambiarVista('estudiante'); return false;">
-                <i class="fas fa-graduation-cap"></i> Mi Panel (Classroom)
+            <a href="#" class="nav-link active" id="nav-estudiante-classroom" onclick="cambiarSubvistaEstudiante('classroom'); return false;">
+                <i class="fas fa-tasks"></i> Classroom & Tareas
+            </a>
+        </li>
+        <li class="nav-item">
+            <a href="#" class="nav-link" id="nav-estudiante-progreso" onclick="cambiarSubvistaEstudiante('progreso'); return false;">
+                <i class="fas fa-chart-line"></i> Mi Progreso & Asistencia
+            </a>
+        </li>
+        <li class="nav-item">
+            <a href="#" class="nav-link" id="nav-estudiante-ensamble" onclick="cambiarSubvistaEstudiante('ensamble'); return false;">
+                <i class="fas fa-guitar"></i> Mi Ensamble & Playthroughs
+            </a>
+        </li>
+        <li class="nav-item">
+            <a href="#" class="nav-link" id="nav-estudiante-playback" onclick="cambiarSubvistaEstudiante('playback'); return false;">
+                <i class="fas fa-sliders-h"></i> Estudio Playback & Metrónomo
+            </a>
+        </li>
+        <li class="nav-item">
+            <a href="#" class="nav-link" id="nav-estudiante-recursos" onclick="cambiarSubvistaEstudiante('recursos'); return false;">
+                <i class="fas fa-bullhorn"></i> Recursos & Anuncios
             </a>
         </li>
     `
@@ -433,10 +448,12 @@ function cambiarVista(rolVista) {
     if (targetView) {
         targetView.style.display = 'block';
         targetView.classList.add('active');
-        if (rol === 'maestro') {
-            cambiarSubvistaMaestro(subvistaMaestroActual || 'classroom');
-            return;
-        }
+        if (rol === 'admin') { cambiarSubvistaAdmin(subvistaAdminActual || 'panel'); return; }
+        if (rol === 'pastor') { cambiarSubvistaPastor(subvistaPastorActual || 'alertas'); return; }
+        if (rol === 'maestro') { cambiarSubvistaMaestro(subvistaMaestroActual || 'classroom'); return; }
+        if (rol === 'produccion') { cambiarSubvistaProduccion(subvistaProduccionActual || 'estatus'); return; }
+        if (rol === 'adoracion') { cambiarSubvistaAdoracion(subvistaAdoracionActual || 'control'); return; }
+        if (rol === 'estudiante') { cambiarSubvistaEstudiante(subvistaEstudianteActual || 'classroom'); return; }
     }
     
     renderizarDatosVista(rol);
@@ -826,6 +843,69 @@ function renderizarPastor(db) {
         `;
         chartContainer.appendChild(chartRow);
     });
+}
+
+// -------------------------------------------------------------
+// CONTROL DE SUBVISTAS LATERALES PARA TODOS LOS ROLES
+// -------------------------------------------------------------
+let subvistaAdminActual = 'panel';
+function cambiarSubvistaAdmin(subVista) {
+    subvistaAdminActual = subVista || 'panel';
+    document.querySelectorAll('.admin-subview').forEach(sv => { sv.style.display = 'none'; sv.classList.remove('active'); });
+    document.querySelectorAll('#dynamic-menu .nav-link').forEach(link => link.classList.remove('active'));
+    const targetNav = document.getElementById('nav-admin-' + subVista);
+    if (targetNav) targetNav.classList.add('active');
+    const targetSub = document.getElementById('admin-subview-' + subVista);
+    if (targetSub) { targetSub.style.display = 'block'; targetSub.classList.add('active'); }
+    renderizarAdmin(getDB());
+}
+
+let subvistaPastorActual = 'alertas';
+function cambiarSubvistaPastor(subVista) {
+    subvistaPastorActual = subVista || 'alertas';
+    document.querySelectorAll('.pastor-subview').forEach(sv => { sv.style.display = 'none'; sv.classList.remove('active'); });
+    document.querySelectorAll('#dynamic-menu .nav-link').forEach(link => link.classList.remove('active'));
+    const targetNav = document.getElementById('nav-pastor-' + subVista);
+    if (targetNav) targetNav.classList.add('active');
+    const targetSub = document.getElementById('pastor-subview-' + subVista);
+    if (targetSub) { targetSub.style.display = 'block'; targetSub.classList.add('active'); }
+    renderizarPastor(getDB());
+}
+
+let subvistaProduccionActual = 'estatus';
+function cambiarSubvistaProduccion(subVista) {
+    subvistaProduccionActual = subVista || 'estatus';
+    document.querySelectorAll('.produccion-subview').forEach(sv => { sv.style.display = 'none'; sv.classList.remove('active'); });
+    document.querySelectorAll('#dynamic-menu .nav-link').forEach(link => link.classList.remove('active'));
+    const targetNav = document.getElementById('nav-produccion-' + subVista);
+    if (targetNav) targetNav.classList.add('active');
+    const targetSub = document.getElementById('produccion-subview-' + subVista);
+    if (targetSub) { targetSub.style.display = 'block'; targetSub.classList.add('active'); }
+    renderizarProduccion(getDB());
+}
+
+let subvistaAdoracionActual = 'control';
+function cambiarSubvistaAdoracion(subVista) {
+    subvistaAdoracionActual = subVista || 'control';
+    document.querySelectorAll('.adoracion-subview').forEach(sv => { sv.style.display = 'none'; sv.classList.remove('active'); });
+    document.querySelectorAll('#dynamic-menu .nav-link').forEach(link => link.classList.remove('active'));
+    const targetNav = document.getElementById('nav-adoracion-' + subVista);
+    if (targetNav) targetNav.classList.add('active');
+    const targetSub = document.getElementById('adoracion-subview-' + subVista);
+    if (targetSub) { targetSub.style.display = 'block'; targetSub.classList.add('active'); }
+    renderizarAdoracion(getDB());
+}
+
+let subvistaEstudianteActual = 'classroom';
+function cambiarSubvistaEstudiante(subVista) {
+    subvistaEstudianteActual = subVista || 'classroom';
+    document.querySelectorAll('.estudiante-subview').forEach(sv => { sv.style.display = 'none'; sv.classList.remove('active'); });
+    document.querySelectorAll('#dynamic-menu .nav-link').forEach(link => link.classList.remove('active'));
+    const targetNav = document.getElementById('nav-estudiante-' + subVista);
+    if (targetNav) targetNav.classList.add('active');
+    const targetSub = document.getElementById('estudiante-subview-' + subVista);
+    if (targetSub) { targetSub.style.display = 'block'; targetSub.classList.add('active'); }
+    renderizarEstudiante(getDB());
 }
 
 // -------------------------------------------------------------

@@ -168,88 +168,96 @@
                         </div>
                     </div>
 
-                    <div class="dashboard-grid">
-                        <div class="card status-card">
-                            <div class="card-icon"><i class="fas fa-server"></i></div>
-                            <div>
-                                <h3>Personal Académico</h3>
-                                <div class="stat-val" id="admin-total-staff">0</div>
-                                <small class="text-muted">Maestros, Pastores y Staff</small>
+                    <!-- SUBVISTA 1: PANEL & ESTADÍSTICAS -->
+                    <div id="admin-subview-panel" class="admin-subview">
+                        <div class="dashboard-grid">
+                            <div class="card status-card">
+                                <div class="card-icon"><i class="fas fa-server"></i></div>
+                                <div>
+                                    <h3>Personal Académico</h3>
+                                    <div class="stat-val" id="admin-total-staff">0</div>
+                                    <small class="text-muted">Maestros, Pastores y Staff</small>
+                                </div>
                             </div>
-                        </div>
-                        <div class="card status-card">
-                            <div class="card-icon red-variant"><i class="fas fa-users"></i></div>
-                            <div>
-                                <h3>Alumnos Registrados</h3>
-                                <div class="stat-val" id="admin-total-students">0</div>
-                                <small class="text-muted">Estudiantes de la Academia</small>
+                            <div class="card status-card">
+                                <div class="card-icon red-variant"><i class="fas fa-users"></i></div>
+                                <div>
+                                    <h3>Alumnos Registrados</h3>
+                                    <div class="stat-val" id="admin-total-students">0</div>
+                                    <small class="text-muted">Estudiantes de la Academia</small>
+                                </div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Módulo de Respaldos de Base de Datos -->
-                    <div class="panel-box backup-panel" style="margin-bottom: 2rem;">
-                        <div class="panel-header">
-                            <h3><i class="fas fa-database"></i> Mantenimiento del Sistema</h3>
-                        </div>
-                        <p class="text-muted" style="margin-bottom: 1.2rem;">Descarga una copia física de la base de datos o restaura un respaldo guardado en tu computadora.</p>
-                        <div class="backup-actions-flex">
-                            <button class="btn btn-secondary" onclick="exportarBaseDatos()">
-                                <i class="fas fa-download"></i> Respaldar Base de Datos
-                            </button>
-                            
-                            <input type="file" id="import-db-input" style="display: none;" onchange="importarBaseDatos(event)">
-                            <button class="btn btn-secondary" onclick="document.getElementById('import-db-input').click()">
-                                <i class="fas fa-upload"></i> Restaurar Respaldo
-                            </button>
+                    <!-- SUBVISTA 2: GESTIÓN DE USUARIOS -->
+                    <div id="admin-subview-usuarios" class="admin-subview" style="display: none;">
+                        <div class="admin-tables-container">
+                            <!-- TABLA 1: PERSONAL Y STAFF -->
+                            <div class="panel-box">
+                                <div class="panel-header">
+                                    <h3><i class="fas fa-users-cog"></i> 1. Personal Docente & Administrativo</h3>
+                                    <button class="btn btn-primary" onclick="abrirModalUsuario()"><i class="fas fa-plus"></i> Nuevo Personal</button>
+                                </div>
+                                <div class="table-container">
+                                    <table class="table-custom">
+                                        <thead>
+                                            <tr>
+                                                <th>Usuario / Nombre</th>
+                                                <th>Rol</th>
+                                                <th>Área Responsable</th>
+                                                <th>Acciones</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="admin-staff-tbody">
+                                            <!-- Cargado por JavaScript -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                            <!-- TABLA 2: ESTUDIANTES / ALUMNOS -->
+                            <div class="panel-box" style="margin-top: 2rem;">
+                                <div class="panel-header">
+                                    <h3><i class="fas fa-user-graduate"></i> 2. Alumnos Matriculados</h3>
+                                    <button class="btn btn-primary" onclick="abrirModalUsuario()"><i class="fas fa-plus"></i> Registrar Alumno</button>
+                                </div>
+                                <div class="table-container">
+                                    <table class="table-custom">
+                                        <thead>
+                                            <tr>
+                                                <th>Alumno / Usuario</th>
+                                                <th>Rol</th>
+                                                <th>Instrumento</th>
+                                                <th>Colegiatura</th>
+                                                <th>Acciones</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="admin-students-tbody">
+                                            <!-- Cargado por JavaScript -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
-                    <div class="admin-tables-container">
-                        <!-- TABLA 1: PERSONAL Y STAFF -->
-                        <div class="panel-box">
+                    <!-- SUBVISTA 3: RESPALDOS & SISTEMA -->
+                    <div id="admin-subview-respaldos" class="admin-subview" style="display: none;">
+                        <div class="panel-box backup-panel" style="margin-bottom: 2rem;">
                             <div class="panel-header">
-                                <h3><i class="fas fa-users-cog"></i> 1. Personal Docente & Administrativo</h3>
-                                <button class="btn btn-primary" onclick="abrirModalUsuario()"><i class="fas fa-plus"></i> Nuevo Personal</button>
+                                <h3><i class="fas fa-database"></i> Mantenimiento del Sistema</h3>
                             </div>
-                            <div class="table-container">
-                                <table class="table-custom">
-                                    <thead>
-                                        <tr>
-                                            <th>Usuario / Nombre</th>
-                                            <th>Rol</th>
-                                            <th>Área Responsable</th>
-                                            <th>Acciones</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="admin-staff-tbody">
-                                        <!-- Cargado por JavaScript -->
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-
-                        <!-- TABLA 2: ESTUDIANTES / ALUMNOS -->
-                        <div class="panel-box" style="margin-top: 2rem;">
-                            <div class="panel-header">
-                                <h3><i class="fas fa-user-graduate"></i> 2. Alumnos Matriculados</h3>
-                                <button class="btn btn-primary" onclick="abrirModalUsuario()"><i class="fas fa-plus"></i> Registrar Alumno</button>
-                            </div>
-                            <div class="table-container">
-                                <table class="table-custom">
-                                    <thead>
-                                        <tr>
-                                            <th>Alumno / Usuario</th>
-                                            <th>Rol</th>
-                                            <th>Instrumento</th>
-                                            <th>Colegiatura</th>
-                                            <th>Acciones</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="admin-students-tbody">
-                                        <!-- Cargado por JavaScript -->
-                                    </tbody>
-                                </table>
+                            <p class="text-muted" style="margin-bottom: 1.2rem;">Descarga una copia física de la base de datos o restaura un respaldo guardado en tu computadora.</p>
+                            <div class="backup-actions-flex">
+                                <button class="btn btn-secondary" onclick="exportarBaseDatos()">
+                                    <i class="fas fa-download"></i> Respaldar Base de Datos
+                                </button>
+                                
+                                <input type="file" id="import-db-input" style="display: none;" onchange="importarBaseDatos(event)">
+                                <button class="btn btn-secondary" onclick="document.getElementById('import-db-input').click()">
+                                    <i class="fas fa-upload"></i> Restaurar Respaldo
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -257,65 +265,67 @@
 
                 <!-- ================= VISTA: PASTOR ================= -->
                 <div id="view-pastor" class="app-view">
-                    <div class="dashboard-grid">
-                        <div class="card">
-                            <div class="card-icon"><i class="fas fa-user-graduate"></i></div>
-                            <div>
-                                <h3>Alumnos Inscritos</h3>
-                                <div class="stat-val" id="pastor-total-students">0</div>
-                                <small class="text-muted">Academia Worship Sessions</small>
-                            </div>
-                        </div>
-                        <div class="card">
-                            <div class="card-icon red-variant"><i class="fas fa-calendar-check"></i></div>
-                            <div>
-                                <h3>Asistencia Promedio</h3>
-                                <div class="stat-val" id="pastor-global-attendance">0%</div>
-                                <small class="text-muted">Asistencia global histórica</small>
-                            </div>
-                        </div>
-                        <div class="card">
-                            <div class="card-icon red-variant"><i class="fas fa-tasks"></i></div>
-                            <div>
-                                <h3>Tareas Entregadas</h3>
-                                <div class="stat-val" id="pastor-homework-pct">0%</div>
-                                <small class="text-muted" id="pastor-homework-count">0 / 0 entregas</small>
-                            </div>
-                        </div>
-                        <!-- NUEVA CARD FINANZAS / PAGOS -->
-                        <div class="card">
-                            <div class="card-icon red-variant"><i class="fas fa-wallet"></i></div>
-                            <div>
-                                <h3>Colegiaturas</h3>
-                                <div style="display:flex; align-items: baseline; gap:8px;">
-                                    <span class="stat-val" id="pastor-solvent-count">0</span><small class="text-muted">/ solventes</small>
-                                    <span class="stat-val" style="color:var(--primary-red); margin-left: 10px;" id="pastor-debtor-count">0</span><small class="text-muted">/ adeudos</small>
+                    <!-- SUBVISTA 1: MÉTRICAS & VISIÓN PASTORAL -->
+                    <div id="pastor-subview-alertas" class="pastor-subview">
+                        <div class="dashboard-grid">
+                            <div class="card">
+                                <div class="card-icon"><i class="fas fa-user-graduate"></i></div>
+                                <div>
+                                    <h3>Alumnos Inscritos</h3>
+                                    <div class="stat-val" id="pastor-total-students">0</div>
+                                    <small class="text-muted">Academia Worship Sessions</small>
                                 </div>
-                                <div class="progress-bar-container mini" style="width: 100%; height: 4px; margin-top: 5px;">
-                                    <div class="progress-bar" id="pastor-recaudacion-progress" style="width: 0%;"></div>
+                            </div>
+                            <div class="card">
+                                <div class="card-icon red-variant"><i class="fas fa-calendar-check"></i></div>
+                                <div>
+                                    <h3>Asistencia Promedio</h3>
+                                    <div class="stat-val" id="pastor-global-attendance">0%</div>
+                                    <small class="text-muted">Asistencia global histórica</small>
                                 </div>
-                                <small class="text-muted" id="pastor-recaudacion-tag">0% Solvencia</small>
                             </div>
-                        </div>
-                    </div>
-                    
-                    <div class="pastor-dashboard-flex" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.8rem; margin-bottom: 2rem;">
-                        <!-- DISTRIBUCIÓN POR INSTRUMENTO -->
-                        <div class="panel-box">
-                            <div class="panel-header">
-                                <h3><i class="fas fa-guitar"></i> Alumnos por Instrumento</h3>
+                            <div class="card">
+                                <div class="card-icon red-variant"><i class="fas fa-tasks"></i></div>
+                                <div>
+                                    <h3>Tareas Entregadas</h3>
+                                    <div class="stat-val" id="pastor-homework-pct">0%</div>
+                                    <small class="text-muted" id="pastor-homework-count">0 / 0 entregas</small>
+                                </div>
                             </div>
-                            <div class="pastor-chart-container" id="pastor-chart-container">
-                                <!-- Cargado por JavaScript (Gráficos CSS) -->
+                            <div class="card">
+                                <div class="card-icon red-variant"><i class="fas fa-wallet"></i></div>
+                                <div>
+                                    <h3>Colegiaturas</h3>
+                                    <div style="display:flex; align-items: baseline; gap:8px;">
+                                        <span class="stat-val" id="pastor-solvent-count">0</span><small class="text-muted">/ solventes</small>
+                                        <span class="stat-val" style="color:var(--primary-red); margin-left: 10px;" id="pastor-debtor-count">0</span><small class="text-muted">/ adeudos</small>
+                                    </div>
+                                    <div class="progress-bar-container mini" style="width: 100%; height: 4px; margin-top: 5px;">
+                                        <div class="progress-bar" id="pastor-recaudacion-progress" style="width: 0%;"></div>
+                                    </div>
+                                    <small class="text-muted" id="pastor-recaudacion-tag">0% Solvencia</small>
+                                </div>
                             </div>
                         </div>
 
-                        <!-- FILTROS Y BÚSQUEDA -->
-                        <div class="panel-box">
+                        <!-- DISTRIBUCIÓN POR INSTRUMENTO -->
+                        <div class="panel-box" style="margin-top: 1.5rem;">
                             <div class="panel-header">
-                                <h3><i class="fas fa-search"></i> Buscador de Estudiantes</h3>
+                                <h3><i class="fas fa-guitar"></i> Distribución de Alumnos por Instrumento</h3>
                             </div>
-                            <div class="pastor-filters-grid" style="display: flex; flex-direction: column; gap: 12px;">
+                            <div class="pastor-chart-container" id="pastor-chart-container">
+                                <!-- Cargado por JavaScript -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- SUBVISTA 2: SUPERVISIÓN & EXPEDIENTES -->
+                    <div id="pastor-subview-asistencia" class="pastor-subview" style="display: none;">
+                        <div class="panel-box" style="margin-bottom: 1.5rem;">
+                            <div class="panel-header">
+                                <h3><i class="fas fa-search"></i> Buscador y Filtros de Estudiantes</h3>
+                            </div>
+                            <div class="pastor-filters-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px;">
                                 <div class="form-group" style="margin-bottom: 0;">
                                     <label>Nombre o @Usuario</label>
                                     <input type="text" id="pastor-search-input" class="form-control" placeholder="Buscar por nombre o usuario..." onkeyup="filtrarPastorData()">
@@ -333,29 +343,29 @@
                                 </div>
                             </div>
                         </div>
-                    </div>
 
-                    <div class="panel-box">
-                        <div class="panel-header">
-                            <h3><i class="fas fa-chart-line"></i> Reporte y Supervisión Académica</h3>
-                        </div>
-                        <p class="text-muted">Vista panorámica sobre calificaciones de teoría y práctica de los alumnos reportados por los maestros.</p>
-                        <div class="table-container">
-                            <table class="table-custom">
-                                <thead>
-                                    <tr>
-                                        <th>Alumno</th>
-                                        <th>Teoría</th>
-                                        <th>Práctica / Técnica</th>
-                                        <th>Asistencia</th>
-                                        <th>Colegiatura</th>
-                                        <th>Observaciones Académicas</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="pastor-summary-tbody">
-                                    <!-- Cargado por JavaScript -->
-                                </tbody>
-                            </table>
+                        <div class="panel-box">
+                            <div class="panel-header">
+                                <h3><i class="fas fa-chart-line"></i> Reporte y Supervisión Académica</h3>
+                            </div>
+                            <p class="text-muted">Vista panorámica sobre calificaciones de teoría y práctica de los alumnos reportados por los maestros.</p>
+                            <div class="table-container">
+                                <table class="table-custom">
+                                    <thead>
+                                        <tr>
+                                            <th>Alumno</th>
+                                            <th>Teoría</th>
+                                            <th>Práctica / Técnica</th>
+                                            <th>Asistencia</th>
+                                            <th>Colegiatura</th>
+                                            <th>Observaciones Académicas</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="pastor-summary-tbody">
+                                        <!-- Cargado por JavaScript -->
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -685,186 +695,186 @@
 
                 <!-- ================= VISTA: PRODUCCIÓN & STAFF ================= -->
                 <div id="view-produccion" class="app-view">
-                    <div class="dashboard-grid">
-                        <div class="card">
-                            <div class="card-icon"><i class="fas fa-sliders-h"></i></div>
-                            <div>
-                                <h3>Estatus de la Academia</h3>
-                                <div class="stat-val" id="prod-status-tag" style="font-size:1.2rem;">Normal</div>
-                                <small class="text-muted">Estado actual de clases</small>
+                    <!-- SUBVISTA 1: ESTATUS DE CLASES & AVISOS -->
+                    <div id="produccion-subview-estatus" class="produccion-subview">
+                        <div class="dashboard-grid">
+                            <div class="card">
+                                <div class="card-icon"><i class="fas fa-sliders-h"></i></div>
+                                <div>
+                                    <h3>Estatus de la Academia</h3>
+                                    <div class="stat-val" id="prod-status-tag" style="font-size:1.2rem;">Normal</div>
+                                    <small class="text-muted">Estado actual de clases</small>
+                                </div>
+                            </div>
+                            <div class="card">
+                                <div class="card-icon red-variant"><i class="fas fa-bullhorn"></i></div>
+                                <div>
+                                    <h3>Avisos a Maestros</h3>
+                                    <div class="stat-val" id="prod-announcements-count">0</div>
+                                    <small class="text-muted">Publicaciones del staff</small>
+                                </div>
                             </div>
                         </div>
-                        <div class="card">
-                            <div class="card-icon red-variant"><i class="fas fa-bullhorn"></i></div>
-                            <div>
-                                <h3>Avisos a Maestros</h3>
-                                <div class="stat-val" id="prod-announcements-count">0</div>
-                                <small class="text-muted">Publicaciones del staff</small>
+
+                        <div class="maestro-panels-grid" style="margin-top: 1.5rem;">
+                            <!-- CONTROL DE ESTATUS DE CLASES -->
+                            <div class="panel-box">
+                                <div class="panel-header">
+                                    <h3><i class="fas fa-calendar-day"></i> Estatus de Clases (Comunidad)</h3>
+                                </div>
+                                <form onsubmit="actualizarEstatusClases(event)" style="display: flex; flex-direction: column; gap: 12px;">
+                                    <div class="form-group" style="margin-bottom: 0;">
+                                        <label for="prod-class-state">Estado de la Clase</label>
+                                        <select id="prod-class-state" class="form-control">
+                                            <option value="normal">✅ Clases Normales (Sábado Habitual)</option>
+                                            <option value="suspendida">🚫 Clase Suspendida (Sin actividad)</option>
+                                            <option value="especial">⚠️ Horario Especial / Evento</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group" style="margin-bottom: 0;">
+                                        <label for="prod-class-message">Mensaje Informativo para la Comunidad</label>
+                                        <textarea id="prod-class-message" class="form-control" rows="3" placeholder="Ej. Este sábado no habrá clases presenciales debido a la Conferencia Anual..." required></textarea>
+                                    </div>
+                                    <button type="submit" class="btn btn-primary" style="justify-content: center;"><i class="fas fa-save"></i> Publicar Estatus de Clase</button>
+                                </form>
+                            </div>
+
+                            <!-- PUBLICAR ANUNCIO PARA MAESTROS -->
+                            <div class="panel-box">
+                                <div class="panel-header">
+                                    <h3><i class="fas fa-users-cog"></i> Comunicados del Staff para Maestros</h3>
+                                </div>
+                                <form onsubmit="publicarAnuncioStaff(event)" style="display: flex; flex-direction: column; gap: 12px;">
+                                    <div class="form-group" style="margin-bottom: 0;">
+                                        <label for="staff-announcement-title">Título del Aviso</label>
+                                        <input type="text" id="staff-announcement-title" class="form-control" placeholder="Ej. Junta Presencial de Docentes" required>
+                                    </div>
+                                    <div class="form-group" style="margin-bottom: 0;">
+                                        <label for="staff-announcement-content">Detalle del Comunicado</label>
+                                        <textarea id="staff-announcement-content" class="form-control" rows="3" placeholder="Ej. Estimados profesores, les recordamos la entrega de reportes..." required></textarea>
+                                    </div>
+                                    <button type="submit" class="btn btn-primary" style="justify-content: center;"><i class="fas fa-paper-plane"></i> Enviar Aviso a Maestros</button>
+                                </form>
+                            </div>
+                        </div>
+
+                        <!-- TABLA DE COMUNICADOS PUBLICADOS -->
+                        <div class="panel-box" style="margin-top: 1.5rem;">
+                            <div class="panel-header">
+                                <h3><i class="fas fa-list"></i> Historial de Comunicados de Staff</h3>
+                            </div>
+                            <div class="table-container">
+                                <table class="table-custom">
+                                    <thead>
+                                        <tr>
+                                            <th>Título / Comunicado</th>
+                                            <th>Fecha</th>
+                                            <th>Publicado por</th>
+                                            <th>Acciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="prod-staff-announcements-tbody">
+                                        <!-- Cargado por JS -->
+                                    </tbody>
+                                </table>
                             </div>
                         </div>
                     </div>
 
-                    <div class="maestro-panels-grid">
-                        <!-- CONTROL DE ESTATUS DE CLASES -->
+                    <!-- SUBVISTA 2: COLEGIATURAS & PAGOS -->
+                    <div id="produccion-subview-colegiaturas" class="produccion-subview" style="display: none;">
                         <div class="panel-box">
                             <div class="panel-header">
-                                <h3><i class="fas fa-calendar-day"></i> Estatus de Clases (Comunidad)</h3>
+                                <h3><i class="fas fa-file-invoice-dollar"></i> Control de Colegiaturas y Pagos de Alumnos</h3>
+                                <span class="badge badge-rol" id="prod-billing-summary-badge">0 Solventes</span>
                             </div>
-                            <form onsubmit="actualizarEstatusClases(event)" style="display: flex; flex-direction: column; gap: 12px;">
-                                <div class="form-group" style="margin-bottom: 0;">
-                                    <label for="prod-class-state">Estado de la Clase</label>
-                                    <select id="prod-class-state" class="form-control">
-                                        <option value="normal">✅ Clases Normales (Sábado Habitual)</option>
-                                        <option value="suspendida">🚫 Clase Suspendida (Sin actividad)</option>
-                                        <option value="especial">⚠️ Horario Especial / Evento</option>
-                                    </select>
-                                </div>
-                                <div class="form-group" style="margin-bottom: 0;">
-                                    <label for="prod-class-message">Mensaje Informativo para la Comunidad</label>
-                                    <textarea id="prod-class-message" class="form-control" rows="3" placeholder="Ej. Este sábado no habrá clases presenciales debido a la Conferencia Anual..." required></textarea>
-                                </div>
-                                <button type="submit" class="btn btn-primary" style="justify-content: center;"><i class="fas fa-save"></i> Publicar Estatus de Clase</button>
-                            </form>
-                        </div>
-
-                        <!-- PUBLICAR ANUNCIO PARA MAESTROS -->
-                        <div class="panel-box">
-                            <div class="panel-header">
-                                <h3><i class="fas fa-users-cog"></i> Comunicados del Staff para Maestros</h3>
+                            <p class="text-muted">Administra y actualiza el estado de pago de los alumnos de la academia.</p>
+                            <div class="table-container" style="margin-top: 1rem;">
+                                <table class="table-custom">
+                                    <thead>
+                                        <tr>
+                                            <th>Alumno</th>
+                                            <th>Instrumento / Área</th>
+                                            <th>Estado de Colegiatura</th>
+                                            <th>Acción de Producción</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="prod-billing-tbody">
+                                        <!-- Cargado por JS -->
+                                    </tbody>
+                                </table>
                             </div>
-                            <form onsubmit="publicarAnuncioStaff(event)" style="display: flex; flex-direction: column; gap: 12px;">
-                                <div class="form-group" style="margin-bottom: 0;">
-                                    <label for="staff-announcement-title">Título del Aviso</label>
-                                    <input type="text" id="staff-announcement-title" class="form-control" placeholder="Ej. Junta Presencial de Docentes" required>
-                                </div>
-                                <div class="form-group" style="margin-bottom: 0;">
-                                    <label for="staff-announcement-content">Detalle del Comunicado</label>
-                                    <textarea id="staff-announcement-content" class="form-control" rows="3" placeholder="Ej. Estimados profesores, les recordamos la entrega de reportes..." required></textarea>
-                                </div>
-                                <button type="submit" class="btn btn-primary" style="justify-content: center;"><i class="fas fa-paper-plane"></i> Enviar Aviso a Maestros</button>
-                            </form>
-                        </div>
-                    </div>
-
-                    <!-- TABLA DE COMUNICADOS PUBLICADOS -->
-                    <div class="panel-box">
-                        <div class="panel-header">
-                            <h3><i class="fas fa-list"></i> Historial de Comunicados de Staff</h3>
-                        </div>
-                        <div class="table-container">
-                            <table class="table-custom">
-                                <thead>
-                                    <tr>
-                                        <th>Título / Comunicado</th>
-                                        <th>Fecha</th>
-                                        <th>Publicado por</th>
-                                        <th>Acciones</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="prod-staff-announcements-tbody">
-                                    <!-- Cargado por JS -->
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-
-                    <!-- TABLA DE CONTROL DE COLEGIATURAS (PRODUCCIÓN & STAFF) -->
-                    <div class="panel-box" style="margin-top: 1.8rem;">
-                        <div class="panel-header">
-                            <h3><i class="fas fa-file-invoice-dollar"></i> Control de Colegiaturas y Pagos de Alumnos</h3>
-                            <span class="badge badge-rol" id="prod-billing-summary-badge">0 Solventes</span>
-                        </div>
-                        <p class="text-muted">Administra y actualiza el estado de pago de los alumnos de la academia.</p>
-                        <div class="table-container" style="margin-top: 1rem;">
-                            <table class="table-custom">
-                                <thead>
-                                    <tr>
-                                        <th>Alumno</th>
-                                        <th>Instrumento / Área</th>
-                                        <th>Estado de Colegiatura</th>
-                                        <th>Acción de Producción</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="prod-billing-tbody">
-                                    <!-- Cargado por JS -->
-                                </tbody>
-                            </table>
                         </div>
                     </div>
                 </div>
 
                 <!-- ================= VISTA: ADORACION ================= -->
                 <div id="view-adoracion" class="app-view">
-                    <div class="dashboard-grid">
-                        <div class="card">
-                            <div class="card-icon"><i class="fas fa-music"></i></div>
-                            <div>
-                                <h3>Repertorio Activo</h3>
-                                <div class="stat-val">Ensamble</div>
-                                <small class="text-muted">Canciones preparadas para domingo</small>
+                    <!-- SUBVISTA 1: ETAPA DE ENSAMBLES & SERVICIOS -->
+                    <div id="adoracion-subview-control" class="adoracion-subview">
+                        <!-- PANEL DE CONTROL DE ETAPA DE ENSAMBLES (ADMIN) -->
+                        <div class="panel-box" style="margin-bottom: 2rem; background: linear-gradient(135deg, rgba(230,0,0,0.1), rgba(15,15,20,0.9)); border: 1px solid var(--primary-red);">
+                            <div class="panel-header">
+                                <h3><i class="fas fa-toggle-on"></i> Etapa de Ensambles por Ciclo (Control de Dirección)</h3>
+                                <button id="admin-toggle-ensamble-btn" class="btn btn-primary" onclick="alternarEtapaEnsamble()"><i class="fas fa-power-off"></i> Habilitar Ensambles</button>
                             </div>
+                            <p class="text-muted" id="admin-ensamble-status-desc">Los ensambles se habilitan a mitad del ciclo escolar para asignar repertorio y playthroughs a alumnos seleccionados.</p>
+                        </div>
+
+                        <!-- ASIGNACIÓN DE INSTRUMENTISTAS DOMINGO -->
+                        <div class="panel-box">
+                            <div class="panel-header">
+                                <h3><i class="fas fa-calendar-alt"></i> Asignación de Roles para Próximo Ensamble Dominical</h3>
+                            </div>
+                            <form onsubmit="guardarPlanEnsamble(event)" class="ensamble-plan-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; align-items: flex-end;">
+                                <div class="form-group" style="margin-bottom: 0;">
+                                    <label>Teclado</label>
+                                    <select id="ens-teclado" class="form-control"></select>
+                                </div>
+                                <div class="form-group" style="margin-bottom: 0;">
+                                    <label>Batería</label>
+                                    <select id="ens-bateria" class="form-control"></select>
+                                </div>
+                                <div class="form-group" style="margin-bottom: 0;">
+                                    <label>Guitarra Eléctrica</label>
+                                    <select id="ens-guitarra" class="form-control"></select>
+                                </div>
+                                <div class="form-group" style="margin-bottom: 0;">
+                                    <label>Bajo Eléctrico</label>
+                                    <select id="ens-bajo" class="form-control"></select>
+                                </div>
+                                <div class="form-group" style="margin-bottom: 0;">
+                                    <label>Canto Principal / Voces</label>
+                                    <select id="ens-canto" class="form-control"></select>
+                                </div>
+                                <button type="submit" class="btn btn-primary" style="height: 50px; justify-content: center;"><i class="fas fa-save"></i> Guardar Ensamble</button>
+                            </form>
                         </div>
                     </div>
 
-                    <!-- PANEL DE CONTROL DE ETAPA DE ENSAMBLES (ADMIN) -->
-                    <div class="panel-box" style="margin-bottom: 2rem; background: linear-gradient(135deg, rgba(230,0,0,0.1), rgba(15,15,20,0.9)); border: 1px solid var(--primary-red);">
-                        <div class="panel-header">
-                            <h3><i class="fas fa-toggle-on"></i> Etapa de Ensambles por Ciclo (Control de Dirección)</h3>
-                            <button id="admin-toggle-ensamble-btn" class="btn btn-primary" onclick="alternarEtapaEnsamble()"><i class="fas fa-power-off"></i> Habilitar Ensambles</button>
-                        </div>
-                        <p class="text-muted" id="admin-ensamble-status-desc">Los ensambles se habilitan a mitad del ciclo escolar para asignar repertorio y playthroughs a alumnos seleccionados.</p>
-                    </div>
-
-                    <!-- ASIGNACIÓN DE INSTRUMENTISTAS DOMINGO -->
-                    <div class="panel-box" style="margin-bottom: 2rem;">
-                        <div class="panel-header">
-                            <h3><i class="fas fa-calendar-alt"></i> Asignación de Roles para Próximo Ensamble Dominical</h3>
-                        </div>
-                        <form onsubmit="guardarPlanEnsamble(event)" class="ensamble-plan-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; align-items: flex-end;">
-                            <div class="form-group" style="margin-bottom: 0;">
-                                <label>Teclado</label>
-                                <select id="ens-teclado" class="form-control"></select>
+                    <!-- SUBVISTA 2: REPERTORIO & SETLIST GENERAL -->
+                    <div id="adoracion-subview-repertorio" class="adoracion-subview" style="display: none;">
+                        <div class="panel-box">
+                            <div class="panel-header">
+                                <h3><i class="fas fa-list-ul"></i> Setlist General y Enlaces de Ensayo</h3>
+                                <button class="btn btn-primary" onclick="abrirModalCancion()"><i class="fas fa-plus"></i> Nueva Canción</button>
                             </div>
-                            <div class="form-group" style="margin-bottom: 0;">
-                                <label>Batería</label>
-                                <select id="ens-bateria" class="form-control"></select>
+                            <div class="table-container">
+                                <table class="table-custom">
+                                    <thead>
+                                        <tr>
+                                            <th>Canción / Autor</th>
+                                            <th>Tono</th>
+                                            <th>Recursos</th>
+                                            <th>Estado</th>
+                                            <th>Acciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="adoracion-setlist-tbody">
+                                        <!-- Cargado por JavaScript -->
+                                    </tbody>
+                                </table>
                             </div>
-                            <div class="form-group" style="margin-bottom: 0;">
-                                <label>Guitarra Eléctrica</label>
-                                <select id="ens-guitarra" class="form-control"></select>
-                            </div>
-                            <div class="form-group" style="margin-bottom: 0;">
-                                <label>Bajo Eléctrico</label>
-                                <select id="ens-bajo" class="form-control"></select>
-                            </div>
-                            <div class="form-group" style="margin-bottom: 0;">
-                                <label>Canto Principal / Voces</label>
-                                <select id="ens-canto" class="form-control"></select>
-                            </div>
-                            <button type="submit" class="btn btn-primary" style="height: 50px; justify-content: center;"><i class="fas fa-save"></i> Guardar Ensamble</button>
-                        </form>
-                    </div>
-
-                    <div class="panel-box">
-                        <div class="panel-header">
-                            <h3><i class="fas fa-list-ul"></i> Setlist General y Enlaces de Ensayo</h3>
-                            <button class="btn btn-primary" onclick="abrirModalCancion()"><i class="fas fa-plus"></i> Nueva Canción</button>
-                        </div>
-                        <div class="table-container">
-                            <table class="table-custom">
-                                <thead>
-                                    <tr>
-                                        <th>Canción / Autor</th>
-                                        <th>Tono</th>
-                                        <th>Recursos</th>
-                                        <th>Estado</th>
-                                        <th>Acciones</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="adoracion-setlist-tbody">
-                                    <!-- Cargado por JavaScript -->
-                                </tbody>
-                            </table>
                         </div>
                     </div>
                 </div>
@@ -872,70 +882,60 @@
                 <!-- ================= VISTA: ESTUDIANTE ================= -->
                 <div id="view-estudiante" class="app-view">
                     
-                    <!-- BANNER ESTATUS DE CLASES (PRODUCCIÓN) -->
-                    <div id="student-class-status-banner" class="class-status-banner normal">
-                        <div class="banner-icon" id="stud-class-status-icon"><i class="fas fa-calendar-check"></i></div>
-                        <div>
-                            <h4 id="stud-class-status-title" style="font-size:1rem; font-weight:800; margin-bottom:2px; color:white;">Estatus de Clases: Normal</h4>
-                            <p id="stud-class-status-desc" style="font-size:0.88rem; margin:0; color:var(--text-light);">Cargando información...</p>
-                        </div>
-                    </div>
-
-                    <!-- NOTIFICACIÓN DE ROL DE TOCAR DOMINGO (PLANIFICADOR) -->
-                    <div id="student-worship-alert" class="worship-alert-banner" style="display: none; margin-bottom: 1.5rem;">
-                        <div class="banner-icon"><i class="fas fa-bell animate-bell"></i></div>
-                        <div class="banner-body">
-                            <h4>¡Tienes una asignación de Ensamble!</h4>
-                            <p>Estás programado para ministrar este Domingo en el puesto de: <strong id="stud-worship-role-tag">-</strong>. Prepárate estudiando el setlist activo.</p>
-                        </div>
-                    </div>
-
-                    <!-- ALERTA DE COLEGITURAS EN MORA -->
-                    <div id="student-billing-alert" class="billing-alert-banner" style="display: none; margin-bottom: 1.5rem;">
-                        <div class="banner-icon"><i class="fas fa-exclamation-circle"></i></div>
-                        <div class="banner-body">
-                            <h4>Aviso Administrativo de Colegiatura</h4>
-                            <p>Tu cuenta registra un adeudo pendiente. Por favor, acércate con el área de administración para regularizar tu colegiatura.</p>
-                        </div>
-                    </div>
-
-                    <!-- MURO DE AVISOS DEL MAESTRO -->
-                    <div id="student-announcements-wall" class="announcements-wall-container" style="margin-bottom: 1.5rem;">
-                        <!-- Anuncios del maestro cargados dinámicamente -->
-                    </div>
-
-                    <!-- PANEL GOOGLE CLASSROOM: MIS TAREAS & ENTREGAS EN VIDEO -->
-                    <div class="panel-box" style="margin-bottom: 1.5rem;">
-                        <div class="panel-header">
-                            <h3><i class="fas fa-tasks"></i> Mis Tareas Asignadas (Google Classroom)</h3>
-                            <span class="badge badge-rol" id="stud-homework-progress-badge">0 / 0 Completadas</span>
-                        </div>
-                        <p class="text-muted">Sube tu video de práctica semanal directamente para que tu maestro lo revise y califique.</p>
-                        <div id="student-classroom-tasks-container" style="margin-top: 1rem;">
-                            <!-- Tareas cargadas por JS -->
-                        </div>
-                    </div>
-
-                    <div class="dashboard-grid">
-                        <div class="card student-instrument-card">
-                            <div class="card-icon"><i class="fas fa-graduation-cap"></i></div>
+                    <!-- SUBVISTA 1: CLASSROOM & TAREAS -->
+                    <div id="estudiante-subview-classroom" class="estudiante-subview">
+                        <!-- BANNER ESTATUS DE CLASES (PRODUCCIÓN) -->
+                        <div id="student-class-status-banner" class="class-status-banner normal" style="margin-bottom: 1.5rem;">
+                            <div class="banner-icon" id="stud-class-status-icon"><i class="fas fa-calendar-check"></i></div>
                             <div>
-                                <h3 id="student-instrument-title">Instrumento: -</h3>
-                                <div class="stat-val">Worship Sessions</div>
-                                <small class="text-muted">Estudiante de Academia</small>
+                                <h4 id="stud-class-status-title" style="font-size:1rem; font-weight:800; margin-bottom:2px; color:white;">Estatus de Clases: Normal</h4>
+                                <p id="stud-class-status-desc" style="font-size:0.88rem; margin:0; color:var(--text-light);">Cargando información...</p>
                             </div>
                         </div>
-                        <div class="card">
-                            <div class="card-icon red-variant"><i class="fas fa-clipboard-user"></i></div>
-                            <div>
-                                <h3>Asistencia</h3>
-                                <div class="stat-val" id="stud-attendance-pct">0%</div>
-                                <small class="text-muted" id="stud-attendance-desc">Clases asistidas: 0 de 0</small>
+
+                        <!-- PANEL GOOGLE CLASSROOM: MIS TAREAS & ENTREGAS EN VIDEO -->
+                        <div class="panel-box">
+                            <div class="panel-header">
+                                <h3><i class="fas fa-tasks"></i> Mis Tareas Asignadas (Google Classroom)</h3>
+                                <span class="badge badge-rol" id="stud-homework-progress-badge">0 / 0 Completadas</span>
+                            </div>
+                            <p class="text-muted">Sube tu video de práctica semanal directamente para que tu maestro lo revise y califique.</p>
+                            <div id="student-classroom-tasks-container" style="margin-top: 1rem;">
+                                <!-- Tareas cargadas por JS -->
                             </div>
                         </div>
                     </div>
 
-                    <div class="student-panel-grid">
+                    <!-- SUBVISTA 2: MI PROGRESO & ASISTENCIA -->
+                    <div id="estudiante-subview-progreso" class="estudiante-subview" style="display: none;">
+                        <!-- ALERTA DE COLEGITURAS EN MORA -->
+                        <div id="student-billing-alert" class="billing-alert-banner" style="display: none; margin-bottom: 1.5rem;">
+                            <div class="banner-icon"><i class="fas fa-exclamation-circle"></i></div>
+                            <div class="banner-body">
+                                <h4>Aviso Administrativo de Colegiatura</h4>
+                                <p>Tu cuenta registra un adeudo pendiente. Por favor, acércate con el área de administración para regularizar tu colegiatura.</p>
+                            </div>
+                        </div>
+
+                        <div class="dashboard-grid" style="margin-bottom: 1.5rem;">
+                            <div class="card student-instrument-card">
+                                <div class="card-icon"><i class="fas fa-graduation-cap"></i></div>
+                                <div>
+                                    <h3 id="student-instrument-title">Instrumento: -</h3>
+                                    <div class="stat-val">Worship Sessions</div>
+                                    <small class="text-muted">Estudiante de Academia</small>
+                                </div>
+                            </div>
+                            <div class="card">
+                                <div class="card-icon red-variant"><i class="fas fa-clipboard-user"></i></div>
+                                <div>
+                                    <h3>Asistencia</h3>
+                                    <div class="stat-val" id="stud-attendance-pct">0%</div>
+                                    <small class="text-muted" id="stud-attendance-desc">Clases asistidas: 0 de 0</small>
+                                </div>
+                            </div>
+                        </div>
+
                         <!-- PANEL CALIFICACIONES -->
                         <div class="panel-box">
                             <h3><i class="fas fa-chart-line"></i> Mis Calificaciones</h3>
@@ -966,146 +966,169 @@
                                 <p id="stud-observaciones" class="feedback-text">Cargando notas...</p>
                             </div>
                         </div>
+                    </div>
+
+                    <!-- SUBVISTA 3: MI ENSAMBLE & PLAYTHROUGHS -->
+                    <div id="estudiante-subview-ensamble" class="estudiante-subview" style="display: none;">
+                        <!-- NOTIFICACIÓN DE ROL DE TOCAR DOMINGO (PLANIFICADOR) -->
+                        <div id="student-worship-alert" class="worship-alert-banner" style="display: none; margin-bottom: 1.5rem;">
+                            <div class="banner-icon"><i class="fas fa-bell animate-bell"></i></div>
+                            <div class="banner-body">
+                                <h4>¡Tienes una asignación de Ensamble!</h4>
+                                <p>Estás programado para ministrar este Domingo en el puesto de: <strong id="stud-worship-role-tag">-</strong>. Prepárate estudiando el setlist activo.</p>
+                            </div>
+                        </div>
+
+                        <!-- PANEL ENSAMBLE ASIGNADO AL ALUMNO (SI ESTÁ ACTIVADA LA ETAPA POR ADMIN) -->
+                        <div id="student-ensamble-container" class="panel-box">
+                            <div class="panel-header">
+                                <h3><i class="fas fa-guitar"></i> Mi Ensamble Asignado (Repertorio por Ciclo)</h3>
+                                <span class="badge badge-rol" id="stud-ensamble-status-tag">Etapa Activa</span>
+                            </div>
+                            <p class="text-muted">Revisa las canciones de ensamble en las que fuiste asignado, mira el video playthrough de tu maestro y practica con las notas técnicas.</p>
+                            <div id="student-ensamble-cards-wall" style="margin-top: 1rem;">
+                                <!-- Cargado por JS -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- SUBVISTA 4: ESTUDIO PLAYBACK & METRÓNOMO -->
+                    <div id="estudiante-subview-playback" class="estudiante-subview" style="display: none;">
+                        <!-- ESTUDIO PLAYBACK MULTITRACK & SECUENCIAS -->
+                        <div class="panel-box playback-studio-box" style="background: linear-gradient(145deg, rgba(20, 24, 38, 0.95), rgba(12, 14, 24, 0.98)); border: 1px solid rgba(230,0,0,0.3); border-radius: 16px; padding: 22px; margin-bottom: 1.5rem;">
+                            <div class="panel-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 15px;">
+                                <div>
+                                    <h3 style="display: flex; align-items: center; gap: 10px; color: white; margin: 0;">
+                                        <i class="fas fa-sliders-h" style="color: var(--primary-red); font-size: 1.3rem;"></i> 
+                                        Estudio Playback Multitrack & Secuencias
+                                    </h3>
+                                    <p class="text-muted" style="margin: 4px 0 0; font-size: 0.88rem;">Mezclador de pistas tipo iOS Playback / Prime. Silencia tu instrumento para ensayar en casa con la banda completa.</p>
+                                </div>
+                                <div style="display: flex; gap: 10px; align-items: center;">
+                                    <select id="playback-song-select" class="form-control" style="width: 220px;" onchange="cargarCancionPlaybackStudio(this.value)">
+                                        <!-- Cargado por JS desde canciones activas -->
+                                    </select>
+                                    <span class="badge badge-rol" style="background: rgba(230,0,0,0.2); color: #ff4d4d; border: 1px solid rgba(230,0,0,0.4); font-size: 0.8rem; padding: 6px 12px;">
+                                        <i class="fas fa-broadcast-tower"></i> Live Studio Engine
+                                    </span>
+                                </div>
+                            </div>
+
+                            <!-- Barra Transport y Controles Principales -->
+                            <div class="playback-transport-bar" style="margin-top: 1.2rem; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 15px 20px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 15px;">
+                                <div style="display: flex; align-items: center; gap: 15px;">
+                                    <button type="button" class="btn btn-primary" id="pb-master-play-btn" onclick="togglePlaybackStudio()" style="height: 48px; min-width: 150px; justify-content: center; font-size: 0.95rem; font-weight: 700; border-radius: 24px; box-shadow: 0 4px 15px rgba(230,0,0,0.4);">
+                                        <i class="fas fa-play"></i> REPRODUCIR
+                                    </button>
+                                    <button type="button" class="btn btn-secondary" onclick="detenerPlaybackStudio()" style="height: 48px; width: 48px; justify-content: center; border-radius: 50%; padding: 0;">
+                                        <i class="fas fa-stop"></i>
+                                    </button>
+                                    <div>
+                                        <strong id="pb-song-title-display" style="color: white; font-size: 1.15rem; display: block;">Tumbas a Jardines</strong>
+                                        <small class="text-muted" id="pb-song-meta-display">Elevation Worship • Tempo: 120 BPM • Tono: B (Si)</small>
+                                    </div>
+                                </div>
+
+                                <!-- Presets Rápidos de Mezcla -->
+                                <div class="preset-mix-buttons" style="display: flex; gap: 8px; flex-wrap: wrap;">
+                                    <button type="button" class="btn btn-sm btn-secondary" onclick="aplicarPresetMezcla('mi-instrumento')" style="border: 1px solid var(--primary-red); color: #ffa6a6;" title="Mutea automáticamente el instrumento de tu especialidad">
+                                        <i class="fas fa-user-slash"></i> Silenciar Mi Instrumento
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-secondary" onclick="aplicarPresetMezcla('click-only')" title="Solo deja sonar el Click y la Guía">
+                                        <i class="fas fa-drum"></i> Solo Click + Guía
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-secondary" onclick="aplicarPresetMezcla('reset')" title="Restablecer todos los canales al 100%">
+                                        <i class="fas fa-undo"></i> Mezcla Completa (100%)
+                                    </button>
+                                </div>
+
+                                <!-- Control Master Volume -->
+                                <div style="display: flex; align-items: center; gap: 10px; min-width: 180px;">
+                                    <i class="fas fa-volume-up" style="color: var(--primary-red);"></i>
+                                    <span style="font-size: 0.8rem; color: var(--text-muted);">Master:</span>
+                                    <input type="range" id="pb-master-volume" min="0" max="100" value="80" class="metro-slider-range" oninput="cambiarVolumenMasterPlayback(this.value)" style="flex: 1;">
+                                    <span id="pb-master-vol-val" style="font-size: 0.85rem; color: white; font-weight: 700; width: 35px; text-align: right;">80%</span>
+                                </div>
+                            </div>
+
+                            <!-- Grilla Multitrack Canales / Stems -->
+                            <div id="playback-tracks-container" class="multitrack-mixer-grid" style="margin-top: 1.2rem; display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 15px;">
+                                <!-- Canales de la Secuencia cargados por JS -->
+                            </div>
+                        </div>
+
+                        <!-- METRÓNOMO INTERACTIVO SINTETIZADO MEJORADO -->
+                        <div class="panel-box metronome-panel-box">
+                            <div class="panel-header">
+                                <h3><i class="fas fa-drum"></i> Metrónomo de Práctica Profesional</h3>
+                                <div id="metro-beat-indicators" class="metro-beats-container" style="display: flex; gap: 8px;">
+                                    <div class="metro-led-dot active">1</div>
+                                    <div class="metro-led-dot">2</div>
+                                    <div class="metro-led-dot">3</div>
+                                    <div class="metro-led-dot">4</div>
+                                </div>
+                            </div>
+                            <p class="text-muted">Ajusta el compás (4/4, 6/8, 3/4), la velocidad BPM y practica con el tono sintetizado diferenciado para el primer tiempo.</p>
+                            
+                            <div class="metronome-interface" style="display: flex; align-items: center; gap: 15px; margin-top: 1.5rem; flex-wrap: wrap;">
+                                <div class="metro-speed-display" style="font-size: 2.2rem; font-weight: 800; min-width: 100px;">
+                                    <span id="metro-bpm-val">120</span> <small style="font-size: 1rem; color: var(--text-muted);">BPM</small>
+                                </div>
+                                
+                                <div class="form-group" style="margin-bottom: 0; width: 110px;">
+                                    <label style="font-size: 0.75rem; color: var(--text-muted);">Compás</label>
+                                    <select id="metro-compas" class="form-control" onchange="cambiarCompasMetronomo(this.value)">
+                                        <option value="4/4" selected>4/4</option>
+                                        <option value="3/4">3/4</option>
+                                        <option value="6/8">6/8</option>
+                                        <option value="2/4">2/4</option>
+                                    </select>
+                                </div>
+
+                                <div class="form-group" style="margin-bottom: 0; width: 130px;">
+                                    <label style="font-size: 0.75rem; color: var(--text-muted);">Subdivisión</label>
+                                    <select id="metro-subdivision" class="form-control">
+                                        <option value="negras" selected>Negras (1x)</option>
+                                        <option value="corcheas">Corcheas (2x)</option>
+                                        <option value="tresillos">Tresillos (3x)</option>
+                                    </select>
+                                </div>
+
+                                <div class="metro-slider-container" style="flex: 1; min-width: 160px;">
+                                    <input type="range" id="metro-slider" min="40" max="240" value="120" class="metro-slider-range" oninput="cambiarBpm(this.value)" style="width: 100%;">
+                                </div>
+                                
+                                <button type="button" class="btn btn-primary" id="metro-play-btn" onclick="toggleMetronomo()" style="justify-content: center; height: 50px; width: 160px; font-size: 0.95rem;">
+                                    <i class="fas fa-play"></i> Ensayar Tempo
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- SUBVISTA 5: RECURSOS & ANUNCIOS -->
+                    <div id="estudiante-subview-recursos" class="estudiante-subview" style="display: none;">
+                        <!-- MURO DE AVISOS DEL MAESTRO -->
+                        <div id="student-announcements-wall" class="announcements-wall-container" style="margin-bottom: 1.5rem;">
+                            <!-- Anuncios del maestro cargados dinámicamente -->
+                        </div>
 
                         <!-- PANEL SETLIST DEL ENSAMBLE -->
-                        <div class="panel-box">
-                            <h3><i class="fas fa-compact-disc"></i> Setlist de Ensamble</h3>
+                        <div class="panel-box" style="margin-bottom: 1.5rem;">
+                            <h3><i class="fas fa-compact-disc"></i> Setlist de Ensamble y Recursos</h3>
                             <p class="text-muted">Estudia el repertorio activo y descarga los cifrados oficiales.</p>
                             <ul class="songs-list-container" id="stud-setlist-ul">
                                 <!-- Cargado por JavaScript -->
                             </ul>
                         </div>
-                    </div>
 
-                    <!-- PANEL ENSAMBLE ASIGNADO AL ALUMNO (SI ESTÁ ACTIVADA LA ETAPA POR ADMIN) -->
-                    <div id="student-ensamble-container" class="panel-box" style="margin-bottom: 1.5rem;">
-                        <div class="panel-header">
-                            <h3><i class="fas fa-guitar"></i> Mi Ensamble Asignado (Repertorio por Ciclo)</h3>
-                            <span class="badge badge-rol" id="stud-ensamble-status-tag">Etapa Activa</span>
+                        <!-- PANEL MATERIALES DE CLASE -->
+                        <div class="panel-box">
+                            <h3><i class="fas fa-folder-open"></i> Guías y Material Didáctico</h3>
+                            <p class="text-muted">Archivos, videos y partituras que tu profesor ha subido para tu especialidad.</p>
+                            <ul class="materials-list-container" id="stud-materials-ul">
+                                <!-- Cargado por JavaScript -->
+                            </ul>
                         </div>
-                        <p class="text-muted">Revisa las canciones de ensamble en las que fuiste asignado, mira el video playthrough de tu maestro y practica con las notas técnicas.</p>
-                        <div id="student-ensamble-cards-wall" style="margin-top: 1rem;">
-                            <!-- Cargado por JS -->
-                        </div>
-                    </div>
-
-                    <!-- METRÓNOMO INTERACTIVO SINTETIZADO MEJORADO -->
-                    <div class="panel-box metronome-panel-box" style="margin-top: 1.5rem;">
-                        <div class="panel-header">
-                            <h3><i class="fas fa-drum"></i> Metrónomo de Práctica Profesional</h3>
-                            <div id="metro-beat-indicators" class="metro-beats-container" style="display: flex; gap: 8px;">
-                                <div class="metro-led-dot active">1</div>
-                                <div class="metro-led-dot">2</div>
-                                <div class="metro-led-dot">3</div>
-                                <div class="metro-led-dot">4</div>
-                            </div>
-                        </div>
-                        <p class="text-muted">Ajusta el compás (4/4, 6/8, 3/4), la velocidad BPM y practica con el tono sintetizado diferenciado para el primer tiempo.</p>
-                        
-                        <div class="metronome-interface" style="display: flex; align-items: center; gap: 15px; margin-top: 1.5rem; flex-wrap: wrap;">
-                            <div class="metro-speed-display" style="font-size: 2.2rem; font-weight: 800; min-width: 100px;">
-                                <span id="metro-bpm-val">120</span> <small style="font-size: 1rem; color: var(--text-muted);">BPM</small>
-                            </div>
-                            
-                            <div class="form-group" style="margin-bottom: 0; width: 110px;">
-                                <label style="font-size: 0.75rem; color: var(--text-muted);">Compás</label>
-                                <select id="metro-compas" class="form-control" onchange="cambiarCompasMetronomo(this.value)">
-                                    <option value="4/4" selected>4/4</option>
-                                    <option value="3/4">3/4</option>
-                                    <option value="6/8">6/8</option>
-                                    <option value="2/4">2/4</option>
-                                </select>
-                            </div>
-
-                            <div class="form-group" style="margin-bottom: 0; width: 130px;">
-                                <label style="font-size: 0.75rem; color: var(--text-muted);">Subdivisión</label>
-                                <select id="metro-subdivision" class="form-control">
-                                    <option value="negras" selected>Negras (1x)</option>
-                                    <option value="corcheas">Corcheas (2x)</option>
-                                    <option value="tresillos">Tresillos (3x)</option>
-                                </select>
-                            </div>
-
-                            <div class="metro-slider-container" style="flex: 1; min-width: 160px;">
-                                <input type="range" id="metro-slider" min="40" max="240" value="120" class="metro-slider-range" oninput="cambiarBpm(this.value)" style="width: 100%;">
-                            </div>
-                            
-                            <button type="button" class="btn btn-primary" id="metro-play-btn" onclick="toggleMetronomo()" style="justify-content: center; height: 50px; width: 160px; font-size: 0.95rem;">
-                                <i class="fas fa-play"></i> Ensayar Tempo
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- ESTUDIO PLAYBACK MULTITRACK & SECUENCIAS (TIPO PLAYBACK APP / PRIME) -->
-                    <div class="panel-box playback-studio-box" style="margin-top: 1.5rem; background: linear-gradient(145deg, rgba(20, 24, 38, 0.95), rgba(12, 14, 24, 0.98)); border: 1px solid rgba(230,0,0,0.3); border-radius: 16px; padding: 22px;">
-                        <div class="panel-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 15px;">
-                            <div>
-                                <h3 style="display: flex; align-items: center; gap: 10px; color: white; margin: 0;">
-                                    <i class="fas fa-sliders-h" style="color: var(--primary-red); font-size: 1.3rem;"></i> 
-                                    Estudio Playback Multitrack & Secuencias
-                                </h3>
-                                <p class="text-muted" style="margin: 4px 0 0; font-size: 0.88rem;">Mezclador de pistas tipo iOS Playback / Prime. Silencia tu instrumento para ensayar en casa con la banda completa.</p>
-                            </div>
-                            <div style="display: flex; gap: 10px; align-items: center;">
-                                <select id="playback-song-select" class="form-control" style="width: 220px;" onchange="cargarCancionPlaybackStudio(this.value)">
-                                    <!-- Cargado por JS desde canciones activas -->
-                                </select>
-                                <span class="badge badge-rol" style="background: rgba(230,0,0,0.2); color: #ff4d4d; border: 1px solid rgba(230,0,0,0.4); font-size: 0.8rem; padding: 6px 12px;">
-                                    <i class="fas fa-broadcast-tower"></i> Live Studio Engine
-                                </span>
-                            </div>
-                        </div>
-
-                        <!-- Barra Transport y Controles Principales -->
-                        <div class="playback-transport-bar" style="margin-top: 1.2rem; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 15px 20px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 15px;">
-                            <div style="display: flex; align-items: center; gap: 15px;">
-                                <button type="button" class="btn btn-primary" id="pb-master-play-btn" onclick="togglePlaybackStudio()" style="height: 48px; min-width: 150px; justify-content: center; font-size: 0.95rem; font-weight: 700; border-radius: 24px; box-shadow: 0 4px 15px rgba(230,0,0,0.4);">
-                                    <i class="fas fa-play"></i> REPRODUCIR
-                                </button>
-                                <button type="button" class="btn btn-secondary" onclick="detenerPlaybackStudio()" style="height: 48px; width: 48px; justify-content: center; border-radius: 50%; padding: 0;">
-                                    <i class="fas fa-stop"></i>
-                                </button>
-                                <div>
-                                    <strong id="pb-song-title-display" style="color: white; font-size: 1.15rem; display: block;">Tumbas a Jardines</strong>
-                                    <small class="text-muted" id="pb-song-meta-display">Elevation Worship • Tempo: 120 BPM • Tono: B (Si)</small>
-                                </div>
-                            </div>
-
-                            <!-- Presets Rápidos de Mezcla -->
-                            <div class="preset-mix-buttons" style="display: flex; gap: 8px; flex-wrap: wrap;">
-                                <button type="button" class="btn btn-sm btn-secondary" onclick="aplicarPresetMezcla('mi-instrumento')" style="border: 1px solid var(--primary-red); color: #ffa6a6;" title="Mutea automáticamente el instrumento de tu especialidad">
-                                    <i class="fas fa-user-slash"></i> Silenciar Mi Instrumento
-                                </button>
-                                <button type="button" class="btn btn-sm btn-secondary" onclick="aplicarPresetMezcla('click-only')" title="Solo deja sonar el Click y la Guía">
-                                    <i class="fas fa-drum"></i> Solo Click + Guía
-                                </button>
-                                <button type="button" class="btn btn-sm btn-secondary" onclick="aplicarPresetMezcla('reset')" title="Restablecer todos los canales al 100%">
-                                    <i class="fas fa-undo"></i> Mezcla Completa (100%)
-                                </button>
-                            </div>
-
-                            <!-- Control Master Volume -->
-                            <div style="display: flex; align-items: center; gap: 10px; min-width: 180px;">
-                                <i class="fas fa-volume-up" style="color: var(--primary-red);"></i>
-                                <span style="font-size: 0.8rem; color: var(--text-muted);">Master:</span>
-                                <input type="range" id="pb-master-volume" min="0" max="100" value="80" class="metro-slider-range" oninput="cambiarVolumenMasterPlayback(this.value)" style="flex: 1;">
-                                <span id="pb-master-vol-val" style="font-size: 0.85rem; color: white; font-weight: 700; width: 35px; text-align: right;">80%</span>
-                            </div>
-                        </div>
-
-                        <!-- Grilla Multitrack Canales / Stems -->
-                        <div id="playback-tracks-container" class="multitrack-mixer-grid" style="margin-top: 1.2rem; display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 15px;">
-                            <!-- Canales de la Secuencia cargados por JS -->
-                        </div>
-                    </div>
-
-                    <!-- PANEL MATERIALES DE CLASE -->
-                    <div class="panel-box" style="margin-top: 1.5rem;">
-                        <h3><i class="fas fa-folder-open"></i> Guías y Material Didáctico</h3>
-                        <p class="text-muted">Archivos, videos y partituras que tu profesor ha subido para tu especialidad.</p>
-                        <ul class="materials-list-container" id="stud-materials-ul">
-                            <!-- Cargado por JavaScript -->
-                        </ul>
                     </div>
                 </div>
 
