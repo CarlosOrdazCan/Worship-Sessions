@@ -405,6 +405,11 @@ const menusConfig = {
             </a>
         </li>
         <li class="nav-item">
+            <a href="#" class="nav-link" id="nav-pastor-colegiaturas" onclick="cambiarSubvistaPastor('colegiaturas'); return false;">
+                <i class="fas fa-file-invoice-dollar"></i> Colegiaturas & Estatus
+            </a>
+        </li>
+        <li class="nav-item">
             <a href="#" class="nav-link" id="nav-pastor-cobertura" onclick="cambiarSubvistaPastor('cobertura'); return false;">
                 <i class="fas fa-heart"></i> Alertas & Cuidado Pastoral
             </a>
@@ -1089,6 +1094,74 @@ function renderizarPastor(db) {
                 }
             }
         });
+    }
+
+    // Renderizar Tabla de Estatus de Colegiaturas Pastoral (Solo Lectura)
+    const pastorBillingTbody = document.getElementById('pastor-billing-tbody');
+    if (pastorBillingTbody) {
+        pastorBillingTbody.innerHTML = '';
+        const alumnos = Object.keys(db.usuarios)
+            .map(uKey => ({ ...db.usuarios[uKey], username: uKey }))
+            .filter(u => normalizeRol(u.rol) === 'estudiante');
+
+        const solventesCount = alumnos.filter(u => obtenerEstatusColegiatura(u).status === 'solvente').length;
+        const badgeSummary = document.getElementById('pastor-billing-summary-badge');
+        if (badgeSummary) badgeSummary.innerText = `${solventesCount} de ${alumnos.length} Solventes`;
+
+        if (alumnos.length === 0) {
+            pastorBillingTbody.innerHTML = `<tr><td colspan="7" style="text-align:center;" class="text-muted">No hay alumnos registrados.</td></tr>`;
+        } else {
+            alumnos.forEach(u => {
+                const infoCol = obtenerEstatusColegiatura(u);
+
+                // Asistencia %
+                const asistenciasAlumno = (db.asistencia && db.asistencia[u.username]) || {};
+                const asistenciasTotales = Object.values(asistenciasAlumno).length;
+                const presentes = Object.values(asistenciasAlumno).filter(val => val === 'presente').length;
+                const asistPct = asistenciasTotales > 0 ? Math.round((presentes / asistenciasTotales) * 100) : 100;
+
+                // Estado de Acceso (Solo Lectura)
+                let accesoHtml = `<span style="color:#10b981; font-weight:700; font-size:0.85rem;"><i class="fas fa-check-circle"></i> ACCESO OK</span>`;
+                if (infoCol.status === 'no_pagado') {
+                    if (u.desbloqueadoManual) {
+                        accesoHtml = `<span style="color:#f59e0b; font-weight:700; font-size:0.85rem;"><i class="fas fa-unlock"></i> AUTORIZADO (PASTOR)</span>`;
+                    } else {
+                        accesoHtml = `<span style="color:#ef4444; font-weight:700; font-size:0.85rem;"><i class="fas fa-lock"></i> USUARIO SUSPENDIDO</span>`;
+                    }
+                } else if (infoCol.status === 'pendiente') {
+                    accesoHtml = `<span style="color:#f59e0b; font-weight:700; font-size:0.85rem;"><i class="fas fa-clock"></i> EN PERIODO / TOLERANCIA</span>`;
+                }
+
+                // Warning Motivo No Pago (Solo lectura)
+                let warningHtml = `<small class="text-muted">Sin observaciones de mora</small>`;
+                if (u.motivoNoPago) {
+                    warningHtml = `
+                        <div style="background:rgba(245, 158, 11, 0.1); border:1px solid rgba(245, 158, 11, 0.4); padding:6px 10px; border-radius:8px; font-size:0.8rem; color:#f59e0b;">
+                            <i class="fas fa-exclamation-triangle"></i> <strong>Warning Admin:</strong> "${u.motivoNoPago}"
+                        </div>
+                    `;
+                }
+
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>
+                        <strong style="color:white;">${u.nombre || u.username}</strong><br>
+                        <small class="text-muted">@${u.username}</small>
+                    </td>
+                    <td><span class="badge badge-rol">${u.area || 'Estudiante'}</span></td>
+                    <td><strong style="color:${asistPct >= 80 ? '#10b981' : '#ef4444'};">${asistPct}%</strong></td>
+                    <td><span class="badge badge-estado ${infoCol.badgeClass}">${infoCol.label}</span></td>
+                    <td style="max-width:230px;">${warningHtml}</td>
+                    <td>${accesoHtml}</td>
+                    <td>
+                        <button class="btn btn-sm btn-primary" onclick="abrirModalExpediente('${u.username}')">
+                            <i class="fas fa-id-card"></i> Ver expediente
+                        </button>
+                    </td>
+                `;
+                pastorBillingTbody.appendChild(tr);
+            });
+        }
     }
 
     // Gráfico de distribución por instrumento

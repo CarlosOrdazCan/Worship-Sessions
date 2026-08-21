@@ -326,6 +326,9 @@
                         <button class="btn btn-sm btn-secondary" id="pastor-tab-asistencia" onclick="cambiarSubvistaPastor('asistencia')">
                             <i class="fas fa-id-card"></i> Expedientes
                         </button>
+                        <button class="btn btn-sm btn-secondary" id="pastor-tab-colegiaturas" onclick="cambiarSubvistaPastor('colegiaturas')">
+                            <i class="fas fa-file-invoice-dollar"></i> Colegiaturas & Estatus
+                        </button>
                         <button class="btn btn-sm btn-secondary" id="pastor-tab-cobertura" onclick="cambiarSubvistaPastor('cobertura')">
                             <i class="fas fa-heart"></i> Cuidado Pastoral
                         </button>
@@ -471,6 +474,35 @@
                                         </tr>
                                     </thead>
                                     <tbody id="pastor-summary-tbody">
+                                        <!-- Cargado por JavaScript -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- SUBVISTA PASTORAL: ESTATUS DE COLEGIATURAS & ACCESO (SOLO LECTURA) -->
+                    <div id="pastor-subview-colegiaturas" class="pastor-subview" style="display: none;">
+                        <div class="panel-box">
+                            <div class="panel-header">
+                                <h3><i class="fas fa-file-invoice-dollar"></i> Estatus de Colegiaturas y Acceso de Alumnos (Supervisión)</h3>
+                                <span class="badge badge-rol" id="pastor-billing-summary-badge">0 Solventes</span>
+                            </div>
+                            <p class="text-muted">Consulta de solo lectura: supervisa el estado de solvencia de la matrícula, asistencia global, razones de atraso enviadas por administración y estatus de bloqueo del usuario.</p>
+                            <div class="table-container" style="margin-top: 1rem;">
+                                <table class="table-custom">
+                                    <thead>
+                                        <tr>
+                                            <th>Alumno / Usuario</th>
+                                            <th>Instrumento</th>
+                                            <th>Asistencia %</th>
+                                            <th>Estatus Colegiatura</th>
+                                            <th>Alerta / Motivo No Pago (Warning)</th>
+                                            <th>Estado de Acceso</th>
+                                            <th>Ficha Pastoral</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="pastor-billing-tbody">
                                         <!-- Cargado por JavaScript -->
                                     </tbody>
                                 </table>
