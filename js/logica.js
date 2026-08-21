@@ -20,7 +20,8 @@ const defaultDB = {
         "aaviles": { password: "can2026**", rol: "maestro", nombre: "Andrea Aviles", area: "Canto" },
         "mdiaz": { password: "can2026**", rol: "maestro", nombre: "Manuel Diaz", area: "Piano" },
         "fgonzalez": { password: "can2026**", rol: "maestro", nombre: "Fe Gonzalez", area: "Piano" },
-        // Pastores
+        // Pastores y Producción
+        "dalva": { password: "can2026**", rol: "produccion", nombre: "Daniela Alva Caudillo", area: "Producción & Administración" },
         "egonzalez": { password: "can2026**", rol: "pastor", nombre: "Efrain Gonzalez", area: "Pastoral" },
         "mgonzalez": { password: "can2026**", rol: "pastor", nombre: "Martha Gonzalez", area: "Pastoral" }
     },
@@ -195,6 +196,22 @@ function initDB() {
                 area: "Administración"
             };
             modificado = true;
+        }
+
+        if (!db.usuarios["dalva"]) {
+            db.usuarios["dalva"] = {
+                password: "can2026**",
+                rol: "produccion",
+                nombre: "Daniela Alva Caudillo",
+                area: "Producción & Administración"
+            };
+            modificado = true;
+        } else {
+            if (db.usuarios["dalva"].rol !== "produccion" && db.usuarios["dalva"].rol !== "administracion") {
+                db.usuarios["dalva"].rol = "produccion";
+                db.usuarios["dalva"].area = "Producción & Administración";
+                modificado = true;
+            }
         }
         
         if (modificado) {
