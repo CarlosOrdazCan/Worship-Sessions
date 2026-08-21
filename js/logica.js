@@ -405,11 +405,6 @@ const menusConfig = {
             </a>
         </li>
         <li class="nav-item">
-            <a href="#" class="nav-link" id="nav-pastor-colegiaturas" onclick="abrirModuloAdministracionDesdeMenu('colegiaturas'); return false;">
-                <i class="fas fa-file-invoice-dollar"></i> Administración & Colegiaturas
-            </a>
-        </li>
-        <li class="nav-item">
             <a href="#" class="nav-link" id="nav-pastor-cobertura" onclick="cambiarSubvistaPastor('cobertura'); return false;">
                 <i class="fas fa-heart"></i> Alertas & Cuidado Pastoral
             </a>
@@ -1983,20 +1978,6 @@ function marcarEstadoColegiaturaAdmin(username, nuevoEstado) {
 
 function registrarPagoColegiatura(username) {
     marcarEstadoColegiaturaAdmin(username, 'solvente');
-}
-
-function agregarAdeudoColegiatura(username) {
-    const db = getDB();
-    if (db.usuarios && db.usuarios[username]) {
-        const actual = typeof db.usuarios[username].mesesAdeudo === 'number' ? db.usuarios[username].mesesAdeudo : 0;
-        const nuevo = actual + 1;
-        db.usuarios[username].mesesAdeudo = nuevo;
-        if (nuevo === 1) db.usuarios[username].pagoStatus = '1_pendiente';
-        if (nuevo >= 2) db.usuarios[username].pagoStatus = '2_pendientes';
-        saveDB(db);
-        showToast(`Se registró 1 mes adicional de adeudo a @${username} (Total: ${nuevo} meses).`, "info");
-        renderizarDatosVista(usuarioActual ? usuarioActual.rol : 'produccion');
-    }
 }
 
 function alternarDesbloqueoManual(username) {
