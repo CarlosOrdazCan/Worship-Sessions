@@ -685,10 +685,23 @@ function guardarUsuario(event) {
         db.usuarios[editandoUsuarioUsername].password = pass;
         db.usuarios[editandoUsuarioUsername].rol = rol;
         db.usuarios[editandoUsuarioUsername].area = area;
+        db.usuarios[editandoUsuarioUsername].instrumento = area;
         if(rol === 'estudiante') {
             db.usuarios[editandoUsuarioUsername].pagoStatus = pago;
         }
-        showToast("Usuario editado correctamente");
+        
+        // Si se edita la cuenta activa, actualizar sesión local
+        if (usuarioActual && usuarioActual.username === editandoUsuarioUsername) {
+            usuarioActual.nombre = nombre;
+            usuarioActual.rol = rol;
+            usuarioActual.area = area;
+            usuarioActual.instrumento = area;
+            usuarioActual.pagoStatus = pago;
+            localStorage.setItem('ws_user_session', JSON.stringify(usuarioActual));
+            actualizarFondoIntroPorInstrumento(usuarioActual);
+        }
+        
+        showToast("Usuario y su especialidad actualizados correctamente", "success");
     } else {
         if (db.usuarios[username]) {
             showToast("El usuario ya existe en el sistema.", "error");
@@ -699,9 +712,10 @@ function guardarUsuario(event) {
             rol: rol, 
             nombre: nombre, 
             area: area,
+            instrumento: area,
             pagoStatus: (rol === 'estudiante' ? pago : undefined)
         };
-        showToast("Usuario registrado con éxito");
+        showToast("Usuario registrado con éxito", "success");
     }
     
     saveDB(db);
