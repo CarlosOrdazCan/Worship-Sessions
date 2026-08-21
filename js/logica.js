@@ -124,7 +124,7 @@ function normalizeRol(rol) {
     if (r === 'alumno' || r === 'alumnos' || r === 'estudiante' || r === 'estudiantes' || r === 'student') return 'estudiante';
     if (r === 'maestro' || r === 'profesor' || r === 'docente' || r === 'teacher') return 'maestro';
     if (r === 'pastor' || r === 'pastoral') return 'pastor';
-    if (r === 'produccion' || r === 'staff') return 'produccion';
+    if (r === 'produccion' || r === 'staff' || r === 'administracion' || r === 'admin_staff') return 'administracion';
     if (r === 'adoracion' || r === 'ensamble') return 'adoracion';
     if (r === 'admin' || r === 'administrador') return 'admin';
     return r;
@@ -171,6 +171,15 @@ function initDB() {
                 area: "Teclado",
                 instrumento: "Teclado",
                 pagoStatus: "solvente"
+            };
+            modificado = true;
+        }
+        if (!db.usuarios["administracion"]) {
+            db.usuarios["administracion"] = {
+                password: "can2026**",
+                rol: "administracion",
+                nombre: "Equipo de Administración",
+                area: "Administración"
             };
             modificado = true;
         }
@@ -331,7 +340,7 @@ const menusConfig = {
             </a>
         </li>
     `,
-    produccion: `
+    administracion: `
         <li class="nav-item">
             <a href="#" class="nav-link active" id="nav-produccion-estatus" onclick="cambiarSubvistaProduccion('estatus'); return false;">
                 <i class="fas fa-calendar-day"></i> Estatus de Clases & Avisos
@@ -339,7 +348,12 @@ const menusConfig = {
         </li>
         <li class="nav-item">
             <a href="#" class="nav-link" id="nav-produccion-colegiaturas" onclick="cambiarSubvistaProduccion('colegiaturas'); return false;">
-                <i class="fas fa-file-invoice-dollar"></i> Colegiaturas & Pagos
+                <i class="fas fa-file-invoice-dollar"></i> Colegiaturas & Control de Pagos
+            </a>
+        </li>
+        <li class="nav-item">
+            <a href="#" class="nav-link" id="nav-produccion-asistencias" onclick="cambiarSubvistaProduccion('asistencias'); return false;">
+                <i class="fas fa-clipboard-list"></i> Asistencias & Cumplimiento
             </a>
         </li>
     `,
@@ -384,6 +398,7 @@ const menusConfig = {
     `
 };
 menusConfig.alumno = menusConfig.estudiante;
+menusConfig.produccion = menusConfig.administracion;
 
 // -------------------------------------------------------------
 // EVENTOS DE SESIÓN
@@ -522,6 +537,9 @@ function cambiarVista(rolVista) {
     document.querySelectorAll('#dynamic-menu .nav-link').forEach(link => link.classList.remove('active'));
     
     let targetView = document.getElementById('view-' + rol);
+    if (!targetView && (rol === 'administracion' || rol === 'produccion')) {
+        targetView = document.getElementById('view-produccion') || document.getElementById('view-administracion');
+    }
     if (!targetView) {
         targetView = document.getElementById('view-estudiante');
     }
@@ -532,7 +550,7 @@ function cambiarVista(rolVista) {
         if (rol === 'admin') { cambiarSubvistaAdmin(subvistaAdminActual || 'panel'); return; }
         if (rol === 'pastor') { cambiarSubvistaPastor(subvistaPastorActual || 'alertas'); return; }
         if (rol === 'maestro') { cambiarSubvistaMaestro(subvistaMaestroActual || 'dashboard'); return; }
-        if (rol === 'produccion') { cambiarSubvistaProduccion(subvistaProduccionActual || 'estatus'); return; }
+        if (rol === 'produccion' || rol === 'administracion') { cambiarSubvistaProduccion(subvistaProduccionActual || 'estatus'); return; }
         if (rol === 'adoracion') { cambiarSubvistaAdoracion(subvistaAdoracionActual || 'control'); return; }
         if (rol === 'estudiante') { cambiarSubvistaEstudiante(subvistaEstudianteActual || 'classroom'); return; }
     }
@@ -551,7 +569,7 @@ function renderizarDatosVista(rolVista) {
         renderizarPastor(db);
     } else if (rol === 'maestro') {
         renderizarMaestro(db);
-    } else if (rol === 'produccion') {
+    } else if (rol === 'produccion' || rol === 'administracion') {
         renderizarProduccion(db);
     } else if (rol === 'adoracion') {
         renderizarAdoracion(db);
@@ -2016,6 +2034,73 @@ function eliminarAsignacionEnsamble(key) {
     }
 }
 
+// -------------------------------------------------------------
+// EVALUACIÓN DE EXÁMENES EN PAPEL (OPCIÓN FOTO / OPCIÓN NOTA DIRECTA)
+// -------------------------------------------------------------
+function abrirModalExamen(usernameSeleccionado = null) {
+    const modal = document.getElementById('modal-examen');
+    const selectStudent = document.getElementById('exam-student');
+    const db = getDB();
+    
+    if (selectStudent) {
+        selectStudent.innerHTML = '<option value="">-- Seleccionar Estudiante --</option>';
+        const usuariosObj = (db && db.usuarios) || {};
+        Object.keys(usuariosObj).forEach(uname => {
+            const u = usuariosObj[uname];
+            if (normalizeRol(u.rol) === 'estudiante') {
+                const opt = document.createElement('option');
+                opt.value = uname;
+                opt.innerText = `${u.nombre || uname} (${u.area || 'Estudiante'}) - @${uname}`;
+                selectStudent.appendChild(opt);
+            }
+        });
+        if (usernameSeleccionado) selectStudent.value = usernameSeleccionado;
+    }
+
+    document.getElementById('exam-titulo').value = '';
+    document.getElementById('exam-calificacion').value = '';
+    document.getElementById('exam-scan-url').value = '';
+    document.getElementById('exam-feedback').value = '';
+    modal.classList.add('active');
+}
+
+function cerrarModalExamen() {
+    document.getElementById('modal-examen').classList.remove('active');
+}
+
+function guardarExamenPapel(event) {
+    event.preventDefault();
+    const uname = document.getElementById('exam-student').value;
+    const titulo = document.getElementById('exam-titulo').value.trim();
+    const calificacion = parseInt(document.getElementById('exam-calificacion').value) || 0;
+    const scanUrl = document.getElementById('exam-scan-url').value.trim();
+    const feedback = document.getElementById('exam-feedback').value.trim();
+
+    if (!uname || !titulo) {
+        showToast("Selecciona un estudiante e ingresa el título del examen.", "error");
+        return;
+    }
+
+    const db = getDB();
+    if (!db.examenes) db.examenes = {};
+    if (!db.examenes[uname]) db.examenes[uname] = [];
+
+    db.examenes[uname].push({
+        id: 'ex_' + Date.now(),
+        titulo,
+        calificacion,
+        scanUrl,
+        feedback,
+        fecha: new Date().toISOString().split('T')[0],
+        evaluadoPor: usuarioActual ? usuarioActual.nombre : "Profesor"
+    });
+
+    saveDB(db);
+    cerrarModalExamen();
+    showToast(`Examen "${titulo}" registrado para @${uname} con nota ${calificacion}/100`, "success");
+    renderizarDatosVista(usuarioActual ? usuarioActual.rol : 'maestro');
+}
+
 function renderizarAdoracion(db) {
     // 0. Estado del Toggle Admin
     const toggleBtn = document.getElementById('admin-toggle-ensamble-btn');
@@ -2135,6 +2220,13 @@ function abrirModalCancion(cancionId = null) {
         document.getElementById('canc-acordes').value = c.linkAcordes || '';
         document.getElementById('canc-video').value = c.linkVideo || '';
         document.getElementById('canc-activo').value = c.activo.toString();
+
+        if (document.getElementById('canc-stem-click')) document.getElementById('canc-stem-click').value = c.stemClick || '';
+        if (document.getElementById('canc-stem-bateria')) document.getElementById('canc-stem-bateria').value = c.stemBateria || '';
+        if (document.getElementById('canc-stem-bajo')) document.getElementById('canc-stem-bajo').value = c.stemBajo || '';
+        if (document.getElementById('canc-stem-teclado')) document.getElementById('canc-stem-teclado').value = c.stemTeclado || '';
+        if (document.getElementById('canc-stem-guitarras')) document.getElementById('canc-stem-guitarras').value = c.stemGuitarras || '';
+        if (document.getElementById('canc-stem-voces')) document.getElementById('canc-stem-voces').value = c.stemVoces || '';
     } else {
         cancionIdSeleccionada = null;
         document.getElementById('modal-cancion-title').innerText = "Nueva Canción";
@@ -2144,6 +2236,13 @@ function abrirModalCancion(cancionId = null) {
         document.getElementById('canc-acordes').value = '';
         document.getElementById('canc-video').value = '';
         document.getElementById('canc-activo').value = "true";
+
+        if (document.getElementById('canc-stem-click')) document.getElementById('canc-stem-click').value = '';
+        if (document.getElementById('canc-stem-bateria')) document.getElementById('canc-stem-bateria').value = '';
+        if (document.getElementById('canc-stem-bajo')) document.getElementById('canc-stem-bajo').value = '';
+        if (document.getElementById('canc-stem-teclado')) document.getElementById('canc-stem-teclado').value = '';
+        if (document.getElementById('canc-stem-guitarras')) document.getElementById('canc-stem-guitarras').value = '';
+        if (document.getElementById('canc-stem-voces')) document.getElementById('canc-stem-voces').value = '';
     }
     
     modal.classList.add('active');
@@ -2162,6 +2261,13 @@ function guardarCancion(event) {
     const video = document.getElementById('canc-video').value.trim();
     const activo = document.getElementById('canc-activo').value === "true";
     
+    const stemClick = document.getElementById('canc-stem-click') ? document.getElementById('canc-stem-click').value.trim() : '';
+    const stemBateria = document.getElementById('canc-stem-bateria') ? document.getElementById('canc-stem-bateria').value.trim() : '';
+    const stemBajo = document.getElementById('canc-stem-bajo') ? document.getElementById('canc-stem-bajo').value.trim() : '';
+    const stemTeclado = document.getElementById('canc-stem-teclado') ? document.getElementById('canc-stem-teclado').value.trim() : '';
+    const stemGuitarras = document.getElementById('canc-stem-guitarras') ? document.getElementById('canc-stem-guitarras').value.trim() : '';
+    const stemVoces = document.getElementById('canc-stem-voces') ? document.getElementById('canc-stem-voces').value.trim() : '';
+
     if (!titulo || !autor) {
         showToast("Introduce título y autor.", "error");
         return;
@@ -2174,22 +2280,21 @@ function guardarCancion(event) {
         if (index !== -1) {
             db.canciones[index] = {
                 ...db.canciones[index],
-                titulo, autor, tono, linkAcordes: acordes, linkVideo: video, activo
+                titulo, autor, tono, linkAcordes: acordes, linkVideo: video, activo,
+                stemClick, stemBateria, stemBajo, stemTeclado, stemGuitarras, stemVoces
             };
         }
-        showToast("Canción modificada");
-    } else {
-        const nuevaId = (db.canciones.length > 0 ? Math.max(...db.canciones.map(item => parseInt(item.id))) + 1 : 1).toString();
         db.canciones.push({
             id: nuevaId,
-            titulo, autor, tono, linkAcordes: acordes, linkVideo: video, activo
+            titulo, autor, tono, linkAcordes: acordes, linkVideo: video, activo,
+            stemClick, stemBateria, stemBajo, stemTeclado, stemGuitarras, stemVoces
         });
-        showToast("Nueva canción agregada");
+        showToast("Nueva canción guardada con Stems Multitrack", "success");
     }
     
     saveDB(db);
     cerrarModalCancion();
-    renderizarDatosVista('adoracion');
+    renderizarDatosVista(usuarioActual ? usuarioActual.rol : 'adoracion');
 }
 
 function alternarEstadoCancion(cancionId) {

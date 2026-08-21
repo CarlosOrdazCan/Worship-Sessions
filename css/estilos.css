@@ -105,6 +105,16 @@ h1, h2, h3, h4, h5, h6, .brand-logo, .nav-link, .btn, .stat-val, .panel-header h
     display: block;
 }
 
+.choice-ws-logo {
+    max-width: 220px;
+    width: 85%;
+    height: auto;
+    filter: invert(1);
+    mix-blend-mode: screen;
+    margin: 4px auto 8px auto;
+    display: block;
+}
+
 .intro-bg-instrument-layer {
     position: absolute;
     top: 0;
