@@ -319,6 +319,11 @@ const menusConfig = {
             </a>
         </li>
         <li class="nav-item">
+            <a href="#" class="nav-link" id="nav-admin-colegiaturas" onclick="abrirModuloAdministracionDesdeMenu('colegiaturas'); return false;">
+                <i class="fas fa-file-invoice-dollar"></i> Administración & Colegiaturas
+            </a>
+        </li>
+        <li class="nav-item">
             <a href="#" class="nav-link" id="nav-admin-usuarios" onclick="cambiarSubvistaAdmin('usuarios'); return false;">
                 <i class="fas fa-users-cog"></i> Gestión de Usuarios
             </a>
@@ -338,6 +343,11 @@ const menusConfig = {
         <li class="nav-item">
             <a href="#" class="nav-link" id="nav-pastor-asistencia" onclick="cambiarSubvistaPastor('asistencia'); return false;">
                 <i class="fas fa-id-card"></i> Expedientes & Supervisión
+            </a>
+        </li>
+        <li class="nav-item">
+            <a href="#" class="nav-link" id="nav-pastor-colegiaturas" onclick="abrirModuloAdministracionDesdeMenu('colegiaturas'); return false;">
+                <i class="fas fa-file-invoice-dollar"></i> Administración & Colegiaturas
             </a>
         </li>
         <li class="nav-item">
@@ -390,13 +400,13 @@ const menusConfig = {
     `,
     administracion: `
         <li class="nav-item">
-            <a href="#" class="nav-link active" id="nav-produccion-estatus" onclick="cambiarSubvistaProduccion('estatus'); return false;">
-                <i class="fas fa-calendar-day"></i> Estatus de Clases & Avisos
+            <a href="#" class="nav-link active" id="nav-produccion-colegiaturas" onclick="cambiarSubvistaProduccion('colegiaturas'); return false;">
+                <i class="fas fa-file-invoice-dollar"></i> Administración & Colegiaturas
             </a>
         </li>
         <li class="nav-item">
-            <a href="#" class="nav-link" id="nav-produccion-colegiaturas" onclick="cambiarSubvistaProduccion('colegiaturas'); return false;">
-                <i class="fas fa-file-invoice-dollar"></i> Colegiaturas & Control de Pagos
+            <a href="#" class="nav-link" id="nav-produccion-estatus" onclick="cambiarSubvistaProduccion('estatus'); return false;">
+                <i class="fas fa-calendar-day"></i> Estatus de Clases & Avisos
             </a>
         </li>
         <li class="nav-item">
@@ -1214,6 +1224,23 @@ function cambiarSubvistaProduccion(subVista, pushHistory = true) {
         }
     }
     renderizarProduccion(getDB());
+}
+
+function abrirModuloAdministracionDesdeMenu(subvista = 'colegiaturas') {
+    document.querySelectorAll('.app-view').forEach(v => {
+        v.classList.remove('active');
+        v.style.display = 'none';
+    });
+    const targetView = document.getElementById('view-produccion') || document.getElementById('view-administracion');
+    if (targetView) {
+        targetView.style.display = 'block';
+        targetView.classList.add('active');
+    }
+    document.querySelectorAll('#dynamic-menu .nav-link').forEach(link => link.classList.remove('active'));
+    const activeNav = document.getElementById('nav-pastor-colegiaturas') || document.getElementById('nav-admin-colegiaturas') || document.getElementById('nav-produccion-colegiaturas');
+    if (activeNav) activeNav.classList.add('active');
+
+    cambiarSubvistaProduccion(subvista);
 }
 
 let subvistaAdoracionActual = 'control';
