@@ -445,21 +445,30 @@ function actualizarFondoIntroPorInstrumento(usuario) {
         const uFresh = db.usuarios[usuario.username];
         usuario.area = uFresh.area || usuario.area;
         usuario.instrumento = uFresh.area || uFresh.instrumento || usuario.instrumento;
+        usuario.rol = uFresh.rol || usuario.rol;
     }
     
-    const inst = ((usuario?.instrumento || usuario?.area || usuario?.rol || '') + '').toLowerCase();
+    const rol = (usuario?.rol || '').toLowerCase().trim();
+    const inst = ((usuario?.instrumento || usuario?.area || '') + '').toLowerCase().trim();
     
-    let bgUrl = 'img/inst-piano.jpg';
-    if (inst.includes('bater') || inst.includes('percus') || inst.includes('drum')) {
-        bgUrl = 'img/inst-bateria.jpg';
-    } else if (inst.includes('canto') || inst.includes('voz') || inst.includes('vocal')) {
-        bgUrl = 'img/inst-canto.jpg';
-    } else if (inst.includes('piano') || inst.includes('teclado') || inst.includes('key')) {
-        bgUrl = 'img/inst-piano.jpg';
-    } else if (inst.includes('bajo') || inst.includes('bass') || inst.includes('guitar')) {
-        bgUrl = 'img/inst-bajo.jpg';
+    let bgUrl = 'img/inst-staff.jpg';
+    
+    // Para Maestros, Producción, Pastor y Admin -> Usar la foto grupal de ensamble/staff (inst-staff.jpg)
+    if (rol === 'maestro' || rol === 'produccion' || rol === 'pastor' || rol === 'admin' || rol === 'adoracion') {
+        bgUrl = 'img/inst-staff.jpg';
     } else {
-        bgUrl = 'img/inst-bateria.jpg';
+        // Alumnos según su instrumento
+        if (inst.includes('bater') || inst.includes('percus') || inst.includes('drum')) {
+            bgUrl = 'img/inst-bateria.jpg';
+        } else if (inst.includes('canto') || inst.includes('voz') || inst.includes('vocal')) {
+            bgUrl = 'img/inst-canto.jpg';
+        } else if (inst.includes('piano') || inst.includes('teclado') || inst.includes('key')) {
+            bgUrl = 'img/inst-piano.jpg';
+        } else if (inst.includes('bajo') || inst.includes('bass') || inst.includes('guitar')) {
+            bgUrl = 'img/inst-bajo.jpg';
+        } else {
+            bgUrl = 'img/inst-staff.jpg';
+        }
     }
     
     layer.style.backgroundImage = `url('${bgUrl}')`;
