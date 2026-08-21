@@ -7,10 +7,10 @@ const defaultDB = {
         "maestro1": { password: "can2026**", rol: "maestro", nombre: "Juan Carlos (Teclado)", area: "Teclado" },
         "maestro2": { password: "can2026**", rol: "maestro", nombre: "Marcos (Batería)", area: "Batería" },
         "pablo": { password: "can2026**", rol: "adoracion", nombre: "Pablo Ensamble", area: "Ensamble" },
-        "alumno1": { password: "can2026**", rol: "estudiante", nombre: "Juan Pérez", area: "Teclado", pagoStatus: "solvente", mesesAdeudo: 0, motivoNoPago: "", observacionesMaestro: "Excelente dedicación en clase de teclado. Muy buen tempo." },
-        "alumno2": { password: "can2026**", rol: "estudiante", nombre: "Ana Gómez", area: "Batería", pagoStatus: "2_pendientes", mesesAdeudo: 2, motivoNoPago: "Solicita prórroga de 15 días por emergencia familiar.", observacionesMaestro: "Muestra gran avance en paradiddles pero requiere afianzar metrónomo." },
-        "alumno3": { password: "can2026**", rol: "estudiante", nombre: "Luis Flores", area: "Teclado", pagoStatus: "1_pendiente", mesesAdeudo: 1, motivoNoPago: "Pendiente pago de fin de mes.", observacionesMaestro: "Muy buena técnica de digitación y lectura a primera vista." },
-        "alumno": { password: "can2026**", rol: "estudiante", nombre: "Alumno de Prueba", area: "Teclado", pagoStatus: "solvente", mesesAdeudo: 0, motivoNoPago: "", observacionesMaestro: "Alumno activo y constante." },
+        "alumno1": { password: "can2026**", rol: "estudiante", nombre: "Juan Pérez", area: "Teclado", pagoStatus: "solvente", mesesAdeudo: 0, motivoNoPago: "", observacionesMaestro: "Excelente dedicación en clase de teclado. Muy buen tempo y soltura en arpegios.", edad: "21 Años", anosIglesia: "4 Años en C.A.N.", ciclosWS: "2° Ciclo Escolar", bio: "Apasionado tecladista y servidor activo en el ministerio de jóvenes. Enfocado en la excelencia musical y espiritual." },
+        "alumno2": { password: "can2026**", rol: "estudiante", nombre: "Ana Gómez", area: "Batería", pagoStatus: "2_pendientes", mesesAdeudo: 2, motivoNoPago: "Solicita prórroga de 15 días por emergencia familiar.", observacionesMaestro: "Muestra gran avance en paradiddles pero requiere afianzar metrónomo.", edad: "19 Años", anosIglesia: "2 Años en C.A.N.", ciclosWS: "1° Ciclo Escolar", bio: "Entusiasta baterista en formación presencial. Destaca por su disciplina en los ensayos generales." },
+        "alumno3": { password: "can2026**", rol: "estudiante", nombre: "Luis Flores", area: "Teclado", pagoStatus: "1_pendiente", mesesAdeudo: 1, motivoNoPago: "Pendiente pago de fin de mes.", observacionesMaestro: "Muy buena técnica de digitación y lectura a primera vista.", edad: "24 Años", anosIglesia: "5 Años en C.A.N.", ciclosWS: "3° Ciclo Escolar", bio: "Músico constante con trayectoria en el ensamble principal de la iglesia." },
+        "alumno": { password: "can2026**", rol: "estudiante", nombre: "Alumno de Prueba", area: "Teclado", pagoStatus: "solvente", mesesAdeudo: 0, motivoNoPago: "", observacionesMaestro: "Alumno activo y constante.", edad: "20 Años", anosIglesia: "3 Años en C.A.N.", ciclosWS: "2° Ciclo Escolar", bio: "Estudiante comprometido con el crecimiento integral en la academia." },
         // Nuevos usuarios maestros y pastores
         "ilopez": { password: "can2026**", rol: "maestro", nombre: "Ivan Lopez", area: "Bajo" },
         "cordaz": { password: "can2026**", rol: "maestro", nombre: "Carlos Ordaz", area: "Batería" },
@@ -1986,8 +1986,13 @@ function abrirModalExpediente(username) {
     const avatarImg = document.getElementById('exp-student-avatar');
     const nameEl = document.getElementById('exp-student-name');
     const instEl = document.getElementById('exp-student-instrument');
-    const userEl = document.getElementById('exp-student-username');
-    const statusTag = document.getElementById('exp-student-status-tag');
+    
+    const metaNombre = document.getElementById('exp-meta-nombre');
+    const metaEdad = document.getElementById('exp-meta-edad');
+    const metaAnosIglesia = document.getElementById('exp-meta-anos-iglesia');
+    const metaCiclosWS = document.getElementById('exp-meta-ciclos-ws');
+    const studentBio = document.getElementById('exp-student-bio');
+
     const noteTeoria = document.getElementById('exp-note-teoria');
     const noteTecnica = document.getElementById('exp-note-tecnica');
     const asistPct = document.getElementById('exp-asistencia-pct');
@@ -1996,25 +2001,33 @@ function abrirModalExpediente(username) {
     const warnBox = document.getElementById('exp-warning-container');
     const warnTxt = document.getElementById('exp-warning-text');
 
-    if (avatarImg) avatarImg.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(nombre)}&background=d90429&color=fff&bold=true`;
+    // Foto grande del alumno (fotoUrl personalizada o retrato HD como fallback)
+    let photoSrc = user.fotoUrl;
+    if (!photoSrc) {
+        if (username === 'alumno1') photoSrc = 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=500&q=80';
+        else if (username === 'alumno2') photoSrc = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=500&q=80';
+        else if (username === 'alumno3') photoSrc = 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=500&q=80';
+        else photoSrc = `https://ui-avatars.com/api/?name=${encodeURIComponent(nombre)}&background=d90429&color=fff&bold=true`;
+    }
+
+    if (avatarImg) avatarImg.src = photoSrc;
     if (nameEl) nameEl.innerText = nombre;
     if (instEl) instEl.innerText = area;
-    if (userEl) userEl.innerText = `@${username}`;
 
-    const meses = typeof user.mesesAdeudo === 'number' ? user.mesesAdeudo : (user.pagoStatus === 'pendiente' ? 1 : 0);
-    const estaBloqueado = esAlumnoBloqueado(username);
+    if (metaNombre) metaNombre.innerText = `@${username}`;
+    if (metaEdad) metaEdad.innerText = user.edad || "22 Años";
+    if (metaAnosIglesia) metaAnosIglesia.innerText = user.anosIglesia || "3 Años";
+    if (metaCiclosWS) metaCiclosWS.innerText = user.ciclosWS || "2° Ciclo Escolar";
 
-    if (statusTag) {
-        statusTag.innerHTML = estaBloqueado 
-            ? `<span style="color:#ef4444; font-weight:700;"><i class="fas fa-lock"></i> Acceso Suspendido (2+ Adeudos)</span>`
-            : `<span style="color:#10b981; font-weight:700;"><i class="fas fa-check-circle"></i> Alumno Activo en Plataforma</span>`;
+    if (studentBio) {
+        studentBio.innerText = user.bio || `"${nombre} es un integrante activo de la iglesia C.A.N., comprometido con su llamado musical y espiritual en el área de ${area}."`;
     }
 
     const cal = (db.calificaciones && db.calificaciones[username]) || {};
     if (noteTeoria) noteTeoria.innerText = cal.teoria !== undefined ? cal.teoria : '-';
     if (noteTecnica) noteTecnica.innerText = cal.tecnica !== undefined ? cal.tecnica : '-';
 
-    // Asistencia
+    // Asistencia Global
     const asistencias = (db.asistencia && db.asistencia[username]) || {};
     const tot = Object.values(asistencias).length;
     const pres = Object.values(asistencias).filter(v => v === 'presente').length;
@@ -2024,12 +2037,13 @@ function abrirModalExpediente(username) {
         asistPct.style.color = pctVal >= 80 ? '#10b981' : '#ef4444';
     }
 
+    const meses = typeof user.mesesAdeudo === 'number' ? user.mesesAdeudo : (user.pagoStatus === 'pendiente' ? 1 : 0);
     if (colBadge) {
         colBadge.innerText = meses === 0 ? 'Solvente' : `${meses} Mes${meses > 1 ? 'es' : ''} Pendiente${meses > 1 ? 's' : ''}`;
         colBadge.style.color = meses === 0 ? '#10b981' : '#ef4444';
     }
 
-    // Observaciones del maestro
+    // Observaciones redactadas por el maestro
     if (obsMaestro) {
         const textoObs = user.observacionesMaestro || cal.notas || "Sin anotaciones del profesor registradas aún.";
         obsMaestro.innerText = `"${textoObs}"`;

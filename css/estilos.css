@@ -2708,3 +2708,9 @@ input:focus, select:focus, textarea:focus {
     color: #ef4444;
     border: 1px solid rgba(239, 68, 68, 0.4);
 }
+
+@media (max-width: 680px) {
+    .expediente-hero-grid {
+        grid-template-columns: 1fr !important;
+    }
+}
