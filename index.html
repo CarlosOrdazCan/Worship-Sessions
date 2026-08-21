@@ -17,6 +17,7 @@
     <!-- ================= PANTALLA 0: SELECCIÓN DE APP ================= -->
     <div id="app-choice-screen" class="screen active">
         <div class="highend-noise-overlay"></div>
+        <div class="choice-video-mesh-layer"></div>
         <div class="choice-mouse-layer"></div>
 
         <div class="choice-buttons-standalone">
@@ -181,9 +182,6 @@
                 </ul>
                 
                 <div class="sidebar-footer">
-                    <button class="btn-change-app" onclick="mostrarPantalla('app-choice-screen')" style="width:100%; background:rgba(255,255,255,0.06); border:1px solid var(--border-color); color:var(--text-light); padding:10px; border-radius:12px; font-weight:700; font-size:0.8rem; margin-bottom:10px; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px; transition:all 0.2s ease;">
-                        <i class="fas fa-th-large" style="color:var(--primary-red);"></i> Cambiar de App
-                    </button>
                     <button class="logout-btn" onclick="cerrarSesion()">
                         <i class="fas fa-sign-out-alt"></i> Cerrar Sesión
                     </button>
