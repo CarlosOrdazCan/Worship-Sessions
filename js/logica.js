@@ -2149,6 +2149,47 @@ function renderizarProduccion(db) {
                 });
             }
         }
+
+        // Tabla de Asistencias & Cumplimiento (Producción / Administración)
+        const prodAttTbody = document.getElementById('prod-attendance-tbody');
+        if (prodAttTbody) {
+            prodAttTbody.innerHTML = '';
+            const usuariosObj = (db && db.usuarios) || {};
+            const alumnos = Object.keys(usuariosObj)
+                .map(uKey => ({ ...usuariosObj[uKey], username: uKey }))
+                .filter(u => normalizeRol(u.rol) === 'estudiante');
+
+            if (alumnos.length === 0) {
+                prodAttTbody.innerHTML = `<tr><td colspan="6" style="text-align:center;" class="text-muted">No hay alumnos registrados en la academia.</td></tr>`;
+            } else {
+                alumnos.forEach(u => {
+                    const asistenciasAlumno = (db.asistencia && db.asistencia[u.username]) || {};
+                    const asistenciasTotales = Object.values(asistenciasAlumno).length;
+                    const presentes = Object.values(asistenciasAlumno).filter(val => val === 'presente').length;
+                    const faltas = asistenciasTotales - presentes;
+                    const asistPct = asistenciasTotales > 0 ? Math.round((presentes / asistenciasTotales) * 100) : 100;
+
+                    let badgeClass = 'presente';
+                    let badgeLabel = 'EXCELENTE (AL DÍA)';
+                    if (asistPct < 80 && asistPct >= 65) { badgeClass = 'ausente'; badgeLabel = 'ALERTA (ASISTENCIA BAJA)'; }
+                    if (asistPct < 65) { badgeClass = 'ausente'; badgeLabel = 'CRÍTICO (RANGOS DE BAJA)'; }
+
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td>
+                            <strong style="color:white;">${u.nombre || u.username}</strong><br>
+                            <small class="text-muted">@${u.username}</small>
+                        </td>
+                        <td><span class="badge badge-rol">${u.area || 'Estudiante'}</span></td>
+                        <td><strong style="color:#10b981;">${presentes}</strong> marcadas</td>
+                        <td><strong style="color:#ef4444;">${faltas}</strong> inasistencias</td>
+                        <td><strong style="color:${asistPct >= 80 ? '#10b981' : '#ef4444'};">${asistPct}%</strong></td>
+                        <td><span class="badge badge-estado ${badgeClass}">${badgeLabel}</span></td>
+                    `;
+                    prodAttTbody.appendChild(tr);
+                });
+            }
+        }
     } catch(err) {
         console.error("Error en renderizarProduccion:", err);
     }
