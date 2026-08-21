@@ -59,6 +59,52 @@ h1, h2, h3, h4, h5, h6, .brand-logo, .nav-link, .btn, .stat-val, .panel-header h
     z-index: 2;
 }
 
+/* OFFICIAL HIGH-END GRAPHIC TYPOGRAPHY LOGO STYLING */
+.highend-logo-hero-box {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    width: 100%;
+}
+
+.worship-sessions-graphic-logo {
+    max-width: 580px;
+    width: 88%;
+    height: auto;
+    filter: invert(1);
+    mix-blend-mode: screen;
+    opacity: 0.95;
+    display: block;
+    transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.4s ease;
+}
+
+.worship-sessions-graphic-logo:hover {
+    transform: scale(1.03);
+    opacity: 1;
+}
+
+.sidebar-graphic-logo {
+    max-width: 180px;
+    max-height: 42px;
+    width: auto;
+    height: auto;
+    filter: invert(1);
+    mix-blend-mode: screen;
+    object-fit: contain;
+    display: block;
+}
+
+.login-graphic-logo {
+    max-width: 250px;
+    width: 90%;
+    height: auto;
+    filter: invert(1);
+    mix-blend-mode: screen;
+    margin: 0 auto 0.8rem auto;
+    display: block;
+}
+
 .intro-bg-instrument-layer {
     position: absolute;
     top: 0;
