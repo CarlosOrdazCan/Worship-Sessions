@@ -56,7 +56,84 @@ h1, h2, h3, h4, h5, h6, .brand-logo, .nav-link, .btn, .stat-val, .panel-header h
     height: 100%;
     background: linear-gradient(180deg, rgba(10, 11, 14, 0.45) 0%, rgba(10, 11, 14, 0.25) 50%, rgba(10, 11, 14, 0.7) 100%);
     pointer-events: none;
+}
+
+/* ============================================================
+   FUSED INSTRUMENT SHOWCASE CARDS (MATCHING BG-LEAF COLOR PALETTE)
+   ============================================================ */
+.instrument-showcase-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 1.2rem;
+    margin-bottom: 1.8rem;
+}
+
+.instrument-showcase-card {
+    position: relative;
+    height: 185px;
+    border-radius: 20px;
+    overflow: hidden;
+    background-color: #0d1e22; /* Dark teal leaf color tone */
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.6);
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    cursor: pointer;
+}
+
+.instrument-showcase-card img.inst-bg-img {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    mix-blend-mode: luminosity; /* Seamlessly fuses photo colors with the dark teal background tone! */
+    opacity: 0.85;
+    filter: contrast(1.25) brightness(0.85);
+    transition: all 0.5s ease;
+    z-index: 1;
+}
+
+.instrument-showcase-card:hover {
+    border-color: var(--primary-orange);
+    transform: translateY(-4px);
+    box-shadow: 0 20px 45px rgba(0, 0, 0, 0.8), 0 0 30px rgba(255, 69, 0, 0.3);
+}
+
+.instrument-showcase-card:hover img.inst-bg-img {
+    mix-blend-mode: overlay;
+    opacity: 0.98;
+    filter: contrast(1.3) brightness(0.95);
+    transform: scale(1.06);
+}
+
+.instrument-card-content {
+    position: relative;
     z-index: 2;
+    background: linear-gradient(180deg, rgba(10, 11, 14, 0) 0%, rgba(10, 11, 14, 0.92) 80%);
+    padding: 1.2rem;
+}
+
+.instrument-card-title {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #ffffff;
+    text-transform: uppercase;
+    margin-bottom: 2px;
+    letter-spacing: 0.02em;
+    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.8);
+}
+
+.instrument-card-sub {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 0.75rem;
+    color: var(--primary-orange);
+    font-weight: 700;
+    letter-spacing: 0.12em;
 }
 
 .highend-mesh-orb {
