@@ -454,43 +454,53 @@ body {
     overflow: hidden;
 }
 
-/* CAPA DE ANIMACIÓN DE GRADIENTE DINÁMICO DE VIDEO (AZUL / GRIS / LUZ DE ESCENARIO) */
+/* CAPA DE ANIMACIÓN DE LUCES ROJAS TIPO ESCENARIO / VIDEO (PULSACIÓN NEGRO A ROJO) */
 .choice-video-mesh-layer {
     position: absolute;
-    top: -20%;
-    left: -20%;
-    width: 140%;
-    height: 140%;
+    top: -15%;
+    left: -15%;
+    width: 130%;
+    height: 130%;
     pointer-events: none;
     z-index: 1;
     background: 
-        radial-gradient(ellipse at 25% 35%, rgba(37, 99, 235, 0.45) 0%, transparent 60%),
-        radial-gradient(ellipse at 75% 65%, rgba(71, 85, 105, 0.5) 0%, transparent 60%),
-        radial-gradient(ellipse at 50% 85%, rgba(229, 9, 20, 0.3) 0%, transparent 55%),
-        radial-gradient(ellipse at 65% 20%, rgba(30, 58, 138, 0.4) 0%, transparent 50%);
+        radial-gradient(ellipse at 35% 35%, rgba(255, 30, 0, 0.8) 0%, transparent 60%),
+        radial-gradient(ellipse at 65% 65%, rgba(220, 0, 0, 0.7) 0%, transparent 60%),
+        radial-gradient(ellipse at 50% 50%, rgba(255, 69, 0, 0.55) 0%, transparent 50%),
+        radial-gradient(ellipse at 80% 20%, rgba(139, 0, 0, 0.65) 0%, transparent 55%);
     mix-blend-mode: screen;
-    animation: choiceVideoShift 10s ease-in-out infinite alternate;
+    animation: stageRedFade 3.8s ease-in-out infinite alternate;
 }
 
-@keyframes choiceVideoShift {
+@keyframes stageRedFade {
     0% {
-        transform: translate(0, 0) scale(1) rotate(0deg);
-        filter: hue-rotate(0deg) brightness(1.05);
-        opacity: 0.85;
+        opacity: 0.1;
+        filter: brightness(0.3) contrast(1.1);
+        transform: scale(0.97) rotate(0deg);
+    }
+    35% {
+        opacity: 0.9;
+        filter: brightness(1.4) contrast(1.5);
+        transform: scale(1.03) rotate(1deg);
     }
     50% {
-        transform: translate(-3%, 2%) scale(1.06) rotate(1.5deg);
-        filter: hue-rotate(22deg) brightness(1.25);
+        opacity: 0.2;
+        filter: brightness(0.4) contrast(1.2);
+        transform: scale(0.98) rotate(-0.5deg);
+    }
+    85% {
         opacity: 0.95;
+        filter: brightness(1.6) contrast(1.6);
+        transform: scale(1.04) rotate(-1deg);
     }
     100% {
-        transform: translate(2%, -3%) scale(1.02) rotate(-1.5deg);
-        filter: hue-rotate(-18deg) brightness(0.95);
-        opacity: 0.8;
+        opacity: 0.15;
+        filter: brightness(0.35) contrast(1.1);
+        transform: scale(0.97) rotate(0deg);
     }
 }
 
-/* CAPA INTERACTIVA CON GRADIENTE MÁS COMPACTO (FOTO SPOTLIGHT DE 340PX QUE SIGUE AL MOUSE) */
+/* LENTE DEL CURSOR MUCHO MÁS PEQUEÑO (140PX MONOCROMÁTICO / BLANCO Y NEGRO) */
 .choice-mouse-layer {
     position: absolute;
     top: 0;
@@ -500,13 +510,26 @@ body {
     pointer-events: none;
     z-index: 2;
     background: radial-gradient(
-        340px circle at var(--mouse-x, 50%) var(--mouse-y, 50%),
-        rgba(59, 130, 246, 0.55) 0%,       /* Electric Royal Blue spotlight center */
-        rgba(100, 116, 139, 0.35) 45%,     /* Cool Metallic Slate Gray halo */
+        140px circle at var(--mouse-x, 50%) var(--mouse-y, 50%),
+        rgba(240, 240, 240, 0.35) 0%,      /* Metallic silver/white center lens */
+        rgba(140, 140, 140, 0.2) 45%,     /* Cool slate gray halo */
         transparent 100%
     );
-    mix-blend-mode: screen;
-    transition: background 0.04s ease-out;
+    backdrop-filter: grayscale(1) contrast(1.3) brightness(1.15);
+    -webkit-backdrop-filter: grayscale(1) contrast(1.3) brightness(1.15);
+    mask-image: radial-gradient(
+        140px circle at var(--mouse-x, 50%) var(--mouse-y, 50%),
+        black 0%,
+        black 55%,
+        transparent 100%
+    );
+    -webkit-mask-image: radial-gradient(
+        140px circle at var(--mouse-x, 50%) var(--mouse-y, 50%),
+        black 0%,
+        black 55%,
+        transparent 100%
+    );
+    transition: background 0.03s ease-out;
 }
 
 /* BOTONES PROMINENTES PARA REGRESAR EN PANTALLA DE LOGIN */
