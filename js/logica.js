@@ -203,17 +203,76 @@ function initDB() {
     }
 }
 
+function obtenerEstatusColegiatura(u) {
+    if (!u) return { status: 'solvente', label: 'SOLVENTE', color: '#10b981', badgeClass: 'presente', estaBloqueado: false };
+
+    // Si la administración registró pago del mes en curso:
+    if (u.pagoStatus === 'solvente' || u.pagoStatus === 'pagado') {
+        return {
+            status: 'solvente',
+            label: 'SOLVENTE (AL DÍA)',
+            color: '#10b981',
+            badgeClass: 'presente',
+            estaBloqueado: false
+        };
+    }
+
+    // Si administración asignó explícitamente estado no_pagado
+    if (u.pagoStatus === 'no_pagado' || u.pagoStatus === '2_pendientes') {
+        const estaDesbloqueadoPastor = u.desbloqueadoManual || false;
+        return {
+            status: 'no_pagado',
+            label: estaDesbloqueadoPastor ? 'NO PAGADO (AUTORIZADO PASTOR)' : 'NO PAGADO (SUSPENDIDO)',
+            color: estaDesbloqueadoPastor ? '#f59e0b' : '#ef4444',
+            badgeClass: 'ausente',
+            estaBloqueado: !estaDesbloqueadoPastor
+        };
+    }
+
+    // Regla de fecha y calendario:
+    // Periodo de pago: Primeros 15 días del mes.
+    // Tolerancia: 12 días adicionales (hasta el día 27 del mes).
+    // A partir del día 28: NO PAGADO (SUSPENDIDO).
+    const hoy = new Date();
+    const diaDelMes = hoy.getDate();
+
+    if (diaDelMes <= 15) {
+        return {
+            status: 'pendiente',
+            label: 'PENDIENTE (PERIODO DÍAS 1-15)',
+            color: '#f59e0b',
+            badgeClass: 'ausente',
+            estaBloqueado: false
+        };
+    } else if (diaDelMes <= 27) {
+        return {
+            status: 'pendiente',
+            label: 'PENDIENTE (TOLERANCIA 12 DÍAS)',
+            color: '#f59e0b',
+            badgeClass: 'ausente',
+            estaBloqueado: false
+        };
+    } else {
+        // Pasaron 12 días del límite de pago -> NO PAGADO (SUSPENDIDO)
+        const estaDesbloqueadoPastor = u.desbloqueadoManual || false;
+        return {
+            status: 'no_pagado',
+            label: estaDesbloqueadoPastor ? 'NO PAGADO (AUTORIZADO PASTOR)' : 'NO PAGADO (SUSPENDIDO)',
+            color: estaDesbloqueadoPastor ? '#f59e0b' : '#ef4444',
+            badgeClass: 'ausente',
+            estaBloqueado: !estaDesbloqueadoPastor
+        };
+    }
+}
+
 function esAlumnoBloqueado(username) {
     const db = getDB();
     if (!db || !db.usuarios || !db.usuarios[username]) return false;
     const u = db.usuarios[username];
     if (normalizeRol(u.rol) !== 'estudiante') return false;
-    const meses = typeof u.mesesAdeudo === 'number' ? u.mesesAdeudo : (u.pagoStatus === 'pendiente' || u.pagoStatus === '1_pendiente' ? 1 : (u.pagoStatus === '2_pendientes' ? 2 : 0));
-    const esAdeudoCritico = meses >= 2 || u.pagoStatus === '2_pendientes';
-    if (esAdeudoCritico && !u.desbloqueadoManual) {
-        return true;
-    }
-    return false;
+    
+    const info = obtenerEstatusColegiatura(u);
+    return info.estaBloqueado;
 }
 
 function getDB() {
@@ -948,9 +1007,9 @@ function renderizarPastor(db) {
     if (hwPctEl) hwPctEl.innerText = pctCumplimientoTareas + "%";
     if (hwCountEl) hwCountEl.innerText = `${totalEntregasRecibidas} entregas recibidas`;
     
-    // Colegiaturas
-    const solventes = estudiantesArr.filter(e => e.pagoStatus !== 'pendiente').length;
-    const deudores = totalEstudiantes - solventes;
+    // Colegiaturas (Estatus solo lectura pastoral)
+    const solventes = estudiantesArr.filter(e => obtenerEstatusColegiatura(e).status === 'solvente').length;
+    const deudores = estudiantesArr.filter(e => obtenerEstatusColegiatura(e).status === 'no_pagado').length;
     const elSolv = document.getElementById('pastor-solvent-count');
     const elDebt = document.getElementById('pastor-debtor-count');
     if (elSolv) elSolv.innerText = solventes;
@@ -960,7 +1019,7 @@ function renderizarPastor(db) {
     const elRecProg = document.getElementById('pastor-recaudacion-progress');
     const elRecTag = document.getElementById('pastor-recaudacion-tag');
     if (elRecProg) elRecProg.style.width = recaudacionPct + "%";
-    if (elRecTag) elRecTag.innerText = recaudacionPct + "% Solvencia";
+    if (elRecTag) elRecTag.innerText = recaudacionPct + "% Solvencia en Periodo";
 
     // Indicadores de Salud Pastoral
     const alumnosEnRiesgo = estudiantesArr.filter(e => {
@@ -1000,11 +1059,7 @@ function renderizarPastor(db) {
                     const asistPct = asistenciasTotales > 0 ? Math.round((presentes / asistenciasTotales) * 100) : 'N/A';
                     
                     const tr = document.createElement('tr');
-                    const meses = typeof user.mesesAdeudo === 'number' ? user.mesesAdeudo : (user.pagoStatus === 'pendiente' ? 1 : 0);
-                    let badgeColegiaturaClass = 'presente';
-                    let badgeColegiaturaLabel = 'SOLVENTE';
-                    if (meses === 1) { badgeColegiaturaClass = 'ausente'; badgeColegiaturaLabel = '1 MES PENDIENTE'; }
-                    if (meses >= 2) { badgeColegiaturaClass = 'ausente'; badgeColegiaturaLabel = user.desbloqueadoManual ? '2 ADEUDOS (AUTORIZADO)' : '2 ADEUDOS (SUSPENDIDO)'; }
+                    const infoCol = obtenerEstatusColegiatura(user);
 
                     tr.innerHTML = `
                         <td>
@@ -1025,8 +1080,8 @@ function renderizarPastor(db) {
                         </td>
                         <td><strong class="asist-pct-text" style="color:${asistPct >= 80 ? '#10b981' : '#ef4444'};">${asistPct !== 'N/A' ? asistPct + '%' : 'S/R'}</strong></td>
                         <td>
-                            <span class="badge badge-estado ${badgeColegiaturaClass}">
-                                ${badgeColegiaturaLabel}
+                            <span class="badge badge-estado ${infoCol.badgeClass}">
+                                ${infoCol.label}
                             </span>
                         </td>
                         <td>
@@ -1830,7 +1885,7 @@ function renderizarProduccion(db) {
                 .map(uKey => ({ ...usuariosObj[uKey], username: uKey }))
                 .filter(u => normalizeRol(u.rol) === 'estudiante');
 
-            const solventesCount = alumnos.filter(u => (typeof u.mesesAdeudo === 'number' ? u.mesesAdeudo === 0 : u.pagoStatus !== 'pendiente')).length;
+            const solventesCount = alumnos.filter(u => obtenerEstatusColegiatura(u).status === 'solvente').length;
             
             const badgeSummary = document.getElementById('prod-billing-summary-badge');
             if (badgeSummary) badgeSummary.innerText = `${solventesCount} de ${alumnos.length} Solventes`;
@@ -1839,8 +1894,7 @@ function renderizarProduccion(db) {
                 billingTbody.innerHTML = `<tr><td colspan="7" style="text-align:center;" class="text-muted">No hay alumnos registrados en la academia.</td></tr>`;
             } else {
                 alumnos.forEach(u => {
-                    const meses = typeof u.mesesAdeudo === 'number' ? u.mesesAdeudo : (u.pagoStatus === 'pendiente' ? 1 : 0);
-                    const isSolvente = meses === 0;
+                    const infoCol = obtenerEstatusColegiatura(u);
 
                     // Asistencia %
                     const asistenciasAlumno = (db.asistencia && db.asistencia[u.username]) || {};
@@ -1848,20 +1902,16 @@ function renderizarProduccion(db) {
                     const presentes = Object.values(asistenciasAlumno).filter(val => val === 'presente').length;
                     const asistPct = asistenciasTotales > 0 ? Math.round((presentes / asistenciasTotales) * 100) : 100;
 
-                    // Estado Colegiatura
-                    let badgeClass = 'presente';
-                    let badgeLabel = 'SOLVENTE (AL DÍA)';
-                    if (meses === 1) { badgeClass = 'ausente'; badgeLabel = '1 MES PENDIENTE'; }
-                    if (meses >= 2) { badgeClass = 'ausente'; badgeLabel = `${meses} MESES PENDIENTES`; }
-
                     // Estado de Acceso
                     let accesoHtml = `<span style="color:#10b981; font-weight:700; font-size:0.85rem;"><i class="fas fa-check-circle"></i> ACCESO OK</span>`;
-                    if (meses >= 2) {
+                    if (infoCol.status === 'no_pagado') {
                         if (u.desbloqueadoManual) {
                             accesoHtml = `<span style="color:#f59e0b; font-weight:700; font-size:0.85rem;"><i class="fas fa-unlock"></i> AUTORIZADO (PASTOR)</span>`;
                         } else {
                             accesoHtml = `<span style="color:#ef4444; font-weight:700; font-size:0.85rem;"><i class="fas fa-lock"></i> SUSPENDIDO</span>`;
                         }
+                    } else if (infoCol.status === 'pendiente') {
+                        accesoHtml = `<span style="color:#f59e0b; font-weight:700; font-size:0.85rem;"><i class="fas fa-clock"></i> EN PERIODO / TOLERANCIA</span>`;
                     }
 
                     // Warning Motivo No Pago
@@ -1885,20 +1935,20 @@ function renderizarProduccion(db) {
                         </td>
                         <td><span class="badge badge-rol">${u.area || 'Estudiante'}</span></td>
                         <td><strong style="color:${asistPct >= 80 ? '#10b981' : '#ef4444'};">${asistPct}%</strong></td>
-                        <td><span class="badge badge-estado ${badgeClass}">${badgeLabel}</span></td>
+                        <td><span class="badge badge-estado ${infoCol.badgeClass}">${infoCol.label}</span></td>
                         <td style="max-width:220px;">${warningHtml}</td>
                         <td>${accesoHtml}</td>
                         <td>
                             <div style="display:flex; gap:6px; flex-wrap:wrap;">
-                                <button class="btn btn-sm btn-primary" onclick="registrarPagoColegiatura('${u.username}')" title="Registrar pago al corriente (desbloqueo inmediato)">
-                                    <i class="fas fa-check-circle"></i> Registrar Pago
+                                <button class="btn btn-sm btn-primary" onclick="marcarEstadoColegiaturaAdmin('${u.username}', 'solvente')" title="Registrar pago completo al corriente">
+                                    <i class="fas fa-check-circle"></i> Solvente
                                 </button>
-                                <button class="btn btn-sm btn-secondary" onclick="agregarAdeudoColegiatura('${u.username}')" title="Sumar 1 mes de adeudo">
-                                    <i class="fas fa-plus-circle"></i> +1 Adeudo
+                                <button class="btn btn-sm btn-secondary" onclick="marcarEstadoColegiaturaAdmin('${u.username}', 'no_pagado')" title="Marcar como No Pagado / Suspendido">
+                                    <i class="fas fa-times-circle"></i> No Pagado
                                 </button>
-                                ${meses >= 2 ? `
+                                ${infoCol.status === 'no_pagado' ? `
                                     <button class="btn btn-sm ${u.desbloqueadoManual ? 'btn-deactivate' : 'btn-activate'}" onclick="alternarDesbloqueoManual('${u.username}')" title="Autorización del Pastor para permitir o revocar acceso">
-                                        ${u.desbloqueadoManual ? '<i class="fas fa-lock"></i> Bloquear Acceso' : '<i class="fas fa-unlock"></i> Desbloquear (Pastor)'}
+                                        ${u.desbloqueadoManual ? '<i class="fas fa-lock"></i> Revocar Acceso' : '<i class="fas fa-unlock"></i> Autorizar (Pastor)'}
                                     </button>
                                 ` : ''}
                             </div>
@@ -1916,17 +1966,23 @@ function renderizarProduccion(db) {
 // -------------------------------------------------------------
 // FUNCIONES ADMINISTRATIVAS DE COLEGIATURAS Y EXPEDIENTES
 // -------------------------------------------------------------
-function registrarPagoColegiatura(username) {
+function marcarEstadoColegiaturaAdmin(username, nuevoEstado) {
     const db = getDB();
     if (db.usuarios && db.usuarios[username]) {
-        db.usuarios[username].mesesAdeudo = 0;
-        db.usuarios[username].pagoStatus = 'solvente';
-        db.usuarios[username].motivoNoPago = '';
-        db.usuarios[username].desbloqueadoManual = false;
+        db.usuarios[username].pagoStatus = nuevoEstado;
+        if (nuevoEstado === 'solvente') {
+            db.usuarios[username].mesesAdeudo = 0;
+            db.usuarios[username].motivoNoPago = '';
+            db.usuarios[username].desbloqueadoManual = false;
+        }
         saveDB(db);
-        showToast(`Pago registrado para @${username}. El usuario se ha desbloqueado automáticamente.`, "success");
+        showToast(`Estado de @${username} actualizado a ${nuevoEstado.toUpperCase()}`, "success");
         renderizarDatosVista(usuarioActual ? usuarioActual.rol : 'produccion');
     }
+}
+
+function registrarPagoColegiatura(username) {
+    marcarEstadoColegiaturaAdmin(username, 'solvente');
 }
 
 function agregarAdeudoColegiatura(username) {

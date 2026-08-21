@@ -318,16 +318,13 @@
 
                 <!-- ================= VISTA: PASTOR ================= -->
                 <div id="view-pastor" class="app-view">
-                    <!-- BARRA DE PESTAÑAS SUPERIOR DEL DASHBOARD PASTORAL -->
+                    <!-- BARRA DE PESTAÑAS SUPERIOR PASTORAL -->
                     <div class="pastor-subview-nav" style="display: flex; gap: 8px; margin-bottom: 1.5rem; flex-wrap: wrap; background: rgba(255,255,255,0.02); padding: 8px 12px; border-radius: 14px; border: 1px solid var(--border-color);">
                         <button class="btn btn-sm btn-secondary active" id="pastor-tab-alertas" onclick="cambiarSubvistaPastor('alertas')">
                             <i class="fas fa-chart-pie"></i> Visión Global
                         </button>
                         <button class="btn btn-sm btn-secondary" id="pastor-tab-asistencia" onclick="cambiarSubvistaPastor('asistencia')">
                             <i class="fas fa-id-card"></i> Expedientes
-                        </button>
-                        <button class="btn btn-sm btn-primary" id="pastor-tab-colegiaturas" onclick="abrirModuloAdministracionDesdeMenu('colegiaturas')" style="box-shadow: 0 4px 15px rgba(229,9,20,0.4);">
-                            <i class="fas fa-file-invoice-dollar"></i> Módulo Administración & Colegiaturas
                         </button>
                         <button class="btn btn-sm btn-secondary" id="pastor-tab-cobertura" onclick="cambiarSubvistaPastor('cobertura')">
                             <i class="fas fa-heart"></i> Cuidado Pastoral
@@ -368,25 +365,19 @@
                                 </div>
                             </div>
 
-                            <!-- TARJETA DE COLEGIATURAS CON BOTÓN DIRECTO A ADMINISTRACIÓN -->
-                            <div class="card" style="cursor: pointer; border: 1px solid rgba(229,9,20,0.3); transition: all 0.25s ease;" onclick="abrirModuloAdministracionDesdeMenu('colegiaturas')" title="Haz clic para abrir el Módulo de Administración & Colegiaturas">
+                            <!-- TARJETA INFORMATIVA ESTATUS DE COLEGIATURAS (READ ONLY PASTORAL) -->
+                            <div class="card">
                                 <div class="card-icon red-variant"><i class="fas fa-wallet"></i></div>
                                 <div style="flex:1;">
-                                    <div style="display:flex; justify-content:space-between; align-items:center;">
-                                        <h3>Colegiaturas</h3>
-                                        <span class="badge badge-rol" style="font-size:0.7rem; background:var(--primary-red); color:white; padding:2px 8px;">Administración <i class="fas fa-arrow-right"></i></span>
-                                    </div>
+                                    <h3>Estatus de Colegiaturas</h3>
                                     <div style="display:flex; align-items: baseline; gap:8px; margin-top:2px;">
-                                        <span class="stat-val" id="pastor-solvent-count">0</span><small class="text-muted">/ solventes</small>
-                                        <span class="stat-val" style="color:var(--primary-red); margin-left: 8px;" id="pastor-debtor-count">0</span><small class="text-muted">/ adeudos</small>
+                                        <span class="stat-val" id="pastor-solvent-count" style="color:#10b981;">0</span><small class="text-muted">Solventes</small>
+                                        <span class="stat-val" id="pastor-debtor-count" style="color:#ef4444; margin-left: 8px;">0</span><small class="text-muted">No Pagados</small>
                                     </div>
                                     <div class="progress-bar-container mini" style="width: 100%; height: 4px; margin-top: 5px;">
                                         <div class="progress-bar" id="pastor-recaudacion-progress" style="width: 0%;"></div>
                                     </div>
-                                    <div style="display:flex; justify-content:space-between; align-items:center; margin-top:6px;">
-                                        <small class="text-muted" id="pastor-recaudacion-tag">0% Solvencia</small>
-                                        <small style="color:var(--primary-red); font-weight:800;"><i class="fas fa-file-invoice-dollar"></i> Ir a Tabla Admin &raquo;</small>
-                                    </div>
+                                    <small class="text-muted" id="pastor-recaudacion-tag" style="margin-top:4px; display:block;">0% Solvencia en Periodo</small>
                                 </div>
                             </div>
                         </div>
