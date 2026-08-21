@@ -432,9 +432,32 @@ function cerrarSesion() {
     showToast("Sesión cerrada con éxito", 'info');
 }
 
+function actualizarFondoIntroPorInstrumento(usuario) {
+    const layer = document.getElementById('intro-bg-instrument-layer');
+    if (!layer) return;
+    
+    const inst = ((usuario?.instrumento || usuario?.area || usuario?.rol || '') + '').toLowerCase();
+    
+    let bgUrl = 'img/inst-piano.jpg';
+    if (inst.includes('bater') || inst.includes('percus') || inst.includes('drum')) {
+        bgUrl = 'img/inst-bateria.jpg';
+    } else if (inst.includes('canto') || inst.includes('voz') || inst.includes('vocal')) {
+        bgUrl = 'img/inst-canto.jpg';
+    } else if (inst.includes('piano') || inst.includes('teclado') || inst.includes('key')) {
+        bgUrl = 'img/inst-piano.jpg';
+    } else if (inst.includes('bajo') || inst.includes('bass') || inst.includes('guitar')) {
+        bgUrl = 'img/inst-bajo.jpg';
+    } else {
+        bgUrl = 'img/inst-bateria.jpg';
+    }
+    
+    layer.style.backgroundImage = `url('${bgUrl}')`;
+}
+
 // CONFIGURACIÓN DE LA INTERFAZ SEGÚN EL ROL
 function configurarInterfaz(usuario) {
     if (!usuario) return;
+    actualizarFondoIntroPorInstrumento(usuario);
     const rol = normalizeRol(usuario.rol);
     usuario.rol = rol;
     const nombre = usuario.nombre || usuario.username || 'Usuario';
