@@ -437,176 +437,153 @@ body {
    PANTALLA DE SELECCIÓN DE APP
    ============================================================ */
 #app-choice-screen {
-    position: relative;
-    justify-content: center;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: linear-gradient(180deg, rgba(10, 11, 14, 0.6) 0%, rgba(10, 11, 14, 0.4) 50%, rgba(10, 11, 14, 0.85) 100%), url('../img/bg-choice.jpg');
+    background-size: cover;
+    background-position: center center;
+    background-repeat: no-repeat;
+    z-index: 10000;
+    display: flex;
     align-items: center;
-    background: var(--bg-dark);
+    justify-content: center;
+    padding: 2rem;
     overflow: hidden;
 }
 
-/* Orbes de fondo decorativos */
-.choice-bg-orb {
-    position: absolute;
-    border-radius: 50%;
-    filter: blur(80px);
-    opacity: 0.35;
-    pointer-events: none;
-}
-.choice-orb-1 {
-    width: 420px;
-    height: 420px;
-    background: radial-gradient(circle, var(--primary-red) 0%, transparent 70%);
-    top: -120px;
-    right: -100px;
-}
-.choice-orb-2 {
-    width: 320px;
-    height: 320px;
-    background: radial-gradient(circle, #3a00cc 0%, transparent 70%);
-    bottom: -100px;
-    left: -80px;
-}
-
-/* Tarjeta central */
-.choice-card {
+.choice-buttons-standalone {
     position: relative;
-    z-index: 1;
-    background: var(--bg-card);
-    border: 1px solid var(--border-color);
-    border-radius: 24px;
-    padding: 48px 40px;
+    z-index: 3;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(320px, 440px));
+    gap: 2.5rem;
     width: 100%;
-    max-width: 480px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 0;
-    box-shadow: 0 32px 80px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.03);
-}
-
-/* Logo */
-.choice-logo {
-    width: 72px;
-    height: 72px;
-    border-radius: 20px;
-    background: linear-gradient(135deg, var(--primary-red) 0%, #8b0000 100%);
-    display: flex;
+    max-width: 960px;
     align-items: center;
     justify-content: center;
-    font-size: 2rem;
-    color: #fff;
-    margin-bottom: 24px;
-    box-shadow: 0 12px 30px var(--primary-red-glow);
 }
 
-/* Títulos */
-.choice-title {
-    font-size: 1.35rem;
-    font-weight: 800;
-    color: var(--text-light);
-    text-align: center;
-    margin-bottom: 8px;
-    letter-spacing: -0.3px;
-}
-.choice-subtitle {
-    font-size: 0.875rem;
-    color: var(--text-muted);
-    text-align: center;
-    margin-bottom: 36px;
-}
-
-/* Contenedor de botones */
-.choice-buttons {
-    display: flex;
-    flex-direction: column;
-    gap: 14px;
-    width: 100%;
-}
-
-/* Botones de selección */
-.choice-btn {
-    width: 100%;
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    padding: 18px 20px;
-    border: 1px solid var(--border-color);
-    border-radius: 14px;
-    background: var(--bg-panel);
-    color: var(--text-light);
+.choice-card-btn {
+    background: rgba(17, 19, 25, 0.78);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 28px;
+    padding: 3rem 2.2rem;
     cursor: pointer;
-    text-align: left;
-    transition: all 0.25s ease;
-    font-family: 'Montserrat', sans-serif;
+    text-align: center;
+    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
     position: relative;
     overflow: hidden;
-}
-.choice-btn:hover {
-    border-color: var(--border-color-hover);
-    background: var(--bg-card-hover);
-    transform: translateY(-2px);
-    box-shadow: 0 8px 24px rgba(0,0,0,0.3);
-}
-.choice-btn:active {
-    transform: translateY(0);
-}
-
-/* Ícono izquierdo */
-.choice-btn-icon {
-    width: 44px;
-    height: 44px;
-    border-radius: 12px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.2rem;
-    flex-shrink: 0;
-}
-.choice-btn-alabanza .choice-btn-icon {
-    background: rgba(229, 9, 20, 0.15);
-    color: var(--primary-red-hover);
-}
-.choice-btn-worship .choice-btn-icon {
-    background: rgba(58, 0, 204, 0.2);
-    color: #a78bfa;
-}
-
-/* Texto del botón */
-.choice-btn-text {
-    flex: 1;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
     display: flex;
     flex-direction: column;
-    gap: 3px;
-}
-.choice-btn-text strong {
-    font-size: 0.975rem;
-    font-weight: 700;
-    color: var(--text-light);
-}
-.choice-btn-text small {
-    font-size: 0.775rem;
-    color: var(--text-muted);
-    font-weight: 400;
+    align-items: center;
+    justify-content: center;
 }
 
-/* Flecha derecha */
-.choice-btn-arrow {
-    font-size: 0.75rem;
-    color: var(--text-muted);
+.choice-card-btn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: radial-gradient(circle at center, rgba(255, 69, 0, 0.25) 0%, transparent 75%);
     opacity: 0;
-    transform: translateX(-4px);
-    transition: all 0.2s ease;
-    flex-shrink: 0;
-}
-.choice-btn:hover .choice-btn-arrow {
-    opacity: 1;
-    transform: translateX(0);
+    transition: opacity 0.4s ease;
 }
 
-/* Acento de color en hover para Alabanza */
-.choice-btn-alabanza:hover {
-    border-color: rgba(229, 9, 20, 0.4);
-    box-shadow: 0 8px 24px rgba(229, 9, 20, 0.15);
+.choice-card-btn:hover {
+    transform: translateY(-8px) scale(1.02);
+    border-color: rgba(255, 69, 0, 0.6);
+    box-shadow: 0 30px 70px rgba(0, 0, 0, 0.8), 0 0 35px rgba(255, 69, 0, 0.35);
+    background: rgba(23, 26, 34, 0.88);
+}
+
+.choice-card-btn:hover::before {
+    opacity: 1;
+}
+
+.choice-card-content {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+}
+
+.choice-card-icon {
+    font-size: 3.8rem;
+    color: var(--primary-red);
+    margin-bottom: 1.2rem;
+    filter: drop-shadow(0 0 20px rgba(255, 69, 0, 0.6));
+    transition: transform 0.4s ease;
+}
+
+.choice-card-btn:hover .choice-card-icon {
+    transform: scale(1.12);
+}
+
+.choice-ws-graphic-logo {
+    max-width: 280px;
+    width: 90%;
+    height: auto;
+    filter: invert(1);
+    mix-blend-mode: screen;
+    opacity: 0.95;
+    margin-bottom: 1.2rem;
+    transition: transform 0.4s ease;
+}
+
+.choice-card-btn:hover .choice-ws-graphic-logo {
+    transform: scale(1.05);
+    opacity: 1;
+}
+
+.choice-card-title {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 1.8rem;
+    font-weight: 800;
+    color: #ffffff;
+    letter-spacing: -0.02em;
+    margin-bottom: 0.6rem;
+    text-transform: uppercase;
+}
+
+.choice-card-subtitle {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    margin-bottom: 1.8rem;
+    line-height: 1.4;
+    font-weight: 500;
+}
+
+.choice-card-action {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    color: var(--primary-red);
+    background: rgba(255, 69, 0, 0.12);
+    border: 1px solid rgba(255, 69, 0, 0.3);
+    padding: 10px 22px;
+    border-radius: 9999px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.3s ease;
+}
+
+.choice-card-btn:hover .choice-card-action {
+    background: var(--primary-red);
+    color: #ffffff;
+    border-color: var(--primary-red);
+    box-shadow: 0 8px 25px rgba(255, 69, 0, 0.5);
 }
 /* Acento de color en hover para Worship Sessions */
 .choice-btn-worship:hover {

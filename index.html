@@ -16,46 +16,34 @@
 
     <!-- ================= PANTALLA 0: SELECCIÓN DE APP ================= -->
     <div id="app-choice-screen" class="screen active">
-        <!-- Decoración de fondo -->
-        <div class="choice-bg-orb choice-orb-1"></div>
-        <div class="choice-bg-orb choice-orb-2"></div>
+        <div class="highend-noise-overlay"></div>
 
-        <div class="choice-card">
-            <!-- Logo / ícono -->
-            <div class="choice-logo">
-                <i class="fas fa-fire-alt"></i>
-            </div>
+        <div class="choice-buttons-standalone">
+            <!-- BOTÓN 1: C.A.N ALABANZA -->
+            <button
+                class="choice-card-btn choice-btn-alabanza"
+                id="btn-alabanza"
+                onclick="window.location.href='./alabanza/index.html'">
+                <div class="choice-card-content">
+                    <span class="choice-card-icon"><i class="fas fa-fire-alt"></i></span>
+                    <h2 class="choice-card-title">C.A.N ALABANZA</h2>
+                    <p class="choice-card-subtitle">Plataforma de canciones, acordes y cifrados</p>
+                    <span class="choice-card-action">ACCEDER A CANCIONES <i class="fas fa-arrow-right"></i></span>
+                </div>
+            </button>
 
-            <h1 class="choice-title">Centro de Avivamiento Naucalpan</h1>
-            <p class="choice-subtitle">Selecciona la plataforma a la que deseas acceder</p>
-
-            <div class="choice-buttons">
-                <!-- Alabanza: C.A.N Alabanza -->
-                <button
-                    class="choice-btn choice-btn-alabanza"
-                    id="btn-alabanza"
-                    onclick="window.location.href='./alabanza/index.html'">
-                    <div style="display:flex; flex-direction:column; align-items:center; width:100%; text-align:center; padding: 0.5rem 0;">
-                        <h2 style="color:white; font-family:'Space Grotesk', sans-serif; font-size:1.6rem; font-weight:800; margin:0 0 8px 0; letter-spacing: -0.02em;">C.A.N Alabanza</h2>
-                        <span class="choice-btn-icon" style="margin-bottom:8px;"><i class="fas fa-fire-alt" style="font-size:2.4rem; color:var(--primary-red);"></i></span>
-                        <small style="color:var(--text-muted); font-size:0.85rem;">Plataforma de canciones, acordes y cifrados</small>
-                    </div>
-                </button>
-
-                <!-- Worship Sessions: Worship Sessions -->
-                <button
-                    class="choice-btn choice-btn-worship"
-                    id="btn-worship"
-                    onclick="mostrarPantalla('login-screen')">
-                    <div style="display:flex; flex-direction:column; align-items:center; width:100%; text-align:center; padding: 0.5rem 0;">
-                        <h2 style="color:white; font-family:'Space Grotesk', sans-serif; font-size:1.6rem; font-weight:800; margin:0 0 8px 0; letter-spacing: -0.02em;">Worship Sessions</h2>
-                        <img src="img/worship-sessions-logo.png" alt="Worship Sessions" class="choice-ws-logo">
-                        <small style="color:var(--text-muted); font-size:0.85rem;">Plataforma de formación y gestión académica</small>
-                    </div>
-                </button>
-            </div>
-
-            <p class="choice-footer">v3.0.0 Enterprise &nbsp;&middot;&nbsp; CAN</p>
+            <!-- BOTÓN 2: WORSHIP SESSIONS -->
+            <button
+                class="choice-card-btn choice-btn-worship"
+                id="btn-worship"
+                onclick="mostrarPantalla('login-screen')">
+                <div class="choice-card-content">
+                    <img src="img/worship-sessions-logo.png" alt="Worship Sessions" class="choice-ws-graphic-logo">
+                    <h2 class="choice-card-title">WORSHIP SESSIONS</h2>
+                    <p class="choice-card-subtitle">Plataforma de formación y gestión académica</p>
+                    <span class="choice-card-action">INGRESAR A PLATAFORMA <i class="fas fa-arrow-right"></i></span>
+                </div>
+            </button>
         </div>
     </div>
 
