@@ -249,8 +249,8 @@ function showToast(mensaje, tipo = 'success') {
     }, 3500);
 }
 
-// SYSTEM DE CONTROL DE PANTALLAS (PANTALLA ELECCION, LOGIN, APP)
-function mostrarPantalla(idPantalla) {
+// SYSTEM DE CONTROL DE PANTALLAS Y ENRUTADOR DE NAVEGACIÓN HISTORIAL HTML5
+function mostrarPantalla(idPantalla, pushHistory = true) {
     document.querySelectorAll('.screen').forEach(s => {
         s.classList.remove('active');
         s.style.display = 'none';
@@ -260,6 +260,28 @@ function mostrarPantalla(idPantalla) {
         target.style.display = 'flex';
         target.classList.add('active');
     }
+    
+    if (pushHistory && window.history && window.history.pushState) {
+        let hash = '#eleccion';
+        if (idPantalla === 'login-screen') hash = '#login';
+        if (idPantalla === 'worship-intro-screen') hash = '#bienvenida';
+        if (idPantalla === 'app-screen') {
+            const rol = usuarioActual ? normalizeRol(usuarioActual.rol) : 'estudiante';
+            hash = getHashParaRolSubvista(rol);
+        }
+        if (window.location.hash !== hash) {
+            history.pushState({ idPantalla, hash }, "", hash);
+        }
+    }
+}
+
+function getHashParaRolSubvista(rol) {
+    if (rol === 'admin') return '#admin-' + (subvistaAdminActual || 'panel');
+    if (rol === 'pastor') return '#pastor-' + (subvistaPastorActual || 'alertas');
+    if (rol === 'maestro') return '#maestro-' + (subvistaMaestroActual || 'dashboard');
+    if (rol === 'produccion' || rol === 'administracion') return '#produccion-' + (subvistaProduccionActual || 'estatus');
+    if (rol === 'adoracion') return '#adoracion-' + (subvistaAdoracionActual || 'control');
+    return '#estudiante-' + (subvistaEstudianteActual || 'classroom');
 }
 
 // MENÚS DINÁMICOS SEGÚN EL ROL DEL USUARIO
@@ -1082,10 +1104,10 @@ function eliminarNotaPastoral(index) {
 }
 
 // -------------------------------------------------------------
-// CONTROL DE SUBVISTAS LATERALES PARA TODOS LOS ROLES
+// CONTROL DE SUBVISTAS LATERALES PARA TODOS LOS ROLES (CON SOPORTE DE ENRUTADOR HISTORIAL)
 // -------------------------------------------------------------
 let subvistaAdminActual = 'panel';
-function cambiarSubvistaAdmin(subVista) {
+function cambiarSubvistaAdmin(subVista, pushHistory = true) {
     subvistaAdminActual = subVista || 'panel';
     document.querySelectorAll('.admin-subview').forEach(sv => { sv.style.display = 'none'; sv.classList.remove('active'); });
     document.querySelectorAll('#dynamic-menu .nav-link').forEach(link => link.classList.remove('active'));
@@ -1093,11 +1115,18 @@ function cambiarSubvistaAdmin(subVista) {
     if (targetNav) targetNav.classList.add('active');
     const targetSub = document.getElementById('admin-subview-' + subVista);
     if (targetSub) { targetSub.style.display = 'block'; targetSub.classList.add('active'); }
+    
+    if (pushHistory && window.history && window.history.pushState) {
+        const hash = '#admin-' + subvistaAdminActual;
+        if (window.location.hash !== hash) {
+            history.pushState({ idPantalla: 'app-screen', subVista: subvistaAdminActual, hash }, "", hash);
+        }
+    }
     renderizarAdmin(getDB());
 }
 
 let subvistaPastorActual = 'alertas';
-function cambiarSubvistaPastor(subVista) {
+function cambiarSubvistaPastor(subVista, pushHistory = true) {
     subvistaPastorActual = subVista || 'alertas';
     document.querySelectorAll('.pastor-subview').forEach(sv => { sv.style.display = 'none'; sv.classList.remove('active'); });
     document.querySelectorAll('#dynamic-menu .nav-link').forEach(link => link.classList.remove('active'));
@@ -1105,11 +1134,18 @@ function cambiarSubvistaPastor(subVista) {
     if (targetNav) targetNav.classList.add('active');
     const targetSub = document.getElementById('pastor-subview-' + subVista);
     if (targetSub) { targetSub.style.display = 'block'; targetSub.classList.add('active'); }
+    
+    if (pushHistory && window.history && window.history.pushState) {
+        const hash = '#pastor-' + subvistaPastorActual;
+        if (window.location.hash !== hash) {
+            history.pushState({ idPantalla: 'app-screen', subVista: subvistaPastorActual, hash }, "", hash);
+        }
+    }
     renderizarPastor(getDB());
 }
 
 let subvistaProduccionActual = 'estatus';
-function cambiarSubvistaProduccion(subVista) {
+function cambiarSubvistaProduccion(subVista, pushHistory = true) {
     subvistaProduccionActual = subVista || 'estatus';
     document.querySelectorAll('.produccion-subview').forEach(sv => { sv.style.display = 'none'; sv.classList.remove('active'); });
     document.querySelectorAll('#dynamic-menu .nav-link').forEach(link => link.classList.remove('active'));
@@ -1117,11 +1153,18 @@ function cambiarSubvistaProduccion(subVista) {
     if (targetNav) targetNav.classList.add('active');
     const targetSub = document.getElementById('produccion-subview-' + subVista);
     if (targetSub) { targetSub.style.display = 'block'; targetSub.classList.add('active'); }
+    
+    if (pushHistory && window.history && window.history.pushState) {
+        const hash = '#produccion-' + subvistaProduccionActual;
+        if (window.location.hash !== hash) {
+            history.pushState({ idPantalla: 'app-screen', subVista: subvistaProduccionActual, hash }, "", hash);
+        }
+    }
     renderizarProduccion(getDB());
 }
 
 let subvistaAdoracionActual = 'control';
-function cambiarSubvistaAdoracion(subVista) {
+function cambiarSubvistaAdoracion(subVista, pushHistory = true) {
     subvistaAdoracionActual = subVista || 'control';
     document.querySelectorAll('.adoracion-subview').forEach(sv => { sv.style.display = 'none'; sv.classList.remove('active'); });
     document.querySelectorAll('#dynamic-menu .nav-link').forEach(link => link.classList.remove('active'));
@@ -1129,11 +1172,18 @@ function cambiarSubvistaAdoracion(subVista) {
     if (targetNav) targetNav.classList.add('active');
     const targetSub = document.getElementById('adoracion-subview-' + subVista);
     if (targetSub) { targetSub.style.display = 'block'; targetSub.classList.add('active'); }
+    
+    if (pushHistory && window.history && window.history.pushState) {
+        const hash = '#adoracion-' + subvistaAdoracionActual;
+        if (window.location.hash !== hash) {
+            history.pushState({ idPantalla: 'app-screen', subVista: subvistaAdoracionActual, hash }, "", hash);
+        }
+    }
     renderizarAdoracion(getDB());
 }
 
 let subvistaEstudianteActual = 'classroom';
-function cambiarSubvistaEstudiante(subVista) {
+function cambiarSubvistaEstudiante(subVista, pushHistory = true) {
     subvistaEstudianteActual = subVista || 'classroom';
     document.querySelectorAll('.estudiante-subview').forEach(sv => { sv.style.display = 'none'; sv.classList.remove('active'); });
     document.querySelectorAll('#dynamic-menu .nav-link').forEach(link => link.classList.remove('active'));
@@ -1141,6 +1191,13 @@ function cambiarSubvistaEstudiante(subVista) {
     if (targetNav) targetNav.classList.add('active');
     const targetSub = document.getElementById('estudiante-subview-' + subVista);
     if (targetSub) { targetSub.style.display = 'block'; targetSub.classList.add('active'); }
+    
+    if (pushHistory && window.history && window.history.pushState) {
+        const hash = '#estudiante-' + subvistaEstudianteActual;
+        if (window.location.hash !== hash) {
+            history.pushState({ idPantalla: 'app-screen', subVista: subvistaEstudianteActual, hash }, "", hash);
+        }
+    }
     renderizarEstudiante(getDB());
 }
 
@@ -1149,7 +1206,7 @@ function cambiarSubvistaEstudiante(subVista) {
 // -------------------------------------------------------------
 let subvistaMaestroActual = 'dashboard';
 
-function cambiarSubvistaMaestro(subVista) {
+function cambiarSubvistaMaestro(subVista, pushHistory = true) {
     subvistaMaestroActual = subVista || 'dashboard';
     
     document.querySelectorAll('.maestro-subview').forEach(sv => {
@@ -1168,6 +1225,13 @@ function cambiarSubvistaMaestro(subVista) {
     if (targetSub) {
         targetSub.style.display = 'block';
         targetSub.classList.add('active');
+    }
+    
+    if (pushHistory && window.history && window.history.pushState) {
+        const hash = '#maestro-' + subvistaMaestroActual;
+        if (window.location.hash !== hash) {
+            history.pushState({ idPantalla: 'app-screen', subVista: subvistaMaestroActual, hash }, "", hash);
+        }
     }
     
     const db = getDB();
@@ -3322,6 +3386,52 @@ function animateCursorSpotlight() {
 }
 requestAnimationFrame(animateCursorSpotlight);
 
+// GESTOR Y ENRUTADOR NATIVO DEL HISTORIAL Y BOTÓN DE REGRESAR EN NAVEGADOR Y GESTOS DACTILARES
+function procesarRutaHash(hash, pushHistory = false) {
+    const rawHash = (hash || window.location.hash || '').replace('#', '').trim().toLowerCase();
+    
+    if (!rawHash || rawHash === 'eleccion' || rawHash === 'inicio') {
+        mostrarPantalla('app-choice-screen', pushHistory);
+        return;
+    }
+    
+    if (rawHash === 'login') {
+        mostrarPantalla('login-screen', pushHistory);
+        return;
+    }
+    
+    if (rawHash === 'bienvenida') {
+        if (usuarioActual) {
+            mostrarPantalla('worship-intro-screen', pushHistory);
+        } else {
+            mostrarPantalla('login-screen', pushHistory);
+        }
+        return;
+    }
+    
+    // Hash pertenece a secciones/módulos dentro del sistema activado
+    if (usuarioActual) {
+        mostrarPantalla('app-screen', pushHistory);
+        const parts = rawHash.split('-');
+        const prefix = parts[0];
+        const sub = parts.slice(1).join('-');
+        
+        if (prefix === 'maestro') cambiarSubvistaMaestro(sub, pushHistory);
+        else if (prefix === 'pastor') cambiarSubvistaPastor(sub, pushHistory);
+        else if (prefix === 'produccion' || prefix === 'administracion') cambiarSubvistaProduccion(sub, pushHistory);
+        else if (prefix === 'admin') cambiarSubvistaAdmin(sub, pushHistory);
+        else if (prefix === 'adoracion') cambiarSubvistaAdoracion(sub, pushHistory);
+        else if (prefix === 'estudiante' || prefix === 'alumno') cambiarSubvistaEstudiante(sub, pushHistory);
+    } else {
+        mostrarPantalla('login-screen', pushHistory);
+    }
+}
+
+// CAPTURAR EL GESTO DE REGRESAR CON 2 DEDOS Y EL BOTÓN ATRÁS DEL NAVEGADOR
+window.addEventListener('popstate', (e) => {
+    procesarRutaHash(window.location.hash, false);
+});
+
 window.onload = function() {
     initDB();
     iniciarEleccionApp();
@@ -3335,10 +3445,16 @@ window.onload = function() {
             if (parsedSession && parsedSession.username && db.usuarios[parsedSession.username]) {
                 usuarioActual = { ...db.usuarios[parsedSession.username], username: parsedSession.username };
                 configurarInterfaz(usuarioActual);
-                mostrarPantalla('worship-intro-screen');
             }
         }
     } catch(e) {
         console.error("Error al restaurar la sesión del usuario:", e);
+    }
+
+    // Inicializar la ruta desde la URL actual o registrar #eleccion en el historial
+    if (window.location.hash) {
+        procesarRutaHash(window.location.hash, false);
+    } else {
+        history.replaceState({ idPantalla: 'app-choice-screen', hash: '#eleccion' }, "", "#eleccion");
     }
 };
