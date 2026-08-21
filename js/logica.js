@@ -120,7 +120,7 @@ const defaultDB = {
 
 function normalizeRol(rol) {
     if (!rol) return 'estudiante';
-    const r = String(rol).trim().toLowerCase();
+    const r = String(rol).trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
     if (r === 'alumno' || r === 'alumnos' || r === 'estudiante' || r === 'estudiantes' || r === 'student') return 'estudiante';
     if (r === 'maestro' || r === 'profesor' || r === 'docente' || r === 'teacher') return 'maestro';
     if (r === 'pastor' || r === 'pastoral') return 'pastor';
@@ -1056,85 +1056,93 @@ function renderizarMaestro(db) {
 // RENDER DE ROL: PRODUCCIÓN & STAFF
 // -------------------------------------------------------------
 function renderizarProduccion(db) {
-    const estatus = db.estatusClases || { estado: 'normal', mensaje: 'Clases normales.' };
-    const prodStatusTag = document.getElementById('prod-status-tag');
-    const prodClassState = document.getElementById('prod-class-state');
-    const prodClassMsg = document.getElementById('prod-class-message');
-    
-    if (prodStatusTag) {
-        let label = "✅ Clases Normales";
-        if (estatus.estado === 'suspendida') label = "🚫 Clase Suspendida";
-        if (estatus.estado === 'especial') label = "⚠️ Horario Especial";
-        prodStatusTag.innerText = label;
-    }
-    if (prodClassState) prodClassState.value = estatus.estado;
-    if (prodClassMsg) prodClassMsg.value = estatus.mensaje;
-
-    // Historial de comunicados de Staff
-    const anunciosStaff = db.anunciosStaff || [];
-    const prodAnnCount = document.getElementById('prod-announcements-count');
-    if (prodAnnCount) prodAnnCount.innerText = anunciosStaff.length;
-
-    const tbody = document.getElementById('prod-staff-announcements-tbody');
-    if (tbody) {
-        tbody.innerHTML = '';
-        if (anunciosStaff.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;" class="text-muted">No hay comunicados del staff emitidos aún.</td></tr>`;
-        } else {
-            anunciosStaff.forEach(a => {
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td>
-                        <strong style="color:white;">${a.titulo}</strong><br>
-                        <small class="text-muted">${a.contenido}</small>
-                    </td>
-                    <td>${a.fecha}</td>
-                    <td><span class="badge badge-rol">${a.autor}</span></td>
-                    <td>
-                        <button class="btn btn-sm btn-delete" onclick="eliminarAnuncioStaff('${a.id}')"><i class="fas fa-trash-alt"></i></button>
-                    </td>
-                `;
-                tbody.appendChild(tr);
-            });
-        }
-    }
-
-    // Tabla Control de Colegiaturas de Alumnos
-    const billingTbody = document.getElementById('prod-billing-tbody');
-    if (billingTbody) {
-        billingTbody.innerHTML = '';
-        const alumnos = Object.values(db.usuarios).filter(u => u.rol === 'estudiante');
-        const solventesCount = alumnos.filter(u => u.pagoStatus !== 'pendiente').length;
+    try {
+        const estatus = (db && db.estatusClases) || { estado: 'normal', mensaje: 'Clases normales.' };
+        const prodStatusTag = document.getElementById('prod-status-tag');
+        const prodClassState = document.getElementById('prod-class-state');
+        const prodClassMsg = document.getElementById('prod-class-message');
         
-        const badgeSummary = document.getElementById('prod-billing-summary-badge');
-        if (badgeSummary) badgeSummary.innerText = `${solventesCount} de ${alumnos.length} Solventes`;
-
-        if (alumnos.length === 0) {
-            billingTbody.innerHTML = `<tr><td colspan="4" style="text-align:center;" class="text-muted">No hay alumnos registrados en la academia.</td></tr>`;
-        } else {
-            alumnos.forEach(u => {
-                const isSolvente = u.pagoStatus !== 'pendiente';
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td>
-                        <strong style="color:white;">${u.nombre}</strong><br>
-                        <small class="text-muted">@${u.username}</small>
-                    </td>
-                    <td><span class="badge badge-rol">${u.area}</span></td>
-                    <td>
-                        <span class="badge badge-estado ${isSolvente ? 'presente' : 'ausente'}">
-                            ${isSolvente ? 'SOLVENTE (AL DÍA)' : 'PAGO PENDIENTE'}
-                        </span>
-                    </td>
-                    <td>
-                        <button class="btn btn-sm ${isSolvente ? 'btn-deactivate' : 'btn-activate'}" onclick="alternarPagoAlumnoProduccion('${u.username}')">
-                            ${isSolvente ? '<i class="fas fa-exclamation-triangle"></i> Marcar Pendiente' : '<i class="fas fa-check-circle"></i> Marcar Solvente'}
-                        </button>
-                    </td>
-                `;
-                billingTbody.appendChild(tr);
-            });
+        if (prodStatusTag) {
+            let label = "✅ Clases Normales";
+            if (estatus.estado === 'suspendida') label = "🚫 Clase Suspendida";
+            if (estatus.estado === 'especial') label = "⚠️ Horario Especial";
+            prodStatusTag.innerText = label;
         }
+        if (prodClassState) prodClassState.value = estatus.estado || 'normal';
+        if (prodClassMsg) prodClassMsg.value = estatus.mensaje || '';
+
+        // Historial de comunicados de Staff
+        const anunciosStaff = (db && db.anunciosStaff) || [];
+        const prodAnnCount = document.getElementById('prod-announcements-count');
+        if (prodAnnCount) prodAnnCount.innerText = anunciosStaff.length;
+
+        const tbody = document.getElementById('prod-staff-announcements-tbody');
+        if (tbody) {
+            tbody.innerHTML = '';
+            if (anunciosStaff.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;" class="text-muted">No hay comunicados del staff emitidos aún.</td></tr>`;
+            } else {
+                anunciosStaff.forEach(a => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td>
+                            <strong style="color:white;">${a.titulo || 'Comunicado'}</strong><br>
+                            <small class="text-muted">${a.contenido || ''}</small>
+                        </td>
+                        <td>${a.fecha || ''}</td>
+                        <td><span class="badge badge-rol">${a.autor || 'Staff'}</span></td>
+                        <td>
+                            <button class="btn btn-sm btn-delete" onclick="eliminarAnuncioStaff('${a.id}')"><i class="fas fa-trash-alt"></i></button>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            }
+        }
+
+        // Tabla Control de Colegiaturas de Alumnos
+        const billingTbody = document.getElementById('prod-billing-tbody');
+        if (billingTbody) {
+            billingTbody.innerHTML = '';
+            const usuariosObj = (db && db.usuarios) || {};
+            const alumnos = Object.keys(usuariosObj)
+                .map(uKey => ({ ...usuariosObj[uKey], username: uKey }))
+                .filter(u => normalizeRol(u.rol) === 'estudiante');
+
+            const solventesCount = alumnos.filter(u => u.pagoStatus !== 'pendiente').length;
+            
+            const badgeSummary = document.getElementById('prod-billing-summary-badge');
+            if (badgeSummary) badgeSummary.innerText = `${solventesCount} de ${alumnos.length} Solventes`;
+
+            if (alumnos.length === 0) {
+                billingTbody.innerHTML = `<tr><td colspan="4" style="text-align:center;" class="text-muted">No hay alumnos registrados en la academia.</td></tr>`;
+            } else {
+                alumnos.forEach(u => {
+                    const isSolvente = u.pagoStatus !== 'pendiente';
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td>
+                            <strong style="color:white;">${u.nombre || u.username}</strong><br>
+                            <small class="text-muted">@${u.username}</small>
+                        </td>
+                        <td><span class="badge badge-rol">${u.area || 'Estudiante'}</span></td>
+                        <td>
+                            <span class="badge badge-estado ${isSolvente ? 'presente' : 'ausente'}">
+                                ${isSolvente ? 'SOLVENTE (AL DÍA)' : 'PAGO PENDIENTE'}
+                            </span>
+                        </td>
+                        <td>
+                            <button class="btn btn-sm ${isSolvente ? 'btn-deactivate' : 'btn-activate'}" onclick="alternarPagoAlumnoProduccion('${u.username}')">
+                                ${isSolvente ? '<i class="fas fa-exclamation-triangle"></i> Marcar Pendiente' : '<i class="fas fa-check-circle"></i> Marcar Solvente'}
+                            </button>
+                        </td>
+                    `;
+                    billingTbody.appendChild(tr);
+                });
+            }
+        }
+    } catch(err) {
+        console.error("Error en renderizarProduccion:", err);
     }
 }
 

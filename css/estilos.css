@@ -885,27 +885,30 @@ textarea.form-control {
 }
 
 /* ================= CONTENIDO DEL PANEL ================= */
+/* ================= CONTENIDO DEL PANEL ================= */
 .main-content {
     flex: 1;
-    padding: 2.2rem 3.5rem;
+    padding: 1.6rem 2.2rem;
     overflow-y: auto;
+    overflow-x: hidden;
     background-color: var(--bg-dark);
+    min-width: 0;
 }
 
 .header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 2.5rem;
+    margin-bottom: 1.8rem;
     background: linear-gradient(135deg, var(--bg-panel) 0%, rgba(15,15,18,0.7) 100%);
-    padding: 1.4rem 2.2rem;
-    border-radius: 20px;
+    padding: 1.2rem 1.8rem;
+    border-radius: 18px;
     border: 1px solid var(--border-color);
     box-shadow: 0 10px 30px rgba(0,0,0,0.15);
 }
 
 .welcome-text h2 {
-    font-size: 1.6rem;
+    font-size: 1.4rem;
     font-weight: 800;
     letter-spacing: 0.5px;
 }
@@ -963,6 +966,7 @@ textarea.form-control {
 .app-view {
     display: none;
     animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+    min-width: 0;
 }
 .app-view.active {
     display: block;
@@ -971,26 +975,28 @@ textarea.form-control {
 /* Rejilla de Tarjetas Estadísticas */
 .dashboard-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-    gap: 1.8rem;
-    margin-bottom: 2.2rem;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1.4rem;
+    margin-bottom: 1.8rem;
+    min-width: 0;
 }
 
 .card {
     background-color: var(--bg-card);
-    padding: 2rem;
-    border-radius: 20px;
+    padding: 1.5rem 1.6rem;
+    border-radius: 16px;
     border: 1px solid var(--border-color);
     position: relative;
     overflow: hidden;
     display: flex;
     align-items: center;
-    gap: 20px;
+    gap: 16px;
     transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    min-width: 0;
 }
 .card:hover {
     border-color: var(--border-color-hover);
-    transform: translateY(-4px);
+    transform: translateY(-3px);
     background-color: var(--bg-card-hover);
     box-shadow: 0 12px 30px rgba(0,0,0,0.3);
 }
@@ -999,29 +1005,30 @@ textarea.form-control {
     display: flex;
     justify-content: center;
     align-items: center;
-    width: 58px;
-    height: 58px;
+    width: 50px;
+    height: 50px;
     background-color: var(--primary-red-dim);
     color: var(--primary-red-hover);
-    border-radius: 14px;
-    font-size: 1.6rem;
+    border-radius: 12px;
+    font-size: 1.4rem;
     box-shadow: 0 6px 15px rgba(229, 9, 20, 0.1);
+    flex-shrink: 0;
 }
 .card-icon.red-variant {
     background-color: rgba(229, 9, 20, 0.15);
 }
 
 .card h3 {
-    font-size: 0.85rem;
+    font-size: 0.8rem;
     font-weight: 600;
     color: var(--text-muted);
     text-transform: uppercase;
     letter-spacing: 0.5px;
 }
 .stat-val {
-    font-size: 2.2rem;
+    font-size: 1.75rem;
     font-weight: 800;
-    margin: 4px 0;
+    margin: 2px 0;
     letter-spacing: -0.5px;
     line-height: 1.1;
 }
@@ -1029,11 +1036,23 @@ textarea.form-control {
 /* Contenedores de paneles */
 .panel-box {
     background-color: var(--bg-panel);
-    border-radius: 20px;
+    border-radius: 16px;
     border: 1px solid var(--border-color);
-    padding: 2.2rem;
-    margin-bottom: 2rem;
+    padding: 1.6rem 1.8rem;
+    margin-bottom: 1.6rem;
     box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+    min-width: 0;
+}
+
+.maestro-panels-grid, .student-panel-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 1.6rem;
+    min-width: 0;
+}
+.maestro-panels-grid > *, .student-panel-grid > * {
+    min-width: 0;
 }
 
 .panel-header {
