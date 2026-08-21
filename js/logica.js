@@ -162,15 +162,18 @@ function initDB() {
             }
         });
 
-        // Garantizar usuario alumno de prueba siempre con datos limpios
-        db.usuarios["alumno"] = {
-            password: "can2026**",
-            rol: "estudiante",
-            nombre: "Alumno de Prueba",
-            area: "Teclado",
-            pagoStatus: "solvente"
-        };
-        modificado = true;
+        // Garantizar usuario alumno de prueba solo si no existe aún
+        if (!db.usuarios["alumno"]) {
+            db.usuarios["alumno"] = {
+                password: "can2026**",
+                rol: "estudiante",
+                nombre: "Alumno de Prueba",
+                area: "Teclado",
+                instrumento: "Teclado",
+                pagoStatus: "solvente"
+            };
+            modificado = true;
+        }
         
         if (modificado) {
             localStorage.setItem('worship_sessions_db', JSON.stringify(db));
@@ -435,6 +438,14 @@ function cerrarSesion() {
 function actualizarFondoIntroPorInstrumento(usuario) {
     const layer = document.getElementById('intro-bg-instrument-layer');
     if (!layer) return;
+    
+    // Obtener datos frescos actualizados de la Base de Datos
+    const db = getDB();
+    if (usuario && usuario.username && db && db.usuarios && db.usuarios[usuario.username]) {
+        const uFresh = db.usuarios[usuario.username];
+        usuario.area = uFresh.area || usuario.area;
+        usuario.instrumento = uFresh.area || uFresh.instrumento || usuario.instrumento;
+    }
     
     const inst = ((usuario?.instrumento || usuario?.area || usuario?.rol || '') + '').toLowerCase();
     
