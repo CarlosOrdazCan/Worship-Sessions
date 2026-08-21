@@ -301,7 +301,12 @@ const menusConfig = {
     `,
     maestro: `
         <li class="nav-item">
-            <a href="#" class="nav-link active" id="nav-maestro-classroom" onclick="cambiarSubvistaMaestro('classroom'); return false;">
+            <a href="#" class="nav-link active" id="nav-maestro-dashboard" onclick="cambiarSubvistaMaestro('dashboard'); return false;">
+                <i class="fas fa-home"></i> Resumen General
+            </a>
+        </li>
+        <li class="nav-item">
+            <a href="#" class="nav-link" id="nav-maestro-classroom" onclick="cambiarSubvistaMaestro('classroom'); return false;">
                 <i class="fas fa-tasks"></i> Classroom & Tareas
             </a>
         </li>
@@ -526,7 +531,7 @@ function cambiarVista(rolVista) {
         targetView.classList.add('active');
         if (rol === 'admin') { cambiarSubvistaAdmin(subvistaAdminActual || 'panel'); return; }
         if (rol === 'pastor') { cambiarSubvistaPastor(subvistaPastorActual || 'alertas'); return; }
-        if (rol === 'maestro') { cambiarSubvistaMaestro(subvistaMaestroActual || 'classroom'); return; }
+        if (rol === 'maestro') { cambiarSubvistaMaestro(subvistaMaestroActual || 'dashboard'); return; }
         if (rol === 'produccion') { cambiarSubvistaProduccion(subvistaProduccionActual || 'estatus'); return; }
         if (rol === 'adoracion') { cambiarSubvistaAdoracion(subvistaAdoracionActual || 'control'); return; }
         if (rol === 'estudiante') { cambiarSubvistaEstudiante(subvistaEstudianteActual || 'classroom'); return; }
@@ -1124,10 +1129,10 @@ function cambiarSubvistaEstudiante(subVista) {
 // -------------------------------------------------------------
 // RENDER DE ROL: MAESTRO & DOCENTES
 // -------------------------------------------------------------
-let subvistaMaestroActual = 'classroom';
+let subvistaMaestroActual = 'dashboard';
 
 function cambiarSubvistaMaestro(subVista) {
-    subvistaMaestroActual = subVista || 'classroom';
+    subvistaMaestroActual = subVista || 'dashboard';
     
     document.querySelectorAll('.maestro-subview').forEach(sv => {
         sv.style.display = 'none';
@@ -1508,6 +1513,96 @@ function renderizarMaestro(db) {
                         </td>
                     `;
                     ensTbody.appendChild(tr);
+                });
+            }
+        }
+
+        // Ponderar y Cargar Métrica de Resumen General Dashboard Maestro
+        const dashTotalStudents = document.getElementById('maestro-dash-total-students');
+        const dashPendingHw = document.getElementById('maestro-dash-pending-homework');
+        const dashAttRate = document.getElementById('maestro-dash-attendance-rate');
+        const dashEnsembles = document.getElementById('maestro-dash-ensembles-count');
+        const dashStudentsTbody = document.getElementById('maestro-dash-students-tbody');
+        const dashSubmissionsList = document.getElementById('maestro-dash-recent-submissions-list');
+
+        const pendientesCount = entregasFiltradas.filter(k => entregas[k].estado !== 'calificado').length;
+
+        if (dashTotalStudents) dashTotalStudents.innerText = count;
+        if (dashPendingHw) dashPendingHw.innerText = pendientesCount;
+        if (dashEnsembles) {
+            const asignaciones = (db && db.ensambleAsignaciones) || {};
+            const keys = Object.keys(asignaciones);
+            const myEnsembles = keys.filter(k => {
+                const u = usuariosObj[asignaciones[k].username];
+                return usuarioActual.rol === 'admin' || (u && u.area === areaMaestro);
+            });
+            dashEnsembles.innerText = myEnsembles.length;
+        }
+
+        // Cargar Alumnos en la Tabla Resumen del Dashboard General
+        if (dashStudentsTbody) {
+            dashStudentsTbody.innerHTML = '';
+            const misAlumnosKeys = Object.keys(usuariosObj).filter(uname => {
+                const u = usuariosObj[uname];
+                return normalizeRol(u.rol) === 'estudiante' && (usuarioActual.rol === 'admin' || u.area === areaMaestro);
+            });
+
+            if (misAlumnosKeys.length === 0) {
+                dashStudentsTbody.innerHTML = `<tr><td colspan="4" style="text-align:center;" class="text-muted">Sin alumnos inscritos aún en tu área.</td></tr>`;
+            } else {
+                misAlumnosKeys.forEach(uname => {
+                    const user = usuariosObj[uname];
+                    const notasObj = ((db && db.calificaciones) || {})[uname] || { teoria: '-', tecnica: '-' };
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td>
+                            <strong style="color:white;">${user.nombre || uname}</strong><br>
+                            <small class="text-muted">@${uname} (${user.area || 'Estudiante'})</small>
+                        </td>
+                        <td><strong class="note-pill">${notasObj.teoria}</strong></td>
+                        <td><strong class="note-pill">${notasObj.tecnica}</strong></td>
+                        <td>
+                            <button class="btn btn-sm btn-primary" onclick="abrirModalCalificar('${uname}')"><i class="fas fa-edit"></i> Calificar</button>
+                        </td>
+                    `;
+                    dashStudentsTbody.appendChild(tr);
+                });
+            }
+        }
+
+        // Cargar Entregas Pendientes en Lista del Dashboard
+        if (dashSubmissionsList) {
+            dashSubmissionsList.innerHTML = '';
+            const pendientesKeys = entregasFiltradas.filter(k => entregas[k].estado !== 'calificado');
+            
+            if (pendientesKeys.length === 0) {
+                dashSubmissionsList.innerHTML = `<div style="background:rgba(255,255,255,0.02); padding:14px; border-radius:12px; text-align:center;" class="text-muted">🎉 ¡Excelente! No tienes tareas pendientes por revisar.</div>`;
+            } else {
+                pendientesKeys.forEach(key => {
+                    const e = entregas[key];
+                    const student = usuariosObj[e.username] || { nombre: e.username };
+                    const tObj = ((db && db.tareas) || []).find(t => t.id === e.tareaId) || { titulo: 'Tarea' };
+                    
+                    const div = document.createElement('div');
+                    div.style.background = 'rgba(255,255,255,0.03)';
+                    div.style.border = '1px solid var(--border-color)';
+                    div.style.padding = '12px 14px';
+                    div.style.borderRadius = '12px';
+                    div.style.display = 'flex';
+                    div.style.justifyContent = 'space-between';
+                    div.style.alignItems = 'center';
+                    
+                    div.innerHTML = `
+                        <div>
+                            <strong style="color:white; font-size:0.9rem;">${student.nombre || e.username}</strong>
+                            <small class="text-muted" style="display:block; font-size:0.8rem;">${tObj.titulo} • ${e.fechaEntrega || 'Fecha N/A'}</small>
+                        </div>
+                        <div style="display:flex; gap:8px;">
+                            <a href="${e.videoUrl || '#'}" target="_blank" class="btn btn-sm btn-secondary" style="padding:6px 10px;"><i class="fab fa-youtube"></i> Video</a>
+                            <button class="btn btn-sm btn-primary" onclick="abrirModalEvaluarTarea('${key}')" style="padding:6px 10px;"><i class="fas fa-check-circle"></i> Nota</button>
+                        </div>
+                    `;
+                    dashSubmissionsList.appendChild(div);
                 });
             }
         }

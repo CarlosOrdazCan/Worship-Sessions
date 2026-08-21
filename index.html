@@ -586,8 +586,118 @@
                 <!-- ================= VISTA: MAESTRO DE INSTRUMENTO ================= -->
                 <div id="view-maestro" class="app-view">
 
+                    <!-- SUB-VISTA 0: RESUMEN GENERAL & DASHBOARD DOCENTE -->
+                    <div id="maestro-subview-dashboard" class="maestro-subview">
+                        <!-- BANNER DE BIENVENIDA EXECUTIVE -->
+                        <div style="background: linear-gradient(135deg, rgba(13, 30, 34, 0.95) 0%, rgba(229, 9, 20, 0.18) 100%); border: 1px solid rgba(255,255,255,0.12); padding: 1.6rem 2rem; border-radius: 20px; margin-bottom: 1.8rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1.2rem; box-shadow: 0 15px 35px rgba(0,0,0,0.4);">
+                            <div>
+                                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 6px;">
+                                    <span style="background: var(--primary-red); color: white; padding: 4px 12px; border-radius: 9999px; font-weight: 700; font-size: 0.75rem; text-transform: uppercase;">PANEL DOCENTE GENERAL</span>
+                                    <span style="color: var(--text-muted); font-size: 0.85rem;"><i class="fas fa-calendar-alt"></i> Próxima Clase: Sábado 10:00 AM</span>
+                                </div>
+                                <h2 style="color: white; font-family: 'Space Grotesk', sans-serif; margin: 0; font-size: 1.6rem; font-weight: 700;">Resumen General de Clase</h2>
+                                <p style="color: var(--text-muted); margin: 4px 0 0 0; font-size: 0.95rem;">Monitorea a tus alumnos, revisiones de tareas pendientes y actividades docentes del ciclo.</p>
+                            </div>
+                            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                                <button class="btn btn-primary" onclick="cambiarSubvistaMaestro('classroom')"><i class="fas fa-plus"></i> Asignar Tarea</button>
+                                <button class="btn btn-secondary" onclick="cambiarSubvistaMaestro('alumnos')"><i class="fas fa-user-check"></i> Evaluaciones & Asistencia</button>
+                            </div>
+                        </div>
+
+                        <!-- METRICAS CLAVE -->
+                        <div class="dashboard-grid" style="margin-bottom: 1.8rem;">
+                            <div class="card">
+                                <div class="card-icon"><i class="fas fa-users"></i></div>
+                                <div>
+                                    <h3>Mis Alumnos</h3>
+                                    <div class="stat-val" id="maestro-dash-total-students">0</div>
+                                    <small class="text-muted">Inscritos en tu área</small>
+                                </div>
+                            </div>
+                            <div class="card">
+                                <div class="card-icon red-variant"><i class="fas fa-video"></i></div>
+                                <div>
+                                    <h3>Entregas por Revisar</h3>
+                                    <div class="stat-val" id="maestro-dash-pending-homework">0</div>
+                                    <small class="text-muted">Videos pendientes de nota</small>
+                                </div>
+                            </div>
+                            <div class="card">
+                                <div class="card-icon"><i class="fas fa-chart-line"></i></div>
+                                <div>
+                                    <h3>Asistencia Promedio</h3>
+                                    <div class="stat-val" id="maestro-dash-attendance-rate">100%</div>
+                                    <small class="text-muted">Asistencia del grupo</small>
+                                </div>
+                            </div>
+                            <div class="card">
+                                <div class="card-icon red-variant"><i class="fas fa-layer-group"></i></div>
+                                <div>
+                                    <h3>Ensambles Asignados</h3>
+                                    <div class="stat-val" id="maestro-dash-ensembles-count">0</div>
+                                    <small class="text-muted">Alumnos con rolas activas</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- SECCIÓN PRINCIPAL GRID: ALUMNOS & REVISIONES -->
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 1.5rem;">
+                            <!-- COLUMNA 1: LISTADO RESUMEN DE ALUMNOS -->
+                            <div class="panel-box">
+                                <div class="panel-header" style="display:flex; justify-content:space-between; align-items:center;">
+                                    <h3><i class="fas fa-user-graduate"></i> Mis Alumnos a Cargo</h3>
+                                    <button class="btn btn-sm btn-secondary" onclick="cambiarSubvistaMaestro('alumnos')">Ver Lista Completa <i class="fas fa-arrow-right"></i></button>
+                                </div>
+                                <div class="table-container" style="margin-top: 1rem;">
+                                    <table class="table-custom">
+                                        <thead>
+                                            <tr>
+                                                <th>Alumno</th>
+                                                <th>Teoría</th>
+                                                <th>Técnica</th>
+                                                <th>Acción</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="maestro-dash-students-tbody">
+                                            <!-- Cargado por JS -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                            <!-- COLUMNA 2: ENTREGAS RECIENTES & COMUNICADOS -->
+                            <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+                                <div class="panel-box">
+                                    <div class="panel-header" style="display:flex; justify-content:space-between; align-items:center;">
+                                        <h3><i class="fas fa-tasks"></i> Tareas en Video Pendientes</h3>
+                                        <button class="btn btn-sm btn-secondary" onclick="cambiarSubvistaMaestro('classroom')">Classroom <i class="fas fa-arrow-right"></i></button>
+                                    </div>
+                                    <div id="maestro-dash-recent-submissions-list" style="margin-top: 1rem; display: flex; flex-direction: column; gap: 10px;">
+                                        <!-- Cargado por JS -->
+                                    </div>
+                                </div>
+
+                                <div class="panel-box" style="background: rgba(255,255,255,0.02); border: 1px dashed var(--border-color);">
+                                    <div class="panel-header">
+                                        <h3><i class="fas fa-bullhorn" style="color:var(--primary-red);"></i> Avisos Directivos</h3>
+                                    </div>
+                                    <div style="margin-top: 0.8rem; display: flex; flex-direction: column; gap: 10px;">
+                                        <div style="background: rgba(255,255,255,0.03); padding: 12px 14px; border-radius: 12px; border-left: 3px solid var(--primary-red);">
+                                            <strong style="color:white; display:block; font-size:0.9rem;">📌 Evaluaciones del Ciclo Escolar</strong>
+                                            <small style="color:var(--text-muted); display:block; margin-top:2px;">Por favor mantén actualizadas las calificaciones teóricas y técnicas de tus alumnos.</small>
+                                        </div>
+                                        <div style="background: rgba(255,255,255,0.03); padding: 12px 14px; border-radius: 12px; border-left: 3px solid #f59e0b;">
+                                            <strong style="color:white; display:block; font-size:0.9rem;">🎵 Etapa de Ensambles & Servicios</strong>
+                                            <small style="color:var(--text-muted); display:block; margin-top:2px;">Revisa las asignaciones de canciones y links de playthroughs para el concierto final.</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- SUB-VISTA 1: CLASSROOM & TAREAS -->
-                    <div id="maestro-subview-classroom" class="maestro-subview">
+                    <div id="maestro-subview-classroom" class="maestro-subview" style="display: none;">
                         <div class="dashboard-grid">
                             <div class="card">
                                 <div class="card-icon"><i class="fas fa-guitar"></i></div>
