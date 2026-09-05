@@ -1,0 +1,167 @@
+/* VIEWS & DASHBOARDS */
+
+/* ADMIN ROLE SWITCHER */
+.admin-role-switcher {
+    background: rgba(255, 69, 0, 0.08);
+    border: 1px solid rgba(255, 69, 0, 0.3);
+    padding: 1rem 1.4rem;
+    border-radius: 16px;
+    margin-bottom: 1.8rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+/* SUBVIEW TAB NAVIGATION */
+.subview-nav {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+    background: rgba(255, 255, 255, 0.02);
+    padding: 8px 12px;
+    border-radius: 14px;
+    border: 1px solid var(--border-color);
+}
+
+/* DASHBOARD STATS GRID */
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 1.25rem;
+    margin-bottom: 2rem;
+}
+
+.status-card {
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+}
+
+.card-icon {
+    width: 52px;
+    height: 52px;
+    border-radius: 14px;
+    background: rgba(0, 180, 216, 0.12);
+    color: var(--accent-teal);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.3rem;
+}
+
+.card-icon.red-variant {
+    background: rgba(255, 69, 0, 0.12);
+    color: var(--primary-red);
+}
+
+.stat-val {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: #fff;
+    margin: 4px 0;
+}
+
+/* BANNERS */
+.class-status-banner {
+    padding: 1.2rem 1.6rem;
+    border-radius: 14px;
+    background: rgba(0, 168, 120, 0.1);
+    border: 1px solid rgba(0, 168, 120, 0.3);
+    margin-bottom: 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.announcements-wall-container {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.announcement-item {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--border-color);
+    border-left: 4px solid var(--primary-red);
+    padding: 1rem 1.25rem;
+    border-radius: 10px;
+}
+
+.announcement-item h4 {
+    font-size: 0.95rem;
+    color: #fff;
+    margin-bottom: 4px;
+}
+
+.announcement-item p {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+}
+
+/* MULTITRACK MIXER */
+.multitrack-mixer-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 12px;
+    margin-top: 1rem;
+}
+
+.track-card {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.track-title {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #fff;
+}
+
+/* METRONOME */
+.metronome-box {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    padding: 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.metro-tempo-display {
+    font-size: 2.4rem;
+    font-weight: 700;
+    color: var(--primary-red);
+}
+
+.metro-beats-container {
+    display: flex;
+    gap: 8px;
+}
+
+.metro-beat-dot {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.2);
+    transition: all 0.1s;
+}
+
+.metro-beat-dot.active {
+    background: var(--primary-red);
+    box-shadow: 0 0 10px var(--primary-red);
+    transform: scale(1.2);
+}

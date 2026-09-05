@@ -548,6 +548,7 @@ app.post("/notifications/read-all", async (req, res) => {
 
 // Static files
 app.use("/alabanza", express.static(path.join(__dirname, "alabanza")));
+app.use(express.static(path.join(__dirname, "dist")));
 app.use(express.static(path.join(__dirname)));
 
 // SPA Fallback for unknown routes
@@ -555,7 +556,12 @@ app.get("*", (req, res) => {
     if (req.path.startsWith("/alabanza")) {
         res.sendFile(path.join(__dirname, "alabanza", "index.html"));
     } else {
-        res.sendFile(path.join(__dirname, "index.html"));
+        const distIndex = path.join(__dirname, "dist", "index.html");
+        if (require("fs").existsSync(distIndex)) {
+            res.sendFile(distIndex);
+        } else {
+            res.sendFile(path.join(__dirname, "index.html"));
+        }
     }
 });
 
