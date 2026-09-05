@@ -171,22 +171,6 @@ function initDB() {
             }
         });
 
-        // Garantizar usuario alumno de prueba solo si no existe aún
-        if (!db.usuarios["alumno"]) {
-            db.usuarios["alumno"] = {
-                password: "can2026**",
-                rol: "estudiante",
-                nombre: "Alumno de Prueba",
-                area: "Teclado",
-                instrumento: "Teclado",
-                pagoStatus: "solvente",
-                mesesAdeudo: 0,
-                motivoNoPago: "",
-                desbloqueadoManual: false,
-                observacionesMaestro: "Alumno de prueba activo."
-            };
-            modificado = true;
-        }
         if (!db.usuarios["administracion"]) {
             db.usuarios["administracion"] = {
                 password: "can2026**",
@@ -905,7 +889,7 @@ function guardarUsuario(event) {
 }
 
 function eliminarUsuario(username) {
-    if (username === usuarioActual.username) {
+    if (usuarioActual && username === usuarioActual.username) {
         showToast("No puedes borrarte a ti mismo.", "error");
         return;
     }
@@ -914,11 +898,35 @@ function eliminarUsuario(username) {
         const db = getDB();
         delete db.usuarios[username];
         
-        if (db.calificaciones[username]) delete db.calificaciones[username];
-        if (db.asistencia[username]) delete db.asistencia[username];
+        if (db.calificaciones && db.calificaciones[username]) delete db.calificaciones[username];
+        if (db.asistencia && db.asistencia[username]) delete db.asistencia[username];
+        
+        if (db.entregasTareas) {
+            Object.keys(db.entregasTareas).forEach(k => {
+                if (db.entregasTareas[k] && db.entregasTareas[k].username === username) {
+                    delete db.entregasTareas[k];
+                }
+            });
+        }
+        if (db.ensambleAsignaciones) {
+            Object.keys(db.ensambleAsignaciones).forEach(k => {
+                if (db.ensambleAsignaciones[k] && db.ensambleAsignaciones[k].username === username) {
+                    delete db.ensambleAsignaciones[k];
+                }
+            });
+        }
         
         saveDB(db);
-        showToast("Usuario eliminado");
+
+        // Sincronizar eliminación con backend de MongoDB si está disponible
+        fetch('/users/' + encodeURIComponent(username), {
+            method: 'DELETE',
+            headers: {
+                'Authorization': 'Bearer ' + (localStorage.getItem('token') || '')
+            }
+        }).catch(err => console.error("Error al sincronizar eliminación con backend:", err));
+
+        showToast("Usuario eliminado correctamente", "success");
         renderizarDatosVista('admin');
     }
 }
