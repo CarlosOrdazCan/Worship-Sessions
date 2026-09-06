@@ -11,6 +11,7 @@ export const MENU_BY_ROLE = {
     admin: [
         { id: 'panel', label: 'Panel & Estadísticas', icon: 'fas fa-chart-line' },
         { id: 'usuarios', label: 'Gestión de Usuarios', icon: 'fas fa-users-cog' },
+        { id: 'stems_cloud', label: 'Cargar Canciones & Stems (Playback Cloud)', icon: 'fas fa-cloud-upload-alt' },
         { id: 'respaldos', label: 'Respaldos & Sistema', icon: 'fas fa-database' }
     ],
     pastor: [

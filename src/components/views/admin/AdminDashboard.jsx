@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useWorship } from '../../../services/WorshipContext';
 import { exportDB, calcularEstadoPago, normalizeRol } from '../../../services/worshipDb';
+import AdminStemsUploader from './AdminStemsUploader';
 
 export default function AdminDashboard() {
     const { db, updateDb, activeSubview, setActiveSubview, setActiveRole, openModal, showToast } = useWorship();
@@ -195,7 +196,14 @@ export default function AdminDashboard() {
                 </div>
             )}
 
-            {/* SUBVIEW 3: RESPALDOS & SISTEMA */}
+            {/* SUBVIEW 3: CARGAR CANCIONES & STEMS (PLAYBACK CLOUD) */}
+            {currentSub === 'stems_cloud' && (
+                <div className="admin-subview">
+                    <AdminStemsUploader />
+                </div>
+            )}
+
+            {/* SUBVIEW 4: RESPALDOS & SISTEMA */}
             {currentSub === 'respaldos' && (
                 <div className="admin-subview">
                     <div className="panel-box">

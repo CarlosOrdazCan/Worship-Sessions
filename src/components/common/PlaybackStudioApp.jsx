@@ -2,28 +2,39 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useWorship } from '../../services/WorshipContext';
 
 export default function PlaybackStudioApp() {
-    const { currentUser, showToast } = useWorship();
+    const { db, currentUser, showToast } = useWorship();
     const myInstrument = currentUser?.area || currentUser?.instrument || 'Teclados';
 
+    // DEFAULT SETLIST + UPLOADED SONGS FROM PLAYBACK CLOUD
+    const defaultSetlist = [
+        { id: 's1', titulo: 'Júbilo', tono: 'D', autor: 'Miel San Marcos', bpm: 135, timeSig: '4/4', cover: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=150&auto=format&fit=crop&q=80' },
+        { id: 's2', titulo: 'Bienvenido...', tono: 'C', autor: 'Elevation Worship', bpm: 128, timeSig: '4/4', cover: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=150&auto=format&fit=crop&q=80' },
+        { id: 's3', titulo: 'Hay Libertad', tono: 'F', autor: 'La Imet', bpm: 140, timeSig: '4/4', cover: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=150&auto=format&fit=crop&q=80' },
+        { id: 's4', titulo: 'Rey de Reyes', tono: 'D', autor: 'Hillsong Worship', bpm: 72, timeSig: '6/8', cover: 'https://images.unsplash.com/photo-1498038432885-c6f3f1b912ee?w=150&auto=format&fit=crop&q=80' }
+    ];
+
+    const uploadedSongs = db.canciones || [];
+    const setlist = [...uploadedSongs, ...defaultSetlist];
+
     // PLAYBACK STATE
+    const [selectedSongId, setSelectedSongId] = useState('s1');
+    const currentSong = setlist.find(s => s.id === selectedSongId) || setlist[0];
+
     const [isPlaying, setIsPlaying] = useState(false);
-    const [bpm, setBpm] = useState(135);
-    const [timeSig, setTimeSig] = useState('4/4');
+    const [bpm, setBpm] = useState(currentSong.bpm || 135);
+    const [timeSig, setTimeSig] = useState(currentSong.timeSig || '4/4');
     const [currentTime, setCurrentTime] = useState(7); // seconds (00:07)
     const [totalTime, setTotalTime] = useState(614); // 10:14
-    const [selectedSongId, setSelectedSongId] = useState('s1');
     const [isPadActive, setIsPadActive] = useState(true);
     const [activeSection, setActiveSection] = useState('V1');
 
-    // SETLIST REPERTORIO
-    const setlist = [
-        { id: 's1', titulo: 'Júbilo', tono: 'D', autor: 'Miel San Marcos', cover: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=150&auto=format&fit=crop&q=80' },
-        { id: 's2', titulo: 'Bienvenido...', tono: 'C', autor: 'Elevation Worship', cover: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=150&auto=format&fit=crop&q=80' },
-        { id: 's3', titulo: 'Hay Libertad', tono: 'F', autor: 'La Imet', cover: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=150&auto=format&fit=crop&q=80' },
-        { id: 's4', titulo: 'Rey de Reyes', tono: 'D', autor: 'Hillsong Worship', cover: 'https://images.unsplash.com/photo-1498038432885-c6f3f1b912ee?w=150&auto=format&fit=crop&q=80' }
-    ];
-
-    const currentSong = setlist.find(s => s.id === selectedSongId) || setlist[0];
+    // Sync song parameters when selectedSongId changes
+    useEffect(() => {
+        if (currentSong) {
+            setBpm(currentSong.bpm || 135);
+            setTimeSig(currentSong.timeSig || '4/4');
+        }
+    }, [selectedSongId, currentSong]);
 
     // CHANNEL STRIPS STATE (matching screenshot tracks exactly)
     const [channels, setChannels] = useState([
