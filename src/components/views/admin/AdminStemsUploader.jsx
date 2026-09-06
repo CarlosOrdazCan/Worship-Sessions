@@ -72,19 +72,25 @@ export default function AdminStemsUploader() {
         setStemsDinamicos(prev => prev.map(s => s.id === id ? { ...s, nombrePersonalizado: nameVal } : s));
     };
 
-    // CAMBIAR ARCHIVO DE AUDIO
+    // CAMBIAR ARCHIVO DE AUDIO CON FILEREADER (BASE64 PERSISTENTE)
     const handleArchivoChange = (id, e) => {
         const file = e.target.files?.[0];
         if (!file) return;
 
-        const objectUrl = URL.createObjectURL(file);
-        setStemsDinamicos(prev => prev.map(s => s.id === id ? {
-            ...s,
-            archivoUrl: objectUrl,
-            archivoNombre: file.name
-        } : s));
-
-        showToast(`Archivo ${file.name} asignado al stem`, 'info');
+        const reader = new FileReader();
+        reader.onload = (evt) => {
+            const dataUrl = evt.target.result;
+            setStemsDinamicos(prev => prev.map(s => s.id === id ? {
+                ...s,
+                archivoUrl: dataUrl,
+                archivoNombre: file.name
+            } : s));
+            showToast(`✅ Archivo "${file.name}" cargado y listo`, 'success');
+        };
+        reader.onerror = () => {
+            showToast('Error al leer el archivo de audio', 'error');
+        };
+        reader.readAsDataURL(file);
     };
 
     // GUARDAR CANCIÓN EN LA NUBE

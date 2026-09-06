@@ -296,11 +296,44 @@ export default function PlaybackStudioApp() {
         const nextState = !isPlaying;
         setIsPlaying(nextState);
 
-        const hasUploadedAudio = Object.keys(audioElementsRef.current).length > 0;
+        const hasSolo = channels.some(c => c.solo);
 
+        // SYNCHRONOUSLY PLAY/PAUSE STEM AUDIO ELEMENTS ON USER GESTURE
+        Object.entries(audioElementsRef.current).forEach(([chId, audio]) => {
+            const ch = channels.find(c => c.id === chId);
+            const isMuted = ch ? ch.muted : false;
+            const isSolo = ch ? ch.solo : false;
+            const isActiveTrack = hasSolo ? isSolo : !isMuted;
+
+            if (nextState && isActiveTrack) {
+                try {
+                    audio.currentTime = currentTime;
+                    audio.volume = ch ? Math.max(0, Math.min(1, ch.vol / 100)) : 0.8;
+                    const playPromise = audio.play();
+                    if (playPromise !== undefined) {
+                        playPromise.catch(err => console.warn('Error reproduciendo stem:', err));
+                    }
+                } catch (err) {
+                    console.warn('Error al iniciar audio stem:', err);
+                }
+            } else {
+                try {
+                    audio.pause();
+                } catch (err) {}
+            }
+        });
+
+        // CONTROL AMBIENT SYNTH PAD
+        if (nextState && isPadActive) {
+            startAmbientPad();
+        } else {
+            stopAmbientPad();
+        }
+
+        const audioCount = Object.keys(audioElementsRef.current).length;
         showToast(
             nextState
-                ? `▶ Reproduciendo ${currentSong.titulo} (${bpm} BPM) ${hasUploadedAudio ? '• Stems de Audio Activos' : '• Pad Synthesizer Activo'}`
+                ? `▶ Reproduciendo "${currentSong.titulo}" (${bpm} BPM) • ${audioCount > 0 ? `${audioCount} pistas de audio en vivo` : 'Sintetizador activo'}`
                 : '❚❚ Pausado',
             nextState ? 'success' : 'info'
         );
