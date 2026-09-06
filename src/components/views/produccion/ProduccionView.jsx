@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useWorship } from '../../../services/WorshipContext';
 import { calcularEstadoPago, normalizeRol } from '../../../services/worshipDb';
+import PlaybackStudioApp from '../../common/PlaybackStudioApp';
 
 export default function ProduccionView() {
     const { db, updateDb, activeSubview, setActiveSubview, currentUser, showToast } = useWorship();
@@ -173,139 +174,7 @@ export default function ProduccionView() {
             {/* TAB: SALA DE ENSAYO PLAYBACK IOS REPLICA */}
             {currentSub === 'playback' && (
                 <div className="produccion-subview animate-fade-in">
-                    <div className="glass-panel" style={{ marginBottom: '2rem' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem', marginBottom: '1.5rem' }}>
-                            <div>
-                                <span style={{ background: '#dc2626', color: '#fff', fontSize: '0.75rem', fontWeight: 800, padding: '4px 10px', borderRadius: '12px', textTransform: 'uppercase' }}>Consola iOS Playback</span>
-                                <h2 style={{ margin: '6px 0 0', color: '#ffffff', fontSize: '1.6rem', fontWeight: 800 }}>{currentSong.titulo}</h2>
-                                <span style={{ color: '#94a3b8', fontSize: '0.88rem' }}>{currentSong.autor} • Tono: <strong>{currentSong.tono}</strong> • Live Stems Mixer</span>
-                            </div>
-
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                {/* BOTÓN DE MUTEAR MI INSTRUMENTO */}
-                                <button
-                                    className="btn btn-secondary"
-                                    onClick={handleMuteMyInstrument}
-                                    style={{ border: '1px solid #ef4444', color: '#ef4444', fontWeight: 800, borderRadius: '12px', padding: '10px 18px' }}
-                                >
-                                    <i className="fas fa-volume-mute" style={{ marginRight: '6px' }}></i> Mutear Mi Instrumento ({myInstrument})
-                                </button>
-
-                                {isPlaying && (
-                                    <div className="audio-wave-visualizer">
-                                        <div className="audio-wave-bar"></div>
-                                        <div className="audio-wave-bar"></div>
-                                        <div className="audio-wave-bar"></div>
-                                        <div className="audio-wave-bar"></div>
-                                    </div>
-                                )}
-
-                                <select
-                                    className="form-control"
-                                    value={selectedSongId}
-                                    onChange={(e) => setSelectedSongId(e.target.value)}
-                                    style={{ width: '200px' }}
-                                >
-                                    {songs.map(s => (
-                                        <option key={s.id} value={s.id}>{s.titulo} ({s.tono})</option>
-                                    ))}
-                                </select>
-                            </div>
-                        </div>
-
-                        {/* Transport Bar */}
-                        <div style={{ background: 'rgba(0,0,0,0.5)', borderRadius: '16px', padding: '1.2rem 1.6rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1.5rem', border: '1px solid rgba(255,255,255,0.08)' }}>
-                            <button
-                                className={`btn ${isPlaying ? 'btn-secondary' : 'btn-primary'} ${isPlaying ? 'pulse-active' : ''}`}
-                                onClick={togglePlay}
-                                style={{ borderRadius: '50px', padding: '12px 28px', fontSize: '1rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '10px' }}
-                            >
-                                <i className={isPlaying ? 'fas fa-pause' : 'fas fa-play'}></i>
-                                <span>{isPlaying ? 'PAUSAR' : 'REPRODUCIR LIVE'}</span>
-                            </button>
-
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '14px', minWidth: '240px' }}>
-                                <i className="fas fa-volume-up" style={{ color: '#94a3b8' }}></i>
-                                <input
-                                    type="range"
-                                    min="0"
-                                    max="100"
-                                    value={masterVol}
-                                    onChange={(e) => setMasterVol(parseInt(e.target.value))}
-                                    style={{ flex: 1, accentColor: '#dc2626' }}
-                                />
-                                <span style={{ fontWeight: 800, fontSize: '0.9rem', width: '45px' }}>{masterVol}%</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Stems Console Grid */}
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(230px, 1fr))', gap: '1.2rem' }}>
-                        {Object.entries(stems).map(([key, stem]) => (
-                            <div
-                                key={key}
-                                style={{
-                                    background: stem.solo ? 'rgba(234, 179, 8, 0.12)' : stem.muted ? 'rgba(255, 255, 255, 0.02)' : 'rgba(18, 20, 32, 0.8)',
-                                    border: stem.solo ? '1px solid #eab308' : stem.muted ? '1px solid rgba(255,255,255,0.04)' : '1px solid rgba(255,255,255,0.08)',
-                                    borderRadius: '16px',
-                                    padding: '1.2rem',
-                                    opacity: stem.muted ? 0.45 : 1,
-                                    transition: 'all 0.25s ease'
-                                }}
-                            >
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                                    <span style={{ fontSize: '0.92rem', fontWeight: 700, color: stem.solo ? '#eab308' : '#ffffff' }}>{stem.name}</span>
-                                    <span style={{ fontSize: '0.82rem', fontWeight: 800, color: '#94a3b8' }}>{stem.vol}%</span>
-                                </div>
-
-                                <input
-                                    type="range"
-                                    min="0"
-                                    max="100"
-                                    value={stem.vol}
-                                    disabled={stem.muted}
-                                    onChange={(e) => handleStemVol(key, e.target.value)}
-                                    style={{ width: '100%', marginBottom: '1.2rem', accentColor: stem.solo ? '#eab308' : '#3b82f6' }}
-                                />
-
-                                <div style={{ display: 'flex', gap: '8px' }}>
-                                    <button
-                                        onClick={() => toggleMute(key)}
-                                        style={{
-                                            flex: 1,
-                                            padding: '8px',
-                                            borderRadius: '8px',
-                                            border: 'none',
-                                            fontWeight: 800,
-                                            fontSize: '0.78rem',
-                                            cursor: 'pointer',
-                                            background: stem.muted ? '#dc2626' : 'rgba(255,255,255,0.08)',
-                                            color: '#ffffff'
-                                        }}
-                                    >
-                                        MUTE
-                                    </button>
-
-                                    <button
-                                        onClick={() => toggleSolo(key)}
-                                        style={{
-                                            flex: 1,
-                                            padding: '8px',
-                                            borderRadius: '8px',
-                                            border: 'none',
-                                            fontWeight: 800,
-                                            fontSize: '0.78rem',
-                                            cursor: 'pointer',
-                                            background: stem.solo ? '#eab308' : 'rgba(255,255,255,0.08)',
-                                            color: stem.solo ? '#000000' : '#ffffff'
-                                        }}
-                                    >
-                                        SOLO
-                                    </button>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
+                    <PlaybackStudioApp />
                 </div>
             )}
 

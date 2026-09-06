@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useWorship } from '../../../services/WorshipContext';
 import { normalizeRol } from '../../../services/worshipDb';
+import PlaybackStudioApp from '../../common/PlaybackStudioApp';
 
 export default function MaestroDashboard() {
     const { db, updateDb, activeSubview, setActiveSubview, currentUser, updateUserProfile, showToast } = useWorship();
@@ -748,24 +749,9 @@ export default function MaestroDashboard() {
             )}
 
             {/* TAB 6: ENSAMBLES & SALA DE ENSAYO (PLAYBACK APP REPLICA) */}
-            {currentSub === 'ensambles' && (
+            {(currentSub === 'ensambles' || currentSub === 'playback_studio') && (
                 <div className="maestro-subview animate-fade-in">
-                    {/* AVISO DE ENSAMBLES PRÓXIMAMENTE */}
-                    <div style={{ background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.15), rgba(30, 27, 75, 0.3))', border: '1px solid rgba(245, 158, 11, 0.3)', borderRadius: '20px', padding: '1.8rem', marginBottom: '2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1.5rem' }}>
-                        <div>
-                            <span style={{ background: '#f59e0b', color: '#000', fontWeight: 800, padding: '4px 12px', borderRadius: '12px', fontSize: '0.78rem', textTransform: 'uppercase' }}>Próximamente</span>
-                            <h3 style={{ margin: '8px 0 4px', color: '#fff', fontSize: '1.4rem', fontWeight: 800 }}>Asignación General de Ensambles</h3>
-                            <p style={{ color: '#cbd5e1', fontSize: '0.9rem', margin: 0 }}>Las asignaciones de ensamble serán habilitadas por el Administrador al inicio del ciclo de conciertos.</p>
-                        </div>
-
-                        <button
-                            className="btn btn-primary pulse-active"
-                            onClick={() => setActiveSubview('playback_studio')}
-                            style={{ padding: '14px 28px', borderRadius: '50px', fontWeight: 800, fontSize: '0.95rem', display: 'inline-flex', alignItems: 'center', gap: '10px' }}
-                        >
-                            <i className="fas fa-sliders-h" style={{ fontSize: '1.1rem' }}></i> Ir a Sala de Ensayo (App Playback iOS)
-                        </button>
-                    </div>
+                    <PlaybackStudioApp />
                 </div>
             )}
 

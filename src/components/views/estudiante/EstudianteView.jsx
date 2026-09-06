@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useWorship } from '../../../services/WorshipContext';
 import { calcularEstadoPago } from '../../../services/worshipDb';
+import PlaybackStudioApp from '../../common/PlaybackStudioApp';
 
 export default function EstudianteView() {
     const { db, activeSubview, setActiveSubview, currentUser, openModal, showToast } = useWorship();
@@ -266,44 +267,10 @@ export default function EstudianteView() {
                 </div>
             )}
 
-            {/* TAB: PLAYBACK & METRONOME */}
+            {/* TAB: PLAYBACK & METRONOME (IOS PLAYBACK APP REPLICA) */}
             {currentSub === 'playback' && (
                 <div className="estudiante-subview animate-fade-in">
-                    <div className="glass-panel" style={{ marginBottom: '2rem' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem', marginBottom: '1.5rem' }}>
-                            <div>
-                                <h3 style={{ margin: 0, color: '#fff' }}><i className="fas fa-stopwatch" style={{ color: '#dc2626', marginRight: '8px' }}></i> Metrónomo de Práctica</h3>
-                                <p style={{ color: '#94a3b8', fontSize: '0.85rem', margin: '4px 0 0' }}>Ajusta el tempo para tus sesiones diarias de instrumento</p>
-                            </div>
-
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
-                                <div style={{ fontSize: '2.5rem', fontWeight: 800, color: '#fff' }}>{bpm} <span style={{ fontSize: '1rem', color: '#94a3b8' }}>BPM</span></div>
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                                    <button className="btn btn-sm btn-secondary" onClick={() => setBpm(b => Math.min(240, b + 5))}>+5 BPM</button>
-                                    <button className="btn btn-sm btn-secondary" onClick={() => setBpm(b => Math.max(40, b - 5))}>-5 BPM</button>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', marginBottom: '1.5rem' }}>
-                            {[0, 1, 2, 3].map(beat => (
-                                <div key={beat} style={{
-                                    width: '18px', height: '18px', borderRadius: '50%',
-                                    background: currentBeat === beat && isPlaying ? '#dc2626' : 'rgba(255,255,255,0.1)',
-                                    boxShadow: currentBeat === beat && isPlaying ? '0 0 15px #dc2626' : 'none',
-                                    transition: 'all 0.1s ease'
-                                }}></div>
-                            ))}
-                        </div>
-
-                        <button
-                            className={`btn ${isPlaying ? 'btn-secondary' : 'btn-primary'}`}
-                            onClick={() => setIsPlaying(!isPlaying)}
-                            style={{ borderRadius: '12px', padding: '12px 24px', fontWeight: 800, width: '100%' }}
-                        >
-                            <i className={isPlaying ? 'fas fa-stop' : 'fas fa-play'} style={{ marginRight: '8px' }}></i> {isPlaying ? 'Detener Metrónomo' : 'Iniciar Metrónomo'}
-                        </button>
-                    </div>
+                    <PlaybackStudioApp />
                 </div>
             )}
         </div>

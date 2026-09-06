@@ -257,3 +257,477 @@
     color: #ef4444;
     border: 1px solid rgba(239, 68, 68, 0.35);
 }
+
+/* ==========================================================================
+   IOS PLAYBACK MULTITRACK APP REPLICA STYLES
+   ========================================================================== */
+.playback-ios-container {
+    background: #090a0d;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 18px;
+    padding: 1.2rem;
+    color: #ffffff;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
+}
+
+/* 1. TOP HEADER TRANSPORT BAR */
+.playback-top-header {
+    background: #14161e;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 14px;
+    padding: 0.8rem 1.2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.playback-header-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.playback-metric-badge {
+    background: #1e212b;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 8px;
+    padding: 6px 12px;
+    display: flex;
+    align-items: baseline;
+    gap: 4px;
+}
+
+.playback-metric-value {
+    font-size: 1.1rem;
+    font-weight: 800;
+    color: #ffffff;
+}
+
+.playback-metric-label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: #94a3b8;
+}
+
+.playback-clock-display {
+    background: #000000;
+    border: 1px solid rgba(34, 197, 94, 0.3);
+    border-radius: 8px;
+    padding: 4px 12px;
+    text-align: center;
+    font-family: 'Courier New', Courier, monospace;
+}
+
+.playback-clock-main {
+    font-size: 1.15rem;
+    font-weight: 800;
+    color: #22c55e;
+    letter-spacing: 1px;
+}
+
+.playback-clock-sub {
+    font-size: 0.68rem;
+    color: #64748b;
+    margin-top: -2px;
+}
+
+.playback-header-center {
+    flex: 1;
+    text-align: center;
+}
+
+.playback-song-title {
+    font-size: 1.15rem;
+    font-weight: 800;
+    color: #ffffff;
+    letter-spacing: 0.5px;
+}
+
+.playback-header-right {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.playback-btn-play {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: transparent;
+    border: 2px solid #22c55e;
+    color: #22c55e;
+    font-size: 1.1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 0 16px rgba(34, 197, 94, 0.35);
+    transition: all 0.2s ease;
+}
+
+.playback-btn-play:hover, .playback-btn-play.playing {
+    background: #22c55e;
+    color: #000000;
+    box-shadow: 0 0 24px rgba(34, 197, 94, 0.7);
+}
+
+.playback-pill-btn {
+    background: #1e212b;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: #ffffff;
+    font-size: 0.78rem;
+    font-weight: 800;
+    padding: 6px 14px;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.playback-pill-btn.active {
+    background: #3b82f6;
+    border-color: #3b82f6;
+    color: #ffffff;
+    box-shadow: 0 0 12px rgba(59, 130, 246, 0.4);
+}
+
+.playback-pill-btn.green-outline {
+    background: transparent;
+    border: 1px solid #22c55e;
+    color: #22c55e;
+}
+
+.playback-pill-btn.green-outline:hover {
+    background: rgba(34, 197, 94, 0.15);
+}
+
+.playback-icon-btn {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-size: 1.1rem;
+    cursor: pointer;
+    padding: 6px 8px;
+    border-radius: 6px;
+    transition: color 0.2s ease;
+}
+
+.playback-icon-btn:hover {
+    color: #ffffff;
+}
+
+/* 2. REPERTORIO SETLIST CAROUSEL */
+.playback-setlist-bar {
+    margin-top: 1rem;
+    overflow-x: auto;
+    padding-bottom: 6px;
+}
+
+.playback-setlist-carousel {
+    display: flex;
+    gap: 12px;
+}
+
+.playback-song-card {
+    background: #161822;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    padding: 8px 14px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 210px;
+    cursor: pointer;
+    transition: all 0.25s ease;
+}
+
+.playback-song-card:hover {
+    border-color: rgba(255, 255, 255, 0.2);
+    transform: translateY(-2px);
+}
+
+.playback-song-card.active {
+    border: 2px solid #22c55e;
+    background: rgba(34, 197, 94, 0.12);
+    box-shadow: 0 0 15px rgba(34, 197, 94, 0.25);
+}
+
+.playback-card-art {
+    width: 38px;
+    height: 38px;
+    border-radius: 8px;
+    object-fit: cover;
+}
+
+.playback-card-info {
+    flex: 1;
+}
+
+.playback-card-title {
+    font-size: 0.88rem;
+    font-weight: 800;
+    color: #ffffff;
+}
+
+.playback-key-tag {
+    color: #22c55e;
+    font-weight: 800;
+}
+
+.playback-card-artist {
+    font-size: 0.75rem;
+    color: #94a3b8;
+}
+
+.playback-active-arrow {
+    color: #22c55e;
+    font-size: 0.9rem;
+}
+
+/* 3. SECTION MARKERS & AUDIO WAVEFORM SECTION */
+.playback-waveform-section {
+    background: #14161e;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 14px;
+    padding: 1rem;
+    margin: 1rem 0;
+}
+
+.playback-sections-header {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 10px;
+    overflow-x: auto;
+}
+
+.playback-section-badge {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    color: #ffffff;
+    font-size: 0.75rem;
+    font-weight: 800;
+    padding: 5px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.playback-section-badge.active, .playback-section-badge:hover {
+    background: var(--sec-color, #3b82f6);
+    border-color: var(--sec-color, #3b82f6);
+    box-shadow: 0 0 10px var(--sec-color, #3b82f6);
+}
+
+.playback-waveform-visualizer {
+    position: relative;
+    height: 75px;
+    background: #090a0d;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 10px;
+    padding: 8px 14px;
+    display: flex;
+    align-items: center;
+    overflow: hidden;
+}
+
+.playback-waveform-graph {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    gap: 3px;
+}
+
+.playback-wave-bar {
+    flex: 1;
+    background: #22c55e;
+    border-radius: 2px;
+    transition: opacity 0.1s ease;
+}
+
+.playback-playhead-line {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: #ffffff;
+    box-shadow: 0 0 10px #ffffff;
+    z-index: 10;
+    transition: left 0.3s linear;
+}
+
+.playback-playhead-head {
+    width: 10px;
+    height: 10px;
+    background: #ef4444;
+    border-radius: 50%;
+    margin-left: -4px;
+    margin-top: -2px;
+}
+
+/* QUICK ACTION BUTTON */
+.playback-quick-actions {
+    display: flex;
+    justify-content: center;
+    margin: 1rem 0;
+}
+
+.playback-mute-my-inst-btn {
+    background: #ef4444;
+    color: #ffffff;
+    font-size: 0.85rem;
+    font-weight: 800;
+    border: none;
+    padding: 10px 26px;
+    border-radius: 30px;
+    cursor: pointer;
+    box-shadow: 0 4px 20px rgba(239, 68, 68, 0.45);
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.playback-mute-my-inst-btn:hover {
+    background: #dc2626;
+    transform: scale(1.03);
+}
+
+/* 4. VERTICAL CHANNEL STRIP MIXER CONSOLE GRID */
+.playback-mixer-console {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(72px, 1fr));
+    gap: 8px;
+    background: #111217;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    padding: 1rem;
+}
+
+.playback-channel-strip {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: #191b24;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 10px;
+    padding: 8px 4px;
+    transition: all 0.25s ease;
+}
+
+.playback-channel-strip.muted {
+    opacity: 0.4;
+}
+
+.playback-channel-strip.solo {
+    border: 1px solid #eab308;
+    background: rgba(234, 179, 8, 0.08);
+}
+
+.playback-strip-controls {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 8px;
+}
+
+.playback-square-btn {
+    width: 26px;
+    height: 26px;
+    border-radius: 4px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: #2a2d3d;
+    color: #94a3b8;
+    font-size: 0.72rem;
+    font-weight: 800;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.playback-square-btn.btn-mute.active {
+    background: #ef4444;
+    color: #ffffff;
+    border-color: #ef4444;
+    box-shadow: 0 0 8px #ef4444;
+}
+
+.playback-square-btn.btn-solo.active {
+    background: #eab308;
+    color: #000000;
+    border-color: #eab308;
+    box-shadow: 0 0 8px #eab308;
+}
+
+.playback-fader-container {
+    display: flex;
+    gap: 8px;
+    height: 160px;
+    align-items: center;
+    justify-content: center;
+    margin: 8px 0;
+}
+
+.playback-led-meter {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    height: 100%;
+    width: 6px;
+}
+
+.playback-led-bar {
+    flex: 1;
+    background: #272a38;
+    border-radius: 1px;
+}
+
+.playback-led-bar.green.lit {
+    background: #22c55e;
+    box-shadow: 0 0 4px #22c55e;
+}
+
+.playback-led-bar.yellow.lit {
+    background: #f59e0b;
+    box-shadow: 0 0 4px #f59e0b;
+}
+
+.playback-led-bar.red.lit {
+    background: #ef4444;
+    box-shadow: 0 0 4px #ef4444;
+}
+
+.playback-slider-track {
+    height: 100%;
+    width: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.playback-vertical-fader {
+    -webkit-appearance: slider-vertical;
+    writing-mode: bt-lr;
+    width: 140px;
+    height: 24px;
+    transform: rotate(-90deg);
+    accent-color: #22c55e;
+    cursor: pointer;
+}
+
+.playback-track-label {
+    font-size: 0.72rem;
+    font-weight: 800;
+    color: #ffffff;
+    background: #252837;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 6px;
+    padding: 4px 6px;
+    text-align: center;
+    width: 95%;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
