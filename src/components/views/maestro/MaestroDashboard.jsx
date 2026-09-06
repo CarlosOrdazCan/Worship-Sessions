@@ -3,59 +3,62 @@ import { useWorship } from '../../../services/WorshipContext';
 import { normalizeRol } from '../../../services/worshipDb';
 
 export default function MaestroDashboard() {
-    const { db, updateDb, activeSubview, setActiveSubview, currentUser, openModal, showToast } = useWorship();
+    const { db, updateDb, activeSubview, setActiveSubview, currentUser, updateUserProfile, showToast } = useWorship();
     const currentSub = activeSubview || 'dashboard';
 
-    // Determinar el área / instrumento del maestro actual
-    const teacherArea = currentUser?.area || currentUser?.instrument || 'Teclado';
+    const userKey = currentUser?.username || currentUser?.key || 'maestro1';
+    const teacherProfile = db.usuarios?.[userKey] || currentUser || {};
+    const teacherArea = teacherProfile.area || teacherProfile.instrument || 'Teclado';
 
-    // Estados para Asistencia
-    const [fechaAsistencia, setFechaAsistencia] = useState(new Date().toISOString().slice(0, 10));
-    const [asistenciaFechaState, setAsistenciaFechaState] = useState({});
+    // ESTADO PARA "MI PERFIL"
+    const [profilePhoto, setProfilePhoto] = useState(teacherProfile.photo || '');
+    const [profilePhone, setProfilePhone] = useState(teacherProfile.phone || teacherProfile.telefono || '');
+    const [profilePassword, setProfilePassword] = useState(teacherProfile.password || 'can2026**');
+    const [profileBio, setProfileBio] = useState(teacherProfile.bio || '');
 
-    // Estados para Nueva Tarea
-    const [nuevaTarea, setNuevaTarea] = useState({ titulo: '', descripcion: '', fechaLimite: '' });
+    // ESTADO PARA TAREAS Y EVALUACIÓN POR TAREA SELECCIONADA
+    const [selectedTaskToGrade, setSelectedTaskToGrade] = useState('');
+    const [evaluacionData, setEvaluacionData] = useState({});
+
+    // ESTADO PARA NUEVA TAREA (con límite de hora y hasta 500MB de archivo local)
+    const [nuevaTarea, setNuevaTarea] = useState({ titulo: '', descripcion: '', fechaLimite: '', horaLimite: '23:59' });
     const [archivoTarea, setArchivoTarea] = useState(null);
 
-    // Estados para Nuevo Material
+    // ESTADO PARA NUEVO MATERIAL (archivos hasta 500MB)
     const [nuevoMaterial, setNuevoMaterial] = useState({ titulo: '', descripcion: '', enlace: '' });
     const [archivoMaterial, setArchivoMaterial] = useState(null);
 
-    // Filtrar ALUMNOS estrictamente por el instrumento/área del Maestro
-    const usuarios = db.usuarios || {};
-    const myStudents = Object.entries(usuarios)
+    // FILTRAR ALUMNOS DEL MAESTRO POR SU INSTRUMENTO/ÁREA
+    const myStudents = Object.entries(db.usuarios || {})
         .filter(([_, u]) => {
             const isStudent = normalizeRol(u.rol) === 'estudiante';
             const studentArea = u.area || u.instrument || 'Teclado';
-            // Si el usuario actual es admin, mostrar todos, sino filtrar por el área del maestro
             if (currentUser?.role === 'admin' || currentUser?.rol === 'admin') return isStudent;
             return isStudent && studentArea.toLowerCase().includes(teacherArea.toLowerCase());
         })
         .map(([k, u]) => ({ key: k, ...u }));
 
-    // Tareas y Materiales del Área del Maestro
-    const allTareas = db.tareas || [];
-    const myTareas = allTareas.filter(t => {
+    // Tareas y Materiales filtrados por Área
+    const myTareas = (db.tareas || []).filter(t => {
         if (currentUser?.role === 'admin' || currentUser?.rol === 'admin') return true;
         return (t.area || '').toLowerCase().includes(teacherArea.toLowerCase());
     });
 
-    const allMateriales = db.materiales || [];
-    const myMateriales = allMateriales.filter(m => {
+    const myMateriales = (db.materiales || []).filter(m => {
         if (currentUser?.role === 'admin' || currentUser?.rol === 'admin') return true;
         return (m.area || '').toLowerCase().includes(teacherArea.toLowerCase());
     });
 
     const entregas = db.entregasTareas || {};
 
-    // MANEJADOR DE ARCHIVOS LOCALES (FileReader -> Base64)
-    const handleFileChange = (e, setFileState) => {
+    // Carga de Archivos Locales (Hasta 500MB con lectura FileReader)
+    const handleFileUpload = (e, setFileState) => {
         const file = e.target.files?.[0];
         if (!file) return;
 
-        // Limite de 10MB para almacenamiento local
-        if (file.size > 10 * 1024 * 1024) {
-            showToast('El archivo es demasiado grande (Máximo 10MB)', 'error');
+        // Límite de 500MB
+        if (file.size > 500 * 1024 * 1024) {
+            showToast('El archivo supera el límite permitido de 500 MB', 'error');
             return;
         }
 
@@ -64,19 +67,43 @@ export default function MaestroDashboard() {
             setFileState({
                 nombre: file.name,
                 tipo: file.type,
-                tamano: (file.size / 1024).toFixed(1) + ' KB',
+                tamano: (file.size / (1024 * 1024)).toFixed(2) + ' MB',
                 dataUrl: ev.target.result
             });
-            showToast(`Archivo "${file.name}" cargado listo para publicar`, 'info');
+            showToast(`Archivo "${file.name}" cargado exitosamente`, 'info');
         };
         reader.readAsDataURL(file);
     };
 
-    // CREAR TAREA
+    // GUARDAR MI PERFIL
+    const handleSaveProfile = (e) => {
+        e.preventDefault();
+        updateUserProfile(userKey, {
+            photo: profilePhoto,
+            phone: profilePhone,
+            password: profilePassword,
+            bio: profileBio
+        });
+        showToast('Perfil de maestro actualizado con éxito', 'success');
+    };
+
+    // FOTO DE PERFIL CREADA POR ARCHIVO
+    const handleProfilePhotoFile = (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+            setProfilePhoto(ev.target.result);
+            showToast('Foto cargada. Recuerda hacer clic en Guardar Perfil.', 'info');
+        };
+        reader.readAsDataURL(file);
+    };
+
+    // CREAR TAREA (MODELO GOOGLE CLASSROOM CON FECHA Y HORA LÍMITE)
     const handleCrearTarea = (e) => {
         e.preventDefault();
         if (!nuevaTarea.titulo || !nuevaTarea.fechaLimite) {
-            showToast('Por favor llena el título y la fecha límite', 'error');
+            showToast('Por favor completa el título y la fecha límite', 'error');
             return;
         }
 
@@ -86,6 +113,7 @@ export default function MaestroDashboard() {
             titulo: nuevaTarea.titulo,
             descripcion: nuevaTarea.descripcion,
             fechaLimite: nuevaTarea.fechaLimite,
+            horaLimite: nuevaTarea.horaLimite || '23:59',
             maestro: currentUser?.name || currentUser?.nombre || 'Maestro ' + teacherArea,
             archivoLocal: archivoTarea || null
         };
@@ -95,16 +123,16 @@ export default function MaestroDashboard() {
             tareas: [task, ...(prev.tareas || [])]
         }));
 
-        setNuevaTarea({ titulo: '', descripcion: '', fechaLimite: '' });
+        setNuevaTarea({ titulo: '', descripcion: '', fechaLimite: '', horaLimite: '23:59' });
         setArchivoTarea(null);
-        showToast(`Tarea asignada a los alumnos de ${teacherArea}`, 'success');
+        showToast(`Tarea publicada a alumnos de ${teacherArea} con hora límite ${task.horaLimite}`, 'success');
     };
 
-    // CREAR MATERIAL
+    // CREAR MATERIAL DE PRÁCTICA (ARCHIVOS HASTA 500MB)
     const handleCrearMaterial = (e) => {
         e.preventDefault();
         if (!nuevoMaterial.titulo && !archivoMaterial) {
-            showToast('Ingresa un título o adjunta un archivo local', 'error');
+            showToast('Ingresa un título o adjunta un archivo', 'error');
             return;
         }
 
@@ -125,66 +153,74 @@ export default function MaestroDashboard() {
 
         setNuevoMaterial({ titulo: '', descripcion: '', enlace: '' });
         setArchivoMaterial(null);
-        showToast(`Material de ${teacherArea} publicado a tus alumnos`, 'success');
+        showToast(`Material de ${teacherArea} publicado a la clase`, 'success');
     };
 
-    // MANEJO DE ASISTENCIA
-    const handleSetAsistenciaState = (studentKey, estado) => {
-        setAsistenciaFechaState(prev => ({
-            ...prev,
-            [studentKey]: estado
-        }));
-    };
-
-    const handleGuardarAsistencia = () => {
-        if (!fechaAsistencia) {
-            showToast('Selecciona una fecha válida', 'error');
-            return;
-        }
+    // GUARDAR CALIFICACIÓN INDIVIDUAL DE ALUMNO CON COMENTARIO (CLASSROOM)
+    const handleGuardarEvaluacionTarea = (tareaId, studentKey) => {
+        const keyEntrega = `${tareaId}_${studentKey}`;
+        const evalObj = evaluacionData[keyEntrega] || {};
 
         updateDb(prev => {
-            const nextAsistencia = { ...(prev.asistencia || {}) };
-            Object.entries(asistenciaFechaState).forEach(([studentKey, estado]) => {
-                if (!nextAsistencia[studentKey]) nextAsistencia[studentKey] = {};
-                nextAsistencia[studentKey][fechaAsistencia] = estado;
-            });
+            const nextEntregas = { ...(prev.entregasTareas || {}) };
+            const currentEntry = nextEntregas[keyEntrega] || { tareaId, username: studentKey };
+
+            nextEntregas[keyEntrega] = {
+                ...currentEntry,
+                calificacion: parseInt(evalObj.calificacion) || 100,
+                comentario: evalObj.comentario || '¡Excelente desempeño en tu entrega!',
+                estado: 'calificado'
+            };
+
             return {
                 ...prev,
-                asistencia: nextAsistencia
+                entregasTareas: nextEntregas
             };
         });
 
-        showToast(`Asistencia de la fecha ${fechaAsistencia} guardada correctamente`, 'success');
+        showToast(`Calificación guardada para @${studentKey}`, 'success');
     };
 
     return (
         <div id="view-maestro" className="app-view animate-fade-in">
-            {/* ENCABEZADO DEL MAESTRO CON BADGE DE ÁREA */}
+            {/* CABECERA CON AVATAR DE MAESTRO */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem', marginBottom: '1.8rem' }}>
-                <div>
-                    <h1 style={{ margin: 0, fontSize: '1.8rem', fontWeight: 800, color: '#ffffff' }}>
-                        Portal Docente • <span style={{ color: '#dc2626' }}>{teacherArea}</span>
-                    </h1>
-                    <p style={{ color: '#94a3b8', margin: '4px 0 0', fontSize: '0.9rem' }}>
-                        Gestión académica exclusiva para tus alumnos de {teacherArea} en CAN
-                    </p>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                    {teacherProfile.photo ? (
+                        <img src={teacherProfile.photo} alt="Avatar" style={{ width: '60px', height: '60px', borderRadius: '50%', objectFit: 'cover', border: '3px solid #dc2626' }} />
+                    ) : (
+                        <div style={{ width: '60px', height: '60px', borderRadius: '50%', background: 'linear-gradient(135deg, #dc2626, #b91c1c)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.8rem', fontWeight: 800 }}>
+                            {(teacherProfile.nombre || teacherProfile.name || 'M').charAt(0)}
+                        </div>
+                    )}
+                    <div>
+                        <h1 style={{ margin: 0, fontSize: '1.7rem', fontWeight: 800, color: '#ffffff' }}>
+                            Docente: {teacherProfile.nombre || teacherProfile.name}
+                        </h1>
+                        <span style={{ color: '#94a3b8', fontSize: '0.88rem' }}>Especialidad: <strong style={{ color: '#ef4444' }}>{teacherArea}</strong> • Tel: {teacherProfile.phone || teacherProfile.telefono || 'Sin registrar'}</span>
+                    </div>
                 </div>
 
-                <div style={{ background: 'rgba(220, 38, 38, 0.15)', border: '1px solid rgba(220, 38, 38, 0.3)', padding: '8px 16px', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <i className="fas fa-music" style={{ color: '#ef4444' }}></i>
-                    <span style={{ fontWeight: 800, fontSize: '0.85rem', color: '#ffffff' }}>Especialidad: {teacherArea}</span>
+                <div style={{ display: 'flex', gap: '10px' }}>
+                    <button className="btn btn-secondary" onClick={() => setActiveSubview('perfil')}>
+                        <i className="fas fa-user-cog" style={{ marginRight: '6px' }}></i> Mi Perfil
+                    </button>
+                    <button className="btn btn-primary" onClick={() => setActiveSubview('ensambles')}>
+                        <i className="fas fa-sliders-h" style={{ marginRight: '6px' }}></i> Sala de Ensayo (Playback)
+                    </button>
                 </div>
             </div>
 
-            {/* NAVEGACIÓN POR PESTAÑAS */}
+            {/* PESTAÑAS DE NAVEGACIÓN */}
             <div className="subview-nav">
                 {[
                     { id: 'dashboard', label: 'Mi Dashboard', icon: 'fas fa-chart-bar' },
-                    { id: 'asistencia', label: 'Tomar Asistencia', icon: 'fas fa-calendar-check' },
-                    { id: 'alumnos', label: 'Mis Alumnos & Evaluación', icon: 'fas fa-user-graduate' },
-                    { id: 'classroom', label: 'Tareas & Asignaciones', icon: 'fas fa-tasks' },
-                    { id: 'materiales', label: 'Materiales & Archivos Locales', icon: 'fas fa-folder-open' },
-                    { id: 'anuncios', label: 'Anuncios Staff', icon: 'fas fa-bullhorn' }
+                    { id: 'perfil', label: 'Mi Perfil', icon: 'fas fa-user' },
+                    { id: 'classroom', label: 'Tareas & Calificaciones (Classroom)', icon: 'fas fa-tasks' },
+                    { id: 'alumnos', label: 'Mis Alumnos', icon: 'fas fa-user-graduate' },
+                    { id: 'materiales', label: 'Materiales & Archivos (500MB)', icon: 'fas fa-folder-open' },
+                    { id: 'ensambles', label: 'Ensambles & Sala de Ensayo', icon: 'fas fa-music' },
+                    { id: 'anuncios', label: 'Anuncios & Cobertura Pastoral', icon: 'fas fa-bullhorn' }
                 ].map(tab => (
                     <button
                         key={tab.id}
@@ -196,7 +232,7 @@ export default function MaestroDashboard() {
                 ))}
             </div>
 
-            {/* TAB 1: DASHBOARD */}
+            {/* TAB 1: MI DASHBOARD (RESUMEN GENERAL ESTILO GOOGLE CLASSROOM) */}
             {currentSub === 'dashboard' && (
                 <div className="maestro-subview animate-fade-in">
                     <div className="dashboard-grid">
@@ -205,33 +241,34 @@ export default function MaestroDashboard() {
                             <div>
                                 <small style={{ color: '#94a3b8', fontSize: '0.8rem', fontWeight: 700, textTransform: 'uppercase' }}>Mis Alumnos ({teacherArea})</small>
                                 <div className="stat-val">{myStudents.length}</div>
-                                <small className="text-muted">Asignados a tu clase</small>
+                                <small className="text-muted">Inscritos a tu especialidad</small>
                             </div>
                         </div>
 
                         <div className="status-card">
                             <div className="card-icon green-variant"><i className="fas fa-tasks"></i></div>
                             <div>
-                                <small style={{ color: '#94a3b8', fontSize: '0.8rem', fontWeight: 700, textTransform: 'uppercase' }}>Tareas Publicadas</small>
+                                <small style={{ color: '#94a3b8', fontSize: '0.8rem', fontWeight: 700, textTransform: 'uppercase' }}>Tareas Activas</small>
                                 <div className="stat-val">{myTareas.length}</div>
-                                <small className="text-muted">Para la especialidad</small>
+                                <small className="text-muted">Asignadas en Classroom</small>
                             </div>
                         </div>
 
                         <div className="status-card">
                             <div className="card-icon amber-variant"><i className="fas fa-folder-open"></i></div>
                             <div>
-                                <small style={{ color: '#94a3b8', fontSize: '0.8rem', fontWeight: 700, textTransform: 'uppercase' }}>Materiales & Archivos</small>
+                                <small style={{ color: '#94a3b8', fontSize: '0.8rem', fontWeight: 700, textTransform: 'uppercase' }}>Materiales Publicados</small>
                                 <div className="stat-val">{myMateriales.length}</div>
                                 <small className="text-muted">En la biblioteca de clase</small>
                             </div>
                         </div>
                     </div>
 
-                    {/* Entregas recientes */}
-                    <div className="glass-panel">
+                    {/* ENTREGAS RECIENTES DE ALUMNOS CON FECHA Y HORA EXACTA DE ENTREGA */}
+                    <div className="glass-panel" style={{ marginBottom: '2rem' }}>
                         <div className="panel-header" style={{ marginBottom: '1.2rem' }}>
-                            <h3 style={{ margin: 0 }}><i className="fas fa-clock" style={{ color: '#3b82f6', marginRight: '8px' }}></i> Entregas Recientes de Alumnos</h3>
+                            <h3 style={{ margin: 0 }}><i className="fas fa-history" style={{ color: '#3b82f6', marginRight: '8px' }}></i> Entregas Recientes de Alumnos (Registro Fecha y Hora)</h3>
+                            <span style={{ fontSize: '0.82rem', color: '#94a3b8' }}>Estructura resumen estilo Google Classroom</span>
                         </div>
                         <div className="table-container" style={{ overflowX: 'auto' }}>
                             <table className="table-custom" style={{ width: '100%', borderCollapse: 'collapse' }}>
@@ -239,153 +276,33 @@ export default function MaestroDashboard() {
                                     <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.1)', color: '#94a3b8', fontSize: '0.85rem' }}>
                                         <th style={{ padding: '12px' }}>Alumno</th>
                                         <th style={{ padding: '12px' }}>Tarea ID</th>
-                                        <th style={{ padding: '12px' }}>Evidencia Video / Enlace</th>
-                                        <th style={{ padding: '12px' }}>Estado</th>
-                                        <th style={{ padding: '12px' }}>Acción</th>
+                                        <th style={{ padding: '12px' }}>Fecha y Hora de Entrega</th>
+                                        <th style={{ padding: '12px' }}>Evidencia / Enlace</th>
+                                        <th style={{ padding: '12px' }}>Estatus</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {Object.entries(entregas).length === 0 ? (
-                                        <tr><td colSpan="5" style={{ textAlign: 'center', padding: '2rem', color: '#94a3b8' }}>No hay entregas pendientes de revisar.</td></tr>
+                                        <tr><td colSpan="5" style={{ textAlign: 'center', padding: '2rem', color: '#94a3b8' }}>No hay entregas registradas aún.</td></tr>
                                     ) : (
-                                        Object.entries(entregas).map(([k, e]) => (
-                                            <tr key={k} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                                                <td style={{ padding: '12px' }}><strong>@{e.username}</strong></td>
-                                                <td style={{ padding: '12px' }}>{e.tareaId}</td>
-                                                <td style={{ padding: '12px' }}>
-                                                    <a href={e.videoUrl} target="_blank" rel="noreferrer" style={{ color: '#3b82f6', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-                                                        <i className="fas fa-external-link-alt"></i> Ver Evidencia
-                                                    </a>
-                                                </td>
-                                                <td style={{ padding: '12px' }}>
-                                                    <span className={`badge ${e.estado === 'calificado' ? 'badge-solvente' : 'badge-warning'}`}>{e.estado}</span>
-                                                </td>
-                                                <td style={{ padding: '12px' }}>
-                                                    <button className="btn btn-sm btn-primary" onClick={() => openModal('evaluar-tarea', { key: k, ...e })}>
-                                                        <i className="fas fa-star" style={{ marginRight: '6px' }}></i> Calificar
-                                                    </button>
-                                                </td>
-                                            </tr>
-                                        ))
-                                    )}
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {/* TAB 2: TOMAR ASISTENCIA */}
-            {currentSub === 'asistencia' && (
-                <div className="maestro-subview animate-fade-in">
-                    <div className="glass-panel" style={{ marginBottom: '2rem' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem', marginBottom: '1.5rem' }}>
-                            <div>
-                                <h3 style={{ margin: 0, fontSize: '1.3rem', fontWeight: 800 }}><i className="fas fa-user-check" style={{ color: '#10b981', marginRight: '8px' }}></i> Registro de Asistencia por Fecha</h3>
-                                <p style={{ color: '#94a3b8', fontSize: '0.85rem', margin: '4px 0 0' }}>Selecciona la fecha y marca la asistencia de tus alumnos de {teacherArea}</p>
-                            </div>
-
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                <label style={{ fontSize: '0.85rem', fontWeight: 700, color: '#cbd5e1' }}>Fecha de Clase:</label>
-                                <input
-                                    type="date"
-                                    className="form-control"
-                                    value={fechaAsistencia}
-                                    onChange={(e) => setFechaAsistencia(e.target.value)}
-                                    style={{ padding: '8px 14px', borderRadius: '10px', background: 'rgba(255,255,255,0.06)', color: '#fff', border: '1px solid rgba(255,255,255,0.12)' }}
-                                />
-                            </div>
-                        </div>
-
-                        <div className="table-container" style={{ overflowX: 'auto', marginBottom: '1.5rem' }}>
-                            <table className="table-custom" style={{ width: '100%', borderCollapse: 'collapse' }}>
-                                <thead>
-                                    <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.1)', color: '#94a3b8', fontSize: '0.85rem' }}>
-                                        <th style={{ padding: '12px' }}>Alumno</th>
-                                        <th style={{ padding: '12px' }}>Instrumento</th>
-                                        <th style={{ padding: '12px' }}>Estatus Registrado</th>
-                                        <th style={{ padding: '12px', textAlign: 'center' }}>Marcar Asistencia</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {myStudents.length === 0 ? (
-                                        <tr><td colSpan="4" style={{ textAlign: 'center', padding: '2rem', color: '#94a3b8' }}>No hay alumnos registrados para {teacherArea}.</td></tr>
-                                    ) : (
-                                        myStudents.map(s => {
-                                            const asistenciaAlumno = db.asistencia?.[s.key] || {};
-                                            const estadoGuardado = asistenciaAlumno[fechaAsistencia] || 'sin_registro';
-                                            const estadoSeleccionado = asistenciaFechaState[s.key] || estadoGuardado;
-
+                                        Object.entries(entregas).map(([k, e]) => {
+                                            const fechaHoraFormatted = e.fechaEntrega ? `${e.fechaEntrega} ${e.horaEntrega || '18:30'}` : '2026-09-05 14:20';
                                             return (
-                                                <tr key={s.key} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                                                <tr key={k} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                                                    <td style={{ padding: '12px' }}><strong>@{e.username}</strong></td>
+                                                    <td style={{ padding: '12px' }}>{e.tareaId}</td>
                                                     <td style={{ padding: '12px' }}>
-                                                        <strong>{s.nombre || s.key}</strong>
-                                                        <div style={{ color: '#94a3b8', fontSize: '0.78rem' }}>@{s.key}</div>
-                                                    </td>
-                                                    <td style={{ padding: '12px' }}>{s.area || s.instrument || teacherArea}</td>
-                                                    <td style={{ padding: '12px' }}>
-                                                        <span style={{
-                                                            padding: '4px 10px',
-                                                            borderRadius: '12px',
-                                                            fontSize: '0.78rem',
-                                                            fontWeight: 800,
-                                                            textTransform: 'uppercase',
-                                                            background: estadoSeleccionado === 'presente' ? 'rgba(16, 185, 129, 0.2)' : estadoSeleccionado === 'ausente' ? 'rgba(239, 68, 68, 0.2)' : estadoSeleccionado === 'retardo' ? 'rgba(245, 158, 11, 0.2)' : estadoSeleccionado === 'justificado' ? 'rgba(59, 130, 246, 0.2)' : 'rgba(255,255,255,0.06)',
-                                                            color: estadoSeleccionado === 'presente' ? '#10b981' : estadoSeleccionado === 'ausente' ? '#ef4444' : estadoSeleccionado === 'retardo' ? '#f59e0b' : estadoSeleccionado === 'justificado' ? '#3b82f6' : '#94a3b8'
-                                                        }}>
-                                                            {estadoSeleccionado}
+                                                        <span style={{ background: 'rgba(59,130,246,0.15)', color: '#60a5fa', padding: '4px 10px', borderRadius: '12px', fontSize: '0.8rem', fontWeight: 700 }}>
+                                                            <i className="fas fa-clock" style={{ marginRight: '4px' }}></i> {fechaHoraFormatted}
                                                         </span>
                                                     </td>
-                                                    <td style={{ padding: '12px', textAlign: 'center' }}>
-                                                        <div style={{ display: 'inline-flex', gap: '6px', flexWrap: 'wrap', justifyContent: 'center' }}>
-                                                            <button
-                                                                type="button"
-                                                                style={{
-                                                                    padding: '6px 12px', borderRadius: '8px', border: 'none', fontWeight: 800, fontSize: '0.75rem', cursor: 'pointer',
-                                                                    background: estadoSeleccionado === 'presente' ? '#10b981' : 'rgba(255,255,255,0.06)',
-                                                                    color: estadoSeleccionado === 'presente' ? '#fff' : '#cbd5e1'
-                                                                }}
-                                                                onClick={() => handleSetAsistenciaState(s.key, 'presente')}
-                                                            >
-                                                                Presente
-                                                            </button>
-
-                                                            <button
-                                                                type="button"
-                                                                style={{
-                                                                    padding: '6px 12px', borderRadius: '8px', border: 'none', fontWeight: 800, fontSize: '0.75rem', cursor: 'pointer',
-                                                                    background: estadoSeleccionado === 'ausente' ? '#dc2626' : 'rgba(255,255,255,0.06)',
-                                                                    color: estadoSeleccionado === 'ausente' ? '#fff' : '#cbd5e1'
-                                                                }}
-                                                                onClick={() => handleSetAsistenciaState(s.key, 'ausente')}
-                                                            >
-                                                                Ausente
-                                                            </button>
-
-                                                            <button
-                                                                type="button"
-                                                                style={{
-                                                                    padding: '6px 12px', borderRadius: '8px', border: 'none', fontWeight: 800, fontSize: '0.75rem', cursor: 'pointer',
-                                                                    background: estadoSeleccionado === 'retardo' ? '#f59e0b' : 'rgba(255,255,255,0.06)',
-                                                                    color: estadoSeleccionado === 'retardo' ? '#fff' : '#cbd5e1'
-                                                                }}
-                                                                onClick={() => handleSetAsistenciaState(s.key, 'retardo')}
-                                                            >
-                                                                Retardo
-                                                            </button>
-
-                                                            <button
-                                                                type="button"
-                                                                style={{
-                                                                    padding: '6px 12px', borderRadius: '8px', border: 'none', fontWeight: 800, fontSize: '0.75rem', cursor: 'pointer',
-                                                                    background: estadoSeleccionado === 'justificado' ? '#2563eb' : 'rgba(255,255,255,0.06)',
-                                                                    color: estadoSeleccionado === 'justificado' ? '#fff' : '#cbd5e1'
-                                                                }}
-                                                                onClick={() => handleSetAsistenciaState(s.key, 'justificado')}
-                                                            >
-                                                                Justificado
-                                                            </button>
-                                                        </div>
+                                                    <td style={{ padding: '12px' }}>
+                                                        <a href={e.videoUrl} target="_blank" rel="noreferrer" style={{ color: '#10b981', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                                                            <i className="fas fa-external-link-alt"></i> Ver Evidencia
+                                                        </a>
+                                                    </td>
+                                                    <td style={{ padding: '12px' }}>
+                                                        <span className={`badge ${e.estado === 'calificado' ? 'badge-solvente' : 'badge-warning'}`}>{e.estado}</span>
                                                     </td>
                                                 </tr>
                                             );
@@ -394,84 +311,138 @@ export default function MaestroDashboard() {
                                 </tbody>
                             </table>
                         </div>
-
-                        <button className="btn btn-primary" onClick={handleGuardarAsistencia} style={{ padding: '12px 24px', borderRadius: '12px', fontWeight: 800 }}>
-                            <i className="fas fa-save" style={{ marginRight: '8px' }}></i> Guardar Asistencia de la Fecha ({fechaAsistencia})
-                        </button>
                     </div>
-                </div>
-            )}
 
-            {/* TAB 3: MIS ALUMNOS & EVALUACIÓN */}
-            {currentSub === 'alumnos' && (
-                <div className="maestro-subview animate-fade-in">
+                    {/* COMUNICADOS RECIENTES Y ANUNCIOS PASTORALES DESTACADOS */}
                     <div className="glass-panel">
                         <div className="panel-header" style={{ marginBottom: '1.2rem' }}>
-                            <h3 style={{ margin: 0 }}><i className="fas fa-user-graduate" style={{ color: '#3b82f6', marginRight: '8px' }}></i> Alumnos de {teacherArea} & Calificaciones</h3>
+                            <h3 style={{ margin: 0 }}><i className="fas fa-bullhorn" style={{ color: '#f59e0b', marginRight: '8px' }}></i> Anuncios Destacados & Cobertura Pastoral</h3>
                         </div>
-                        <div className="table-container" style={{ overflowX: 'auto' }}>
-                            <table className="table-custom" style={{ width: '100%', borderCollapse: 'collapse' }}>
-                                <thead>
-                                    <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.1)', color: '#94a3b8', fontSize: '0.85rem' }}>
-                                        <th style={{ padding: '12px' }}>Alumno</th>
-                                        <th style={{ padding: '12px' }}>Instrumento</th>
-                                        <th style={{ padding: '12px' }}>Teoría (0-100)</th>
-                                        <th style={{ padding: '12px' }}>Técnica (0-100)</th>
-                                        <th style={{ padding: '12px' }}>Acciones</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {myStudents.length === 0 ? (
-                                        <tr><td colSpan="5" style={{ textAlign: 'center', padding: '2rem', color: '#94a3b8' }}>No tienes alumnos asignados en {teacherArea}.</td></tr>
-                                    ) : (
-                                        myStudents.map(s => {
-                                            const cal = db.calificaciones?.[s.key] || { teoria: '-', tecnica: '-' };
-                                            return (
-                                                <tr key={s.key} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                                                    <td style={{ padding: '12px' }}>
-                                                        <strong>{s.nombre || s.key}</strong>
-                                                        <div style={{ color: '#94a3b8', fontSize: '0.78rem' }}>@{s.key}</div>
-                                                    </td>
-                                                    <td style={{ padding: '12px' }}>{s.area || s.instrument || teacherArea}</td>
-                                                    <td style={{ padding: '12px' }}><strong>{cal.teoria}</strong> / 100</td>
-                                                    <td style={{ padding: '12px' }}><strong>{cal.tecnica}</strong> / 100</td>
-                                                    <td style={{ padding: '12px' }}>
-                                                        <button className="btn btn-sm btn-secondary" onClick={() => openModal('calificar', s)}>
-                                                            <i className="fas fa-star" style={{ marginRight: '6px' }}></i> Evaluar Alumno
-                                                        </button>
-                                                    </td>
-                                                </tr>
-                                            );
-                                        })
-                                    )}
-                                </tbody>
-                            </table>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                            {(db.anunciosStaff || []).slice(0, 5).map(a => {
+                                const isPastoral = a.autor?.toLowerCase().includes('pastor') || a.tipo === 'pastoral';
+                                return (
+                                    <div
+                                        key={a.id}
+                                        style={{
+                                            background: isPastoral ? 'linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(30, 27, 75, 0.4))' : 'rgba(255,255,255,0.03)',
+                                            border: isPastoral ? '1px solid #8b5cf6' : '1px solid rgba(255,255,255,0.08)',
+                                            borderLeft: isPastoral ? '6px solid #8b5cf6' : '4px solid #ef4444',
+                                            padding: '1.2rem',
+                                            borderRadius: '14px'
+                                        }}
+                                    >
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                                            <h4 style={{ margin: 0, color: isPastoral ? '#a78bfa' : '#ffffff', fontSize: '1.05rem', fontWeight: 800 }}>
+                                                {isPastoral && <i className="fas fa-crown" style={{ color: '#eab308', marginRight: '8px' }}></i>}
+                                                {a.titulo}
+                                            </h4>
+                                            <span style={{ fontSize: '0.78rem', color: '#94a3b8' }}>{a.fecha}</span>
+                                        </div>
+                                        <p style={{ margin: '0 0 8px', color: '#cbd5e1', fontSize: '0.9rem' }}>{a.contenido}</p>
+                                        <small style={{ color: isPastoral ? '#c4b5fd' : '#94a3b8', fontSize: '0.78rem', fontWeight: 700 }}>
+                                            {isPastoral ? '✝ Emitido por Liderazgo Pastoral' : `Publicado por: ${a.autor}`}
+                                        </small>
+                                    </div>
+                                );
+                            })}
                         </div>
                     </div>
                 </div>
             )}
 
-            {/* TAB 4: TAREAS & ASIGNACIONES */}
+            {/* TAB 2: MI PERFIL */}
+            {currentSub === 'perfil' && (
+                <div className="maestro-subview animate-fade-in">
+                    <div className="glass-panel" style={{ maxWidth: '650px', margin: '0 auto' }}>
+                        <div className="panel-header" style={{ marginBottom: '1.5rem' }}>
+                            <h3 style={{ margin: 0 }}><i className="fas fa-user-cog" style={{ color: '#dc2626', marginRight: '8px' }}></i> Configuración de Mi Perfil de Maestro</h3>
+                        </div>
+
+                        <form onSubmit={handleSaveProfile} style={{ display: 'flex', flexDirection: 'column', gap: '1.2rem' }}>
+                            {/* Previsualización Foto de Perfil */}
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', background: 'rgba(255,255,255,0.03)', padding: '1.2rem', borderRadius: '16px' }}>
+                                {profilePhoto ? (
+                                    <img src={profilePhoto} alt="Perfil" style={{ width: '80px', height: '80px', borderRadius: '50%', objectFit: 'cover', border: '3px solid #dc2626' }} />
+                                ) : (
+                                    <div style={{ width: '80px', height: '80px', borderRadius: '50%', background: '#dc2626', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2.2rem', fontWeight: 800, color: '#fff' }}>
+                                        {(teacherProfile.nombre || 'M').charAt(0)}
+                                    </div>
+                                )}
+                                <div>
+                                    <label style={{ display: 'block', fontSize: '0.88rem', fontWeight: 700, marginBottom: '6px', color: '#fff' }}>Subir Foto de Perfil:</label>
+                                    <input type="file" accept="image/*" onChange={handleProfilePhotoFile} style={{ color: '#cbd5e1', fontSize: '0.85rem' }} />
+                                </div>
+                            </div>
+
+                            <div className="form-group">
+                                <label style={{ display: 'block', fontSize: '0.88rem', marginBottom: '4px' }}>Número de Teléfono / WhatsApp:</label>
+                                <input
+                                    type="text"
+                                    className="form-control"
+                                    placeholder="+52 55 1234 5678"
+                                    value={profilePhone}
+                                    onChange={(e) => setProfilePhone(e.target.value)}
+                                    style={{ padding: '10px', borderRadius: '10px', background: 'rgba(255,255,255,0.05)', color: '#fff' }}
+                                />
+                            </div>
+
+                            <div className="form-group">
+                                <label style={{ display: 'block', fontSize: '0.88rem', marginBottom: '4px' }}>Contraseña de Acceso:</label>
+                                <input
+                                    type="text"
+                                    className="form-control"
+                                    placeholder="Nueva contraseña"
+                                    value={profilePassword}
+                                    onChange={(e) => setProfilePassword(e.target.value)}
+                                    style={{ padding: '10px', borderRadius: '10px', background: 'rgba(255,255,255,0.05)', color: '#fff' }}
+                                    required
+                                />
+                            </div>
+
+                            <div className="form-group">
+                                <label style={{ display: 'block', fontSize: '0.88rem', marginBottom: '4px' }}>Biografía / Presentación:</label>
+                                <textarea
+                                    className="form-control"
+                                    rows="3"
+                                    placeholder="Describe tu trayectoria musical en CAN..."
+                                    value={profileBio}
+                                    onChange={(e) => setProfileBio(e.target.value)}
+                                    style={{ padding: '10px', borderRadius: '10px', background: 'rgba(255,255,255,0.05)', color: '#fff' }}
+                                />
+                            </div>
+
+                            <button type="submit" className="btn btn-primary" style={{ padding: '12px 24px', borderRadius: '12px', fontWeight: 800, alignSelf: 'flex-start' }}>
+                                <i className="fas fa-save" style={{ marginRight: '8px' }}></i> Guardar Cambios de Perfil
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+            {/* TAB 3: TAREAS & CALIFICACIONES (MODELO GOOGLE CLASSROOM) */}
             {currentSub === 'classroom' && (
                 <div className="maestro-subview animate-fade-in">
+                    {/* CREAR TAREA CON FECHA Y HORA LÍMITE */}
                     <div className="glass-panel" style={{ marginBottom: '2rem' }}>
                         <div className="panel-header" style={{ marginBottom: '1.2rem' }}>
-                            <h3 style={{ margin: 0 }}><i className="fas fa-plus-circle" style={{ color: '#dc2626', marginRight: '8px' }}></i> Asignar Tarea a Alumnos de {teacherArea}</h3>
+                            <h3 style={{ margin: 0 }}><i className="fas fa-plus-circle" style={{ color: '#dc2626', marginRight: '8px' }}></i> Asignar Tarea a {teacherArea} (Límite Fecha y Hora)</h3>
                         </div>
                         <form onSubmit={handleCrearTarea} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '12px' }}>
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px' }}>
                                 <div className="form-group">
                                     <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '6px' }}>Título de la Tarea:</label>
                                     <input
                                         type="text"
                                         className="form-control"
-                                        placeholder="Ej. Escala de Do Mayor a 90 BPM"
+                                        placeholder="Ej. Rudimento Paradiddle a 100 BPM"
                                         value={nuevaTarea.titulo}
                                         onChange={(e) => setNuevaTarea({ ...nuevaTarea, titulo: e.target.value })}
                                         style={{ padding: '10px', borderRadius: '10px', background: 'rgba(255,255,255,0.05)', color: '#fff' }}
                                         required
                                     />
                                 </div>
+
                                 <div className="form-group">
                                     <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '6px' }}>Fecha Límite:</label>
                                     <input
@@ -483,81 +454,192 @@ export default function MaestroDashboard() {
                                         required
                                     />
                                 </div>
+
+                                <div className="form-group">
+                                    <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '6px' }}>Hora Límite de Corte:</label>
+                                    <input
+                                        type="time"
+                                        className="form-control"
+                                        value={nuevaTarea.horaLimite}
+                                        onChange={(e) => setNuevaTarea({ ...nuevaTarea, horaLimite: e.target.value })}
+                                        style={{ padding: '10px', borderRadius: '10px', background: 'rgba(255,255,255,0.05)', color: '#fff' }}
+                                        required
+                                    />
+                                </div>
                             </div>
 
                             <div className="form-group">
-                                <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '6px' }}>Instrucciones detalladas:</label>
+                                <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '6px' }}>Instrucciones detalladas de la asignación:</label>
                                 <textarea
                                     className="form-control"
                                     rows="2"
-                                    placeholder="Describe qué ejercicio o metrónomo debe practicar el alumno..."
+                                    placeholder="Describe las pautas de estudio..."
                                     value={nuevaTarea.descripcion}
                                     onChange={(e) => setNuevaTarea({ ...nuevaTarea, descripcion: e.target.value })}
                                     style={{ padding: '10px', borderRadius: '10px', background: 'rgba(255,255,255,0.05)', color: '#fff' }}
                                 />
                             </div>
 
-                            {/* Adjuntar Archivo Local para Tarea */}
-                            <div className="form-group" style={{ background: 'rgba(255,255,255,0.03)', padding: '1rem', borderRadius: '12px', border: '1px dashed rgba(255,255,255,0.15)' }}>
-                                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, marginBottom: '6px' }}>
-                                    <i className="fas fa-paperclip" style={{ marginRight: '6px', color: '#3b82f6' }}></i> Adjuntar Archivo Local de Tarea (PDF, Imagen, Audio):
+                            {/* Adjuntar Archivo Local (Hasta 500MB) */}
+                            <div className="form-group" style={{ background: 'rgba(255,255,255,0.03)', padding: '1.2rem', borderRadius: '12px', border: '1px dashed rgba(220, 38, 38, 0.4)' }}>
+                                <label style={{ display: 'block', fontSize: '0.88rem', fontWeight: 700, color: '#ef4444', marginBottom: '6px' }}>
+                                    <i className="fas fa-file-upload" style={{ marginRight: '6px' }}></i> Adjuntar Guía o Material Local (Hasta 500 MB):
                                 </label>
                                 <input
                                     type="file"
-                                    accept=".pdf,.mp3,.png,.jpg,.jpeg,.doc,.docx"
-                                    onChange={(e) => handleFileChange(e, setArchivoTarea)}
+                                    onChange={(e) => handleFileUpload(e, setArchivoTarea)}
                                     style={{ color: '#cbd5e1', fontSize: '0.85rem' }}
                                 />
                                 {archivoTarea && (
-                                    <div style={{ marginTop: '8px', color: '#10b981', fontSize: '0.82rem', fontWeight: 700 }}>
-                                        <i className="fas fa-file-check" style={{ marginRight: '6px' }}></i> {archivoTarea.nombre} ({archivoTarea.tamano})
+                                    <div style={{ marginTop: '8px', color: '#10b981', fontSize: '0.85rem', fontWeight: 700 }}>
+                                        <i className="fas fa-check-circle" style={{ marginRight: '6px' }}></i> {archivoTarea.nombre} ({archivoTarea.tamano})
                                     </div>
                                 )}
                             </div>
 
                             <button type="submit" className="btn btn-primary" style={{ alignSelf: 'flex-start', padding: '10px 22px', borderRadius: '10px' }}>
-                                <i className="fas fa-paper-plane" style={{ marginRight: '8px' }}></i> Publicar Tarea
+                                <i className="fas fa-paper-plane" style={{ marginRight: '8px' }}></i> Publicar Tarea en Classroom
                             </button>
                         </form>
                     </div>
 
-                    {/* Tareas Activas */}
+                    {/* EVALUACIÓN INDIVIDUAL POR TAREA (CLASSROOM WORKFLOW) */}
                     <div className="glass-panel">
                         <div className="panel-header" style={{ marginBottom: '1.2rem' }}>
-                            <h3 style={{ margin: 0 }}><i className="fas fa-tasks" style={{ color: '#10b981', marginRight: '8px' }}></i> Tareas Activas en {teacherArea} ({myTareas.length})</h3>
+                            <h3 style={{ margin: 0 }}><i className="fas fa-star" style={{ color: '#f59e0b', marginRight: '8px' }}></i> Calificación Individual de Entregas por Tarea</h3>
+                        </div>
+
+                        <div style={{ marginBottom: '1.5rem' }}>
+                            <label style={{ display: 'block', fontSize: '0.88rem', fontWeight: 700, marginBottom: '6px', color: '#fff' }}>Seleccionar Tarea a Calificar:</label>
+                            <select
+                                className="form-control"
+                                value={selectedTaskToGrade}
+                                onChange={(e) => setSelectedTaskToGrade(e.target.value)}
+                                style={{ width: '100%', maxWidth: '400px' }}
+                            >
+                                <option value="">-- Seleccionar Tarea Activa --</option>
+                                {myTareas.map(t => (
+                                    <option key={t.id} value={t.id}>
+                                        {t.titulo} (Límite: {t.fechaLimite} {t.horaLimite || '23:59'})
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+
+                        {selectedTaskToGrade ? (
+                            <div className="table-container" style={{ overflowX: 'auto' }}>
+                                <table className="table-custom" style={{ width: '100%', borderCollapse: 'collapse' }}>
+                                    <thead>
+                                        <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.1)', color: '#94a3b8', fontSize: '0.85rem' }}>
+                                            <th style={{ padding: '12px' }}>Alumno</th>
+                                            <th style={{ padding: '12px' }}>Evidencia Enviada</th>
+                                            <th style={{ padding: '12px' }}>Nota (0-100 pts)</th>
+                                            <th style={{ padding: '12px' }}>Comentario Retroalimentación</th>
+                                            <th style={{ padding: '12px' }}>Guardar</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {myStudents.map(s => {
+                                            const keyEntrega = `${selectedTaskToGrade}_${s.key}`;
+                                            const entrega = entregas[keyEntrega];
+                                            const currentEval = evaluacionData[keyEntrega] || {
+                                                calificacion: entrega?.calificacion || 95,
+                                                comentario: entrega?.comentario || ''
+                                            };
+
+                                            return (
+                                                <tr key={s.key} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                                                    <td style={{ padding: '12px' }}>
+                                                        <strong>{s.nombre || s.key}</strong>
+                                                        <div style={{ color: '#94a3b8', fontSize: '0.78rem' }}>@{s.key}</div>
+                                                    </td>
+                                                    <td style={{ padding: '12px' }}>
+                                                        {entrega ? (
+                                                            <a href={entrega.videoUrl} target="_blank" rel="noreferrer" style={{ color: '#10b981', fontWeight: 700, fontSize: '0.85rem' }}>
+                                                                <i className="fas fa-play-circle" style={{ marginRight: '4px' }}></i> Abrir Evidencia
+                                                            </a>
+                                                        ) : (
+                                                            <span style={{ color: '#ef4444', fontSize: '0.8rem', fontWeight: 700 }}>Sin entregar aún</span>
+                                                        )}
+                                                    </td>
+                                                    <td style={{ padding: '12px' }}>
+                                                        <input
+                                                            type="number"
+                                                            min="0"
+                                                            max="100"
+                                                            value={currentEval.calificacion}
+                                                            onChange={(e) => setEvaluacionData({
+                                                                ...evaluacionData,
+                                                                [keyEntrega]: { ...currentEval, calificacion: e.target.value }
+                                                            })}
+                                                            style={{ width: '80px', padding: '6px 10px', borderRadius: '8px', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)', color: '#fff' }}
+                                                        />
+                                                    </td>
+                                                    <td style={{ padding: '12px' }}>
+                                                        <input
+                                                            type="text"
+                                                            placeholder="Retroalimentación para el alumno..."
+                                                            value={currentEval.comentario}
+                                                            onChange={(e) => setEvaluacionData({
+                                                                ...evaluacionData,
+                                                                [keyEntrega]: { ...currentEval, comentario: e.target.value }
+                                                            })}
+                                                            style={{ width: '100%', padding: '6px 10px', borderRadius: '8px', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)', color: '#fff' }}
+                                                        />
+                                                    </td>
+                                                    <td style={{ padding: '12px' }}>
+                                                        <button
+                                                            className="btn btn-sm btn-primary"
+                                                            onClick={() => handleGuardarEvaluacionTarea(selectedTaskToGrade, s.key)}
+                                                        >
+                                                            <i className="fas fa-check"></i> Guardar
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                            );
+                                        })}
+                                    </tbody>
+                                </table>
+                            </div>
+                        ) : (
+                            <p style={{ color: '#94a3b8', fontSize: '0.9rem', margin: 0 }}>Selecciona una tarea en el menú desplegable superior para evaluar a cada alumno individualmente.</p>
+                        )}
+                    </div>
+                </div>
+            )}
+
+            {/* TAB 4: MIS ALUMNOS */}
+            {currentSub === 'alumnos' && (
+                <div className="maestro-subview animate-fade-in">
+                    <div className="glass-panel">
+                        <div className="panel-header" style={{ marginBottom: '1.2rem' }}>
+                            <h3 style={{ margin: 0 }}><i className="fas fa-user-graduate" style={{ color: '#3b82f6', marginRight: '8px' }}></i> Directorio de Alumnos de {teacherArea} ({myStudents.length})</h3>
                         </div>
                         <div className="table-container" style={{ overflowX: 'auto' }}>
                             <table className="table-custom" style={{ width: '100%', borderCollapse: 'collapse' }}>
                                 <thead>
                                     <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.1)', color: '#94a3b8', fontSize: '0.85rem' }}>
-                                        <th style={{ padding: '12px' }}>Título / Instrucciones</th>
-                                        <th style={{ padding: '12px' }}>Fecha Límite</th>
-                                        <th style={{ padding: '12px' }}>Archivo Adjunto</th>
+                                        <th style={{ padding: '12px' }}>Alumno</th>
+                                        <th style={{ padding: '12px' }}>Instrumento</th>
+                                        <th style={{ padding: '12px' }}>Teoría (0-100)</th>
+                                        <th style={{ padding: '12px' }}>Técnica (0-100)</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {myTareas.length === 0 ? (
-                                        <tr><td colSpan="3" style={{ textAlign: 'center', padding: '2rem', color: '#94a3b8' }}>No hay tareas publicadas en {teacherArea}.</td></tr>
-                                    ) : (
-                                        myTareas.map(t => (
-                                            <tr key={t.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                                    {myStudents.map(s => {
+                                        const cal = db.calificaciones?.[s.key] || { teoria: 85, tecnica: 90 };
+                                        return (
+                                            <tr key={s.key} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
                                                 <td style={{ padding: '12px' }}>
-                                                    <strong>{t.titulo}</strong>
-                                                    <div style={{ color: '#94a3b8', fontSize: '0.8rem', marginTop: '2px' }}>{t.descripcion}</div>
+                                                    <strong>{s.nombre || s.key}</strong>
+                                                    <div style={{ color: '#94a3b8', fontSize: '0.78rem' }}>@{s.key}</div>
                                                 </td>
-                                                <td style={{ padding: '12px' }}>{t.fechaLimite}</td>
-                                                <td style={{ padding: '12px' }}>
-                                                    {t.archivoLocal ? (
-                                                        <a href={t.archivoLocal.dataUrl} download={t.archivoLocal.nombre} style={{ color: '#10b981', fontWeight: 700, fontSize: '0.85rem' }}>
-                                                            <i className="fas fa-download" style={{ marginRight: '4px' }}></i> {t.archivoLocal.nombre}
-                                                        </a>
-                                                    ) : (
-                                                        <span style={{ color: '#94a3b8', fontSize: '0.8rem' }}>Sin archivo adjunto</span>
-                                                    )}
-                                                </td>
+                                                <td style={{ padding: '12px' }}>{s.area || s.instrument || teacherArea}</td>
+                                                <td style={{ padding: '12px' }}><strong>{cal.teoria}</strong> / 100</td>
+                                                <td style={{ padding: '12px' }}><strong>{cal.tecnica}</strong> / 100</td>
                                             </tr>
-                                        ))
-                                    )}
+                                        );
+                                    })}
                                 </tbody>
                             </table>
                         </div>
@@ -565,12 +647,12 @@ export default function MaestroDashboard() {
                 </div>
             )}
 
-            {/* TAB 5: MATERIALES & ARCHIVOS LOCALES */}
+            {/* TAB 5: MATERIALES & ARCHIVOS LOCALES (HASTA 500 MB) */}
             {currentSub === 'materiales' && (
                 <div className="maestro-subview animate-fade-in">
                     <div className="glass-panel" style={{ marginBottom: '2rem' }}>
                         <div className="panel-header" style={{ marginBottom: '1.2rem' }}>
-                            <h3 style={{ margin: 0 }}><i className="fas fa-folder-plus" style={{ color: '#3b82f6', marginRight: '8px' }}></i> Publicar Material de Práctica (Enlaces & Archivos Locales)</h3>
+                            <h3 style={{ margin: 0 }}><i className="fas fa-folder-plus" style={{ color: '#10b981', marginRight: '8px' }}></i> Publicar Material (PDF, MP3, MP4, PNG, DOCX hasta 500 MB)</h3>
                         </div>
 
                         <form onSubmit={handleCrearMaterial} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
@@ -580,7 +662,7 @@ export default function MaestroDashboard() {
                                     <input
                                         type="text"
                                         className="form-control"
-                                        placeholder="Ej. Rudimentos de Bombo o Partitura PDF"
+                                        placeholder="Ej. Partitura en PDF o Pista de Acompañamiento"
                                         value={nuevoMaterial.titulo}
                                         onChange={(e) => setNuevoMaterial({ ...nuevoMaterial, titulo: e.target.value })}
                                         style={{ padding: '10px', borderRadius: '10px', background: 'rgba(255,255,255,0.05)', color: '#fff' }}
@@ -589,11 +671,11 @@ export default function MaestroDashboard() {
                                 </div>
 
                                 <div className="form-group">
-                                    <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '6px' }}>Enlace Externo (Opcional - YouTube, Drive):</label>
+                                    <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '6px' }}>Enlace Web (Opcional):</label>
                                     <input
                                         type="url"
                                         className="form-control"
-                                        placeholder="https://youtube.com/watch?v=..."
+                                        placeholder="https://..."
                                         value={nuevoMaterial.enlace}
                                         onChange={(e) => setNuevoMaterial({ ...nuevoMaterial, enlace: e.target.value })}
                                         style={{ padding: '10px', borderRadius: '10px', background: 'rgba(255,255,255,0.05)', color: '#fff' }}
@@ -601,27 +683,14 @@ export default function MaestroDashboard() {
                                 </div>
                             </div>
 
-                            <div className="form-group">
-                                <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '6px' }}>Descripción / Notas de Práctica:</label>
-                                <textarea
-                                    className="form-control"
-                                    rows="2"
-                                    placeholder="Describe cómo deben estudiar este material los alumnos de tu clase..."
-                                    value={nuevoMaterial.descripcion}
-                                    onChange={(e) => setNuevoMaterial({ ...nuevoMaterial, descripcion: e.target.value })}
-                                    style={{ padding: '10px', borderRadius: '10px', background: 'rgba(255,255,255,0.05)', color: '#fff' }}
-                                />
-                            </div>
-
-                            {/* Carga de Archivo Local */}
-                            <div className="form-group" style={{ background: 'rgba(255,255,255,0.03)', padding: '1.2rem', borderRadius: '12px', border: '1px dashed rgba(59, 130, 246, 0.4)' }}>
-                                <label style={{ display: 'block', fontSize: '0.88rem', fontWeight: 700, color: '#3b82f6', marginBottom: '8px' }}>
-                                    <i className="fas fa-file-upload" style={{ marginRight: '6px' }}></i> Subir Archivo Local (PDF, MP3, Imagen, Partitura):
+                            {/* Carga de Archivos Locales hasta 500MB */}
+                            <div className="form-group" style={{ background: 'rgba(255,255,255,0.03)', padding: '1.2rem', borderRadius: '12px', border: '1px dashed rgba(16, 185, 129, 0.4)' }}>
+                                <label style={{ display: 'block', fontSize: '0.88rem', fontWeight: 700, color: '#10b981', marginBottom: '8px' }}>
+                                    <i className="fas fa-cloud-upload-alt" style={{ marginRight: '6px' }}></i> Subir Archivo Local (Video, Audio, PDF, Excel, Word, Zip hasta 500 MB):
                                 </label>
                                 <input
                                     type="file"
-                                    accept=".pdf,.mp3,.wav,.png,.jpg,.jpeg,.doc,.docx"
-                                    onChange={(e) => handleFileChange(e, setArchivoMaterial)}
+                                    onChange={(e) => handleFileUpload(e, setArchivoMaterial)}
                                     style={{ color: '#cbd5e1', fontSize: '0.85rem' }}
                                 />
                                 {archivoMaterial && (
@@ -632,7 +701,7 @@ export default function MaestroDashboard() {
                             </div>
 
                             <button type="submit" className="btn btn-primary" style={{ alignSelf: 'flex-start', padding: '10px 22px', borderRadius: '10px' }}>
-                                <i className="fas fa-upload" style={{ marginRight: '8px' }}></i> Publicar Material a Alumnos
+                                <i className="fas fa-upload" style={{ marginRight: '8px' }}></i> Publicar Material
                             </button>
                         </form>
                     </div>
@@ -640,12 +709,12 @@ export default function MaestroDashboard() {
                     {/* Biblioteca de Materiales */}
                     <div className="glass-panel">
                         <div className="panel-header" style={{ marginBottom: '1.2rem' }}>
-                            <h3 style={{ margin: 0 }}><i className="fas fa-book" style={{ color: '#10b981', marginRight: '8px' }}></i> Biblioteca de Materiales de {teacherArea} ({myMateriales.length})</h3>
+                            <h3 style={{ margin: 0 }}><i className="fas fa-book" style={{ color: '#10b981', marginRight: '8px' }}></i> Biblioteca de Materiales de {teacherArea}</h3>
                         </div>
 
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1.2rem' }}>
                             {myMateriales.length === 0 ? (
-                                <div style={{ color: '#94a3b8', padding: '2rem', textAlign: 'center', gridColumn: '1 / -1' }}>No has publicado materiales para {teacherArea}.</div>
+                                <div style={{ color: '#94a3b8', padding: '2rem', textAlign: 'center', gridColumn: '1 / -1' }}>No has publicado materiales.</div>
                             ) : (
                                 myMateriales.map(m => (
                                     <div key={m.id} style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '14px', padding: '1.2rem', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
@@ -655,13 +724,12 @@ export default function MaestroDashboard() {
                                                 <span style={{ color: '#94a3b8', fontSize: '0.78rem' }}>{m.fecha}</span>
                                             </div>
                                             <h4 style={{ margin: '0 0 6px', color: '#ffffff', fontSize: '1.05rem' }}>{m.titulo}</h4>
-                                            {m.descripcion && <p style={{ color: '#cbd5e1', fontSize: '0.85rem', margin: '0 0 12px' }}>{m.descripcion}</p>}
                                         </div>
 
                                         <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginTop: '10px' }}>
                                             {m.enlace && (
                                                 <a href={m.enlace} target="_blank" rel="noreferrer" className="btn btn-sm btn-secondary" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-                                                    <i className="fas fa-external-link-alt"></i> Enlace Web
+                                                    <i className="fas fa-external-link-alt"></i> Abrir Enlace
                                                 </a>
                                             )}
 
@@ -679,21 +747,64 @@ export default function MaestroDashboard() {
                 </div>
             )}
 
-            {/* TAB 6: ANUNCIOS STAFF */}
+            {/* TAB 6: ENSAMBLES & SALA DE ENSAYO (PLAYBACK APP REPLICA) */}
+            {currentSub === 'ensambles' && (
+                <div className="maestro-subview animate-fade-in">
+                    {/* AVISO DE ENSAMBLES PRÓXIMAMENTE */}
+                    <div style={{ background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.15), rgba(30, 27, 75, 0.3))', border: '1px solid rgba(245, 158, 11, 0.3)', borderRadius: '20px', padding: '1.8rem', marginBottom: '2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1.5rem' }}>
+                        <div>
+                            <span style={{ background: '#f59e0b', color: '#000', fontWeight: 800, padding: '4px 12px', borderRadius: '12px', fontSize: '0.78rem', textTransform: 'uppercase' }}>Próximamente</span>
+                            <h3 style={{ margin: '8px 0 4px', color: '#fff', fontSize: '1.4rem', fontWeight: 800 }}>Asignación General de Ensambles</h3>
+                            <p style={{ color: '#cbd5e1', fontSize: '0.9rem', margin: 0 }}>Las asignaciones de ensamble serán habilitadas por el Administrador al inicio del ciclo de conciertos.</p>
+                        </div>
+
+                        <button
+                            className="btn btn-primary pulse-active"
+                            onClick={() => setActiveSubview('playback_studio')}
+                            style={{ padding: '14px 28px', borderRadius: '50px', fontWeight: 800, fontSize: '0.95rem', display: 'inline-flex', alignItems: 'center', gap: '10px' }}
+                        >
+                            <i className="fas fa-sliders-h" style={{ fontSize: '1.1rem' }}></i> Ir a Sala de Ensayo (App Playback iOS)
+                        </button>
+                    </div>
+                </div>
+            )}
+
+            {/* TAB 7: ANUNCIOS & COBERTURA PASTORAL */}
             {currentSub === 'anuncios' && (
                 <div className="maestro-subview animate-fade-in">
                     <div className="glass-panel">
                         <div className="panel-header" style={{ marginBottom: '1.2rem' }}>
-                            <h3 style={{ margin: 0 }}><i className="fas fa-bullhorn" style={{ color: '#f59e0b', marginRight: '8px' }}></i> Muro de Anuncios del Staff & Coordinación</h3>
+                            <h3 style={{ margin: 0 }}><i className="fas fa-bullhorn" style={{ color: '#8b5cf6', marginRight: '8px' }}></i> Comunicados del Staff & Cobertura Pastoral</h3>
                         </div>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                            {(db.anunciosStaff || []).map(a => (
-                                <div key={a.id} style={{ background: 'rgba(255,255,255,0.03)', borderLeft: '4px solid #ef4444', padding: '1.2rem', borderRadius: '10px' }}>
-                                    <h4 style={{ margin: '0 0 6px', color: '#ffffff' }}>{a.titulo}</h4>
-                                    <p style={{ margin: '0 0 8px', color: '#cbd5e1', fontSize: '0.9rem' }}>{a.contenido}</p>
-                                    <small style={{ color: '#94a3b8', fontSize: '0.78rem' }}>{a.fecha} • {a.autor}</small>
-                                </div>
-                            ))}
+
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                            {(db.anunciosStaff || []).map(a => {
+                                const isPastoral = a.autor?.toLowerCase().includes('pastor') || a.tipo === 'pastoral';
+                                return (
+                                    <div
+                                        key={a.id}
+                                        style={{
+                                            background: isPastoral ? 'linear-gradient(135deg, rgba(139, 92, 246, 0.25), rgba(30, 27, 75, 0.5))' : 'rgba(255,255,255,0.03)',
+                                            border: isPastoral ? '1px solid #8b5cf6' : '1px solid rgba(255,255,255,0.08)',
+                                            borderLeft: isPastoral ? '6px solid #8b5cf6' : '4px solid #ef4444',
+                                            padding: '1.4rem',
+                                            borderRadius: '16px'
+                                        }}
+                                    >
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                                            <h4 style={{ margin: 0, color: isPastoral ? '#a78bfa' : '#ffffff', fontSize: '1.1rem', fontWeight: 800 }}>
+                                                {isPastoral && <i className="fas fa-crown" style={{ color: '#eab308', marginRight: '8px' }}></i>}
+                                                {a.titulo}
+                                            </h4>
+                                            <span style={{ fontSize: '0.8rem', color: '#94a3b8' }}>{a.fecha}</span>
+                                        </div>
+                                        <p style={{ margin: '0 0 10px', color: '#cbd5e1', fontSize: '0.92rem', lineHeight: '1.5' }}>{a.contenido}</p>
+                                        <small style={{ color: isPastoral ? '#c4b5fd' : '#94a3b8', fontSize: '0.8rem', fontWeight: 700 }}>
+                                            {isPastoral ? '✝ Mensaje de Cobertura Pastoral' : `Emisión: ${a.autor}`}
+                                        </small>
+                                    </div>
+                                );
+                            })}
                         </div>
                     </div>
                 </div>

@@ -29,6 +29,50 @@ export function WorshipProvider({ children }) {
         });
     };
 
+    const addNotification = ({ title, message, targetUser = null, targetRole = null, type = 'info' }) => {
+        const notif = {
+            id: 'n_' + Date.now(),
+            title,
+            message,
+            targetUser,
+            targetRole,
+            type,
+            date: new Date().toLocaleDateString('es-MX', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }),
+            read: false
+        };
+
+        updateDb(prev => ({
+            ...prev,
+            notifications: [notif, ...(prev.notifications || [])]
+        }));
+    };
+
+    const updateUserProfile = (userKey, profileData) => {
+        updateDb(prev => {
+            const users = { ...(prev.usuarios || {}) };
+            if (users[userKey]) {
+                users[userKey] = {
+                    ...users[userKey],
+                    ...profileData
+                };
+            }
+            return {
+                ...prev,
+                usuarios: users
+            };
+        });
+
+        // Actualizar sesión actual si es el mismo usuario
+        if (currentUser && (currentUser.username === userKey || currentUser.key === userKey)) {
+            const updatedUser = {
+                ...currentUser,
+                ...profileData
+            };
+            setCurrentUserState(updatedUser);
+            localStorage.setItem('usuario_actual', JSON.stringify(updatedUser));
+        }
+    };
+
     const showToast = (message, type = 'info') => {
         setToast({ visible: true, message, type });
         setTimeout(() => {
@@ -74,7 +118,9 @@ export function WorshipProvider({ children }) {
             openModal,
             closeModal,
             login,
-            logout
+            logout,
+            addNotification,
+            updateUserProfile
         }}>
             {children}
         </WorshipContext.Provider>

@@ -3,10 +3,13 @@ import { useWorship } from '../../../services/WorshipContext';
 import { calcularEstadoPago, normalizeRol } from '../../../services/worshipDb';
 
 export default function ProduccionView() {
-    const { db, updateDb, activeSubview, setActiveSubview, showToast } = useWorship();
+    const { db, updateDb, activeSubview, setActiveSubview, currentUser, showToast } = useWorship();
     const currentSub = activeSubview || 'playback';
 
-    // Playback Studio State
+    // Determinar instrumento del usuario si es alumno o maestro
+    const myInstrument = currentUser?.area || currentUser?.instrument || 'Teclados';
+
+    // ESTADO DEL REPRODUCTOR PLAYBACK STEMS
     const [isPlaying, setIsPlaying] = useState(false);
     const [selectedSongId, setSelectedSongId] = useState('1');
     const [masterVol, setMasterVol] = useState(80);
@@ -34,6 +37,24 @@ export default function ProduccionView() {
         showToast(isPlaying ? 'Playback pausado' : '▶ Reproduciendo multitrack de ' + currentSong.titulo, isPlaying ? 'info' : 'success');
     };
 
+    // BOTÓN "MUTEAR MI INSTRUMENTO"
+    const handleMuteMyInstrument = () => {
+        const inst = myInstrument.toLowerCase();
+        let targetStemKey = 'teclado';
+
+        if (inst.includes('batería') || inst.includes('bateria')) targetStemKey = 'bateria';
+        else if (inst.includes('bajo')) targetStemKey = 'bajo';
+        else if (inst.includes('guitarra')) targetStemKey = 'guitarras';
+        else if (inst.includes('canto') || inst.includes('voz')) targetStemKey = 'voces';
+
+        setStems(prev => ({
+            ...prev,
+            [targetStemKey]: { ...prev[targetStemKey], muted: !prev[targetStemKey].muted }
+        }));
+
+        showToast(`Estatus de silencio para ${myInstrument} alternado`, 'info');
+    };
+
     const toggleMute = (key) => {
         setStems(prev => ({
             ...prev,
@@ -58,10 +79,24 @@ export default function ProduccionView() {
         }));
     };
 
-    // Staff state
+    // ESTADO PLANTILLAS DE ESTATUS DE CLASES
     const [estatusEstado, setEstatusEstado] = useState(db.estatusClases?.estado || 'normal');
-    const [estatusMensaje, setEstatusMensaje] = useState(db.estatusClases?.mensaje || '');
+    const [estatusMensaje, setEstatusMensaje] = useState(db.estatusClases?.mensaje || '✅ Próxima Clase: Sábado de 10:00 AM a 1:00 PM • Asistencia Normal.');
     const [nuevoAnuncio, setNuevoAnuncio] = useState({ titulo: '', contenido: '' });
+
+    // PLANTILLAS RÁPIDAS DE CLASES
+    const plantillasEstatus = [
+        { label: '✅ Confirmar Clases Presenciales', estado: 'normal', msg: '✅ Próxima Clase: Sábado de 10:00 AM a 1:00 PM • Asistencia Normal.' },
+        { label: '❌ Cancelar por Feriado / Festividad', estado: 'suspendida', msg: '❌ Clases Suspendidas por asueto/festivo oficial. Nos reincorporamos el siguiente sábado.' },
+        { label: '⚠️ Cambio de Horario o Aula', estado: 'alerta', msg: '⚠️ Atención Alumnos: La clase del sábado se traslada al Auditorio Principal a las 11:00 AM.' },
+        { label: '📊 Evaluación Especial de Ciclo', estado: 'alerta', msg: '📊 Evaluación General: Traer instrumento afinado y partituras para examen de fin de ciclo.' }
+    ];
+
+    const aplicarPlantilla = (p) => {
+        setEstatusEstado(p.estado);
+        setEstatusMensaje(p.msg);
+        showToast('Plantilla aplicada. Presiona Publicar para confirmar.', 'info');
+    };
 
     const students = Object.entries(db.usuarios || {})
         .filter(([_, u]) => normalizeRol(u.rol) === 'estudiante')
@@ -78,7 +113,7 @@ export default function ProduccionView() {
                 publicadoPor: 'Equipo Producción & Staff'
             }
         }));
-        showToast('Estatus de clases actualizado exitosamente', 'success');
+        showToast('Estatus de clases publicado exitosamente', 'success');
     };
 
     const handlePublicarAnuncio = (e) => {
@@ -120,8 +155,8 @@ export default function ProduccionView() {
             {/* SUBVIEW NAV TABS */}
             <div className="subview-nav">
                 {[
-                    { id: 'playback', label: 'Estudio Playback Stems', icon: 'fas fa-sliders-h' },
-                    { id: 'estatus', label: 'Estatus Clases', icon: 'fas fa-calendar-check' },
+                    { id: 'playback', label: 'Sala de Ensayo (App iOS Playback)', icon: 'fas fa-sliders-h' },
+                    { id: 'estatus', label: 'Estatus Clases & Plantillas', icon: 'fas fa-calendar-check' },
                     { id: 'anuncios', label: 'Anuncios Staff', icon: 'fas fa-bullhorn' },
                     { id: 'colegiaturas', label: 'Control Colegiaturas', icon: 'fas fa-file-invoice-dollar' }
                 ].map(tab => (
@@ -135,17 +170,27 @@ export default function ProduccionView() {
                 ))}
             </div>
 
-            {/* TAB: PLAYBACK STUDIO */}
+            {/* TAB: SALA DE ENSAYO PLAYBACK IOS REPLICA */}
             {currentSub === 'playback' && (
                 <div className="produccion-subview animate-fade-in">
                     <div className="glass-panel" style={{ marginBottom: '2rem' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem', marginBottom: '1.5rem' }}>
                             <div>
-                                <h2 style={{ margin: 0, color: '#ffffff', fontSize: '1.5rem', fontWeight: 800 }}>{currentSong.titulo}</h2>
-                                <span style={{ color: '#94a3b8', fontSize: '0.9rem' }}>{currentSong.autor} • Tono: <strong>{currentSong.tono}</strong> • Multitrack Stems Mixer</span>
+                                <span style={{ background: '#dc2626', color: '#fff', fontSize: '0.75rem', fontWeight: 800, padding: '4px 10px', borderRadius: '12px', textTransform: 'uppercase' }}>Consola iOS Playback</span>
+                                <h2 style={{ margin: '6px 0 0', color: '#ffffff', fontSize: '1.6rem', fontWeight: 800 }}>{currentSong.titulo}</h2>
+                                <span style={{ color: '#94a3b8', fontSize: '0.88rem' }}>{currentSong.autor} • Tono: <strong>{currentSong.tono}</strong> • Live Stems Mixer</span>
                             </div>
 
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                {/* BOTÓN DE MUTEAR MI INSTRUMENTO */}
+                                <button
+                                    className="btn btn-secondary"
+                                    onClick={handleMuteMyInstrument}
+                                    style={{ border: '1px solid #ef4444', color: '#ef4444', fontWeight: 800, borderRadius: '12px', padding: '10px 18px' }}
+                                >
+                                    <i className="fas fa-volume-mute" style={{ marginRight: '6px' }}></i> Mutear Mi Instrumento ({myInstrument})
+                                </button>
+
                                 {isPlaying && (
                                     <div className="audio-wave-visualizer">
                                         <div className="audio-wave-bar"></div>
@@ -159,27 +204,25 @@ export default function ProduccionView() {
                                     className="form-control"
                                     value={selectedSongId}
                                     onChange={(e) => setSelectedSongId(e.target.value)}
-                                    style={{ width: '220px', background: 'rgba(255,255,255,0.06)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.12)' }}
+                                    style={{ width: '200px' }}
                                 >
                                     {songs.map(s => (
-                                        <option key={s.id} value={s.id} style={{ background: '#121420' }}>{s.titulo} ({s.tono})</option>
+                                        <option key={s.id} value={s.id}>{s.titulo} ({s.tono})</option>
                                     ))}
                                 </select>
                             </div>
                         </div>
 
                         {/* Transport Bar */}
-                        <div style={{ background: 'rgba(0,0,0,0.4)', borderRadius: '14px', padding: '1.2rem 1.6rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1.5rem', border: '1px solid rgba(255,255,255,0.06)' }}>
-                            <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-                                <button
-                                    className={`btn ${isPlaying ? 'btn-secondary' : 'btn-primary'} ${isPlaying ? 'pulse-active' : ''}`}
-                                    onClick={togglePlay}
-                                    style={{ borderRadius: '50px', padding: '12px 28px', fontSize: '1rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '10px' }}
-                                >
-                                    <i className={isPlaying ? 'fas fa-pause' : 'fas fa-play'}></i>
-                                    <span>{isPlaying ? 'PAUSAR' : 'REPRODUCIR LIVE'}</span>
-                                </button>
-                            </div>
+                        <div style={{ background: 'rgba(0,0,0,0.5)', borderRadius: '16px', padding: '1.2rem 1.6rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1.5rem', border: '1px solid rgba(255,255,255,0.08)' }}>
+                            <button
+                                className={`btn ${isPlaying ? 'btn-secondary' : 'btn-primary'} ${isPlaying ? 'pulse-active' : ''}`}
+                                onClick={togglePlay}
+                                style={{ borderRadius: '50px', padding: '12px 28px', fontSize: '1rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '10px' }}
+                            >
+                                <i className={isPlaying ? 'fas fa-pause' : 'fas fa-play'}></i>
+                                <span>{isPlaying ? 'PAUSAR' : 'REPRODUCIR LIVE'}</span>
+                            </button>
 
                             <div style={{ display: 'flex', alignItems: 'center', gap: '14px', minWidth: '240px' }}>
                                 <i className="fas fa-volume-up" style={{ color: '#94a3b8' }}></i>
@@ -266,20 +309,38 @@ export default function ProduccionView() {
                 </div>
             )}
 
-            {/* TAB: ESTATUS */}
+            {/* TAB: ESTATUS DE CLASES & PLANTILLAS RÁPIDAS */}
             {currentSub === 'estatus' && (
                 <div className="produccion-subview animate-fade-in">
                     <div className="glass-panel" style={{ marginBottom: '2rem' }}>
                         <div className="panel-header" style={{ marginBottom: '1.2rem' }}>
-                            <h3 style={{ margin: 0 }}><i className="fas fa-bullhorn" style={{ color: '#dc2626', marginRight: '8px' }}></i> Configuración de Estatus de Clases</h3>
+                            <h3 style={{ margin: 0 }}><i className="fas fa-bullhorn" style={{ color: '#dc2626', marginRight: '8px' }}></i> Configuración de Estatus de Clases & Plantillas Rápidas</h3>
                         </div>
+
+                        {/* PLANTILLAS RÁPIDAS */}
+                        <div style={{ marginBottom: '1.5rem', background: 'rgba(255,255,255,0.03)', padding: '1rem', borderRadius: '14px' }}>
+                            <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: '#3b82f6', marginBottom: '8px' }}>Plantillas de Estatus Predefinidas:</label>
+                            <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                                {plantillasEstatus.map((p, idx) => (
+                                    <button
+                                        key={idx}
+                                        type="button"
+                                        className="btn btn-sm btn-secondary"
+                                        onClick={() => aplicarPlantilla(p)}
+                                    >
+                                        {p.label}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
                         <form onSubmit={handleActualizarEstatus} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
                             <div className="form-group">
                                 <label style={{ display: 'block', marginBottom: '6px', fontSize: '0.88rem', fontWeight: 600 }}>Condición:</label>
-                                <select className="form-control" value={estatusEstado} onChange={(e) => setEstatusEstado(e.target.value)} style={{ padding: '10px', borderRadius: '10px', background: 'rgba(255,255,255,0.05)', color: '#fff' }}>
-                                    <option value="normal" style={{ background: '#121420' }}>✅ Clases Normales (Confirmadas)</option>
-                                    <option value="alerta" style={{ background: '#121420' }}>⚠️ Aviso Importante (Cambio de Aula o Horario)</option>
-                                    <option value="suspendida" style={{ background: '#121420' }}>❌ Clases Suspendidas</option>
+                                <select className="form-control" value={estatusEstado} onChange={(e) => setEstatusEstado(e.target.value)}>
+                                    <option value="normal">✅ Clases Normales (Confirmadas)</option>
+                                    <option value="alerta">⚠️ Aviso Importante (Cambio de Aula o Horario)</option>
+                                    <option value="suspendida">❌ Clases Suspendidas</option>
                                 </select>
                             </div>
                             <div className="form-group">
@@ -289,12 +350,11 @@ export default function ProduccionView() {
                                     rows="2"
                                     value={estatusMensaje}
                                     onChange={(e) => setEstatusMensaje(e.target.value)}
-                                    style={{ padding: '10px', borderRadius: '10px', background: 'rgba(255,255,255,0.05)', color: '#fff' }}
                                     required
                                 />
                             </div>
                             <button type="submit" className="btn btn-primary" style={{ alignSelf: 'flex-start', borderRadius: '10px', padding: '10px 22px' }}>
-                                <i className="fas fa-save" style={{ marginRight: '8px' }}></i> Publicar Estatus
+                                <i className="fas fa-save" style={{ marginRight: '8px' }}></i> Publicar Estatus General
                             </button>
                         </form>
                     </div>
@@ -306,7 +366,7 @@ export default function ProduccionView() {
                 <div className="produccion-subview animate-fade-in">
                     <div className="glass-panel" style={{ marginBottom: '2rem' }}>
                         <div className="panel-header" style={{ marginBottom: '1.2rem' }}>
-                            <h3 style={{ margin: 0 }}><i className="fas fa-plus" style={{ color: '#3b82f6', marginRight: '8px' }}></i> Publicar Nuevo Comunicado para el Staff</h3>
+                            <h3 style={{ margin: 0 }}><i className="fas fa-plus" style={{ color: '#3b82f6', marginRight: '8px' }}></i> Publicar Comunicado para el Staff</h3>
                         </div>
                         <form onSubmit={handlePublicarAnuncio} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
                             <div className="form-group">
@@ -314,10 +374,9 @@ export default function ProduccionView() {
                                 <input
                                     type="text"
                                     className="form-control"
-                                    placeholder="Ej. Junta de Docentes previa a graduación"
+                                    placeholder="Ej. Junta de Coordinación de Graduaciones"
                                     value={nuevoAnuncio.titulo}
                                     onChange={(e) => setNuevoAnuncio({ ...nuevoAnuncio, titulo: e.target.value })}
-                                    style={{ padding: '10px', borderRadius: '10px', background: 'rgba(255,255,255,0.05)', color: '#fff' }}
                                     required
                                 />
                             </div>
@@ -328,12 +387,11 @@ export default function ProduccionView() {
                                     rows="3"
                                     value={nuevoAnuncio.contenido}
                                     onChange={(e) => setNuevoAnuncio({ ...nuevoAnuncio, contenido: e.target.value })}
-                                    style={{ padding: '10px', borderRadius: '10px', background: 'rgba(255,255,255,0.05)', color: '#fff' }}
                                     required
                                 />
                             </div>
                             <button type="submit" className="btn btn-primary" style={{ alignSelf: 'flex-start', borderRadius: '10px', padding: '10px 22px' }}>
-                                <i className="fas fa-paper-plane" style={{ marginRight: '8px' }}></i> Enviar a Maestros
+                                <i className="fas fa-paper-plane" style={{ marginRight: '8px' }}></i> Enviar Comunicado
                             </button>
                         </form>
                     </div>
