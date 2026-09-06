@@ -38,15 +38,77 @@ export default function AdminStemsUploader() {
         coverUrl: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=150&auto=format&fit=crop&q=80'
     });
 
-    // LISTADO DINÁMICO DE STEMS AGREGADOS UNO POR UNO
-    const [stemsDinamicos, setStemsDinamicos] = useState([
-        { id: 's_init_1', tipo: 'click', nombrePersonalizado: '', archivoUrl: null, archivoNombre: '' },
-        { id: 's_init_2', tipo: 'bateria', nombrePersonalizado: '', archivoUrl: null, archivoNombre: '' },
-        { id: 's_init_3', tipo: 'bajo', nombrePersonalizado: '', archivoUrl: null, archivoNombre: '' },
-        { id: 's_init_4', tipo: 'teclados', nombrePersonalizado: '', archivoUrl: null, archivoNombre: '' }
-    ]);
+    // LISTADO DINÁMICO DE STEMS AGREGADOS
+    const [stemsDinamicos, setStemsDinamicos] = useState([]);
 
-    // AGREGAR NUEVO STEM / PISTA
+    // DETECCIÓN AUTOMÁTICA DE INSTRUMENTO SEGÚN EL NOMBRE DEL ARCHIVO
+    const autoDetectInstrumentType = (filename) => {
+        const name = filename.toLowerCase();
+
+        if (name.includes('click') || name.includes('metronomo') || name.includes('guia') || name.includes('guide') || name.includes('cue')) return { tipo: 'click', customName: '' };
+        if (name.includes('bat') || name.includes('drum') || name.includes('kick') || name.includes('snare') || name.includes('tom')) return { tipo: 'bateria', customName: '' };
+        if (name.includes('pan') || name.includes('percu') || name.includes('shaker') || name.includes('tambor')) return { tipo: 'pandero', customName: '' };
+        if (name.includes('loop') || name.includes('seq') || name.includes('ritm')) return { tipo: 'loop', customName: '' };
+        if (name.includes('fx') || name.includes('efect') || name.includes('atmos')) return { tipo: 'fx', customName: '' };
+        if (name.includes('bajosnt') || name.includes('synth_bass') || name.includes('sub')) return { tipo: 'bajosnt', customName: '' };
+        if (name.includes('baj') || name.includes('bass')) return { tipo: 'bajo', customName: '' };
+        if (name.includes('ga') || name.includes('acust') || name.includes('acous')) return { tipo: 'ga', customName: '' };
+        if (name.includes('ge2') || name.includes('elec2')) return { tipo: 'ge2', customName: '' };
+        if (name.includes('ge') || name.includes('elec')) return { tipo: 'ge1', customName: '' };
+        if (name.includes('lider') || name.includes('lead_guit') || name.includes('solo')) return { tipo: 'g_lider', customName: '' };
+        if (name.includes('tec') || name.includes('key') || name.includes('piano') || name.includes('rhodes')) return { tipo: 'teclados', customName: '' };
+        if (name.includes('syn') || name.includes('pad') || name.includes('lead') || name.includes('arp')) return { tipo: 'synths', customName: '' };
+        if (name.includes('cuerd') || name.includes('string') || name.includes('violin') || name.includes('cello')) return { tipo: 'cuerdas', customName: '' };
+        if (name.includes('metal') || name.includes('horn') || name.includes('brass') || name.includes('sax')) return { tipo: 'metales', customName: '' };
+        if (name.includes('lead_voc') || name.includes('voz_lead') || name.includes('canto')) return { tipo: 'voz_lead', customName: '' };
+        if (name.includes('voc') || name.includes('coro') || name.includes('back')) return { tipo: 'voces_back', customName: '' };
+        if (name.includes('mast') || name.includes('mix') || name.includes('full')) return { tipo: 'master', customName: '' };
+
+        // Si el nombre no coincide con ninguna palabra clave, poner en 'otro' con el nombre limpio del archivo
+        const cleanName = filename.replace(/\.[^/.]+$/, '').replace(/[_.\-]/g, ' ');
+        return { tipo: 'otro', customName: cleanName };
+    };
+
+    // CARGAR TODOS LOS STEMS DE GOLPE (SELECCIÓN MÚLTIPLE DE ARCHIVOS)
+    const handleCargarStemsDeGolpe = (e) => {
+        const files = Array.from(e.target.files || []);
+        if (files.length === 0) return;
+
+        showToast(`⚡ Procesando ${files.length} stems simultáneamente...`, 'info');
+
+        let loadedCount = 0;
+        const newStems = [];
+
+        files.forEach((file) => {
+            const reader = new FileReader();
+            reader.onload = (evt) => {
+                const dataUrl = evt.target.result;
+                const detected = autoDetectInstrumentType(file.name);
+                const stemId = 'stem_bulk_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
+
+                newStems.push({
+                    id: stemId,
+                    tipo: detected.tipo,
+                    nombrePersonalizado: detected.customName,
+                    archivoUrl: dataUrl,
+                    archivoNombre: file.name
+                });
+
+                loadedCount++;
+                if (loadedCount === files.length) {
+                    setStemsDinamicos(prev => [...prev.filter(s => s.archivoUrl), ...newStems]);
+                    showToast(`🎉 ¡${files.length} Stems cargados de golpe y clasificados automáticamente!`, 'success');
+                }
+            };
+            reader.onerror = () => {
+                loadedCount++;
+                showToast(`Error al leer archivo ${file.name}`, 'error');
+            };
+            reader.readAsDataURL(file);
+        });
+    };
+
+    // AGREGAR NUEVO STEM INDIVIDUAL
     const handleAgregarStem = () => {
         const nuevoId = 'stem_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4);
         setStemsDinamicos(prev => [
@@ -72,7 +134,7 @@ export default function AdminStemsUploader() {
         setStemsDinamicos(prev => prev.map(s => s.id === id ? { ...s, nombrePersonalizado: nameVal } : s));
     };
 
-    // CAMBIAR ARCHIVO DE AUDIO CON FILEREADER (BASE64 PERSISTENTE)
+    // CAMBIAR ARCHIVO DE AUDIO INDIVIDUAL
     const handleArchivoChange = (id, e) => {
         const file = e.target.files?.[0];
         if (!file) return;
@@ -102,7 +164,7 @@ export default function AdminStemsUploader() {
         }
 
         if (stemsDinamicos.length === 0) {
-            showToast('Agrega al menos 1 stem para publicar la canción', 'error');
+            showToast('Agrega o carga al menos 1 stem para publicar la canción', 'error');
             return;
         }
 
@@ -122,7 +184,7 @@ export default function AdminStemsUploader() {
                 tipo: s.tipo,
                 label: nombreLabel,
                 url: s.archivoUrl,
-                archivoNombre: s.archivoNombre || 'Audio sin subir'
+                archivoNombre: s.archivoNombre || 'Audio cargado'
             };
         });
 
@@ -154,15 +216,12 @@ export default function AdminStemsUploader() {
             coverUrl: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=150&auto=format&fit=crop&q=80'
         });
 
-        setStemsDinamicos([
-            { id: 's_init_1', tipo: 'click', nombrePersonalizado: '', archivoUrl: null, archivoNombre: '' },
-            { id: 's_init_2', tipo: 'bateria', nombrePersonalizado: '', archivoUrl: null, archivoNombre: '' }
-        ]);
+        setStemsDinamicos([]);
 
-        showToast(`🎵 Canción "${cancionGuardada.titulo}" subida con ${cancionGuardada.totalStems} stems dinámicos`, 'success');
+        showToast(`🎵 Canción "${cancionGuardada.titulo}" subida exitosamente con ${cancionGuardada.totalStems} stems en vivo`, 'success');
     };
 
-    // ELIMINAR CANCIÓN
+    // ELIMINAR CANCIÓN DE LA NUBE
     const handleEliminarCancion = (id, titulo) => {
         if (window.confirm(`¿Eliminar la canción "${titulo}" de Playback Cloud?`)) {
             updateDb(prev => ({
@@ -192,14 +251,14 @@ export default function AdminStemsUploader() {
             }}>
                 <div>
                     <span style={{ background: '#22c55e', color: '#000000', fontSize: '0.75rem', fontWeight: 800, padding: '4px 12px', borderRadius: '12px', textTransform: 'uppercase' }}>
-                        Playback Cloud Studio • Carga Dinámica
+                        Playback Cloud Studio • Carga Masiva
                     </span>
                     <h2 style={{ margin: '8px 0 4px', color: '#ffffff', fontSize: '1.6rem', fontWeight: 800 }}>
                         <i className="fas fa-cloud-upload-alt" style={{ color: '#22c55e', marginRight: '10px' }}></i>
-                        Cargar Canción & Stems (Personalizados)
+                        Cargar Canción & Stems (Carga Masiva o Individual)
                     </h2>
                     <p style={{ color: '#cbd5e1', fontSize: '0.9rem', margin: 0 }}>
-                        Agrega libremente stems uno por uno seleccionando el instrumento exacto o escribiendo nombres personalizados.
+                        Sube todos tus stems de golpe seleccionando múltiples archivos de audio. El sistema los clasificará automáticamente por su nombre.
                     </p>
                 </div>
             </div>
@@ -279,124 +338,146 @@ export default function AdminStemsUploader() {
                         </div>
                     </div>
 
-                    {/* SECCIÓN CARGA DE STEMS UNO POR UNO */}
+                    {/* SECCIÓN CARGA MASIVA & INDIVIDUAL DE STEMS */}
                     <div style={{ background: 'rgba(255, 255, 255, 0.02)', border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: '16px', padding: '1.5rem', marginBottom: '2rem' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem', marginBottom: '1.2rem' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem', marginBottom: '1.5rem' }}>
                             <div>
                                 <h4 style={{ color: '#ffffff', fontSize: '1.15rem', fontWeight: 800, margin: 0 }}>
                                     <i className="fas fa-sliders-h" style={{ color: '#22c55e', marginRight: '8px' }}></i>
-                                    2. Agregar Stems uno por uno ({stemsDinamicos.length} Pistas)
+                                    2. Pistas & Stems de la Canción ({stemsDinamicos.length} Stems Cargados)
                                 </h4>
                                 <p style={{ color: '#94a3b8', fontSize: '0.85rem', margin: '4px 0 0' }}>
-                                    Selecciona el instrumento del menú desplegable o ingresa uno personalizado, luego adjunta el audio.
+                                    Puedes cargar todos tus stems de golpe o agregar pistas una por una.
                                 </p>
                             </div>
 
-                            {/* BOTÓN AGREGAR STEM */}
-                            <button
-                                type="button"
-                                className="btn btn-secondary"
-                                onClick={handleAgregarStem}
-                                style={{ border: '1px solid #22c55e', color: '#22c55e', fontWeight: 800, borderRadius: '20px', padding: '8px 18px' }}
-                            >
-                                <i className="fas fa-plus" style={{ marginRight: '6px' }}></i> Agregar Nuevo Stem / Pista
-                            </button>
-                        </div>
+                            <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                                {/* BOTÓN CARGAR TODOS DE GOLPE */}
+                                <label className="btn btn-primary pulse-active" style={{ cursor: 'pointer', borderRadius: '20px', padding: '8px 20px', display: 'inline-flex', alignItems: 'center', gap: '8px', fontWeight: 800 }}>
+                                    <i className="fas fa-folder-open"></i> ⚡ Cargar Todos los Stems de Golpe
+                                    <input
+                                        type="file"
+                                        accept="audio/*"
+                                        multiple
+                                        onChange={handleCargarStemsDeGolpe}
+                                        style={{ display: 'none' }}
+                                    />
+                                </label>
 
-                        {/* LISTADO DE FILAS DE STEMS DINÁMICOS */}
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                            {stemsDinamicos.map((stem, index) => (
-                                <div
-                                    key={stem.id}
-                                    style={{
-                                        background: stem.archivoUrl ? 'rgba(34, 197, 94, 0.08)' : 'rgba(30, 34, 48, 0.6)',
-                                        border: stem.archivoUrl ? '1px solid #22c55e' : '1px solid rgba(255, 255, 255, 0.1)',
-                                        borderRadius: '14px',
-                                        padding: '1rem 1.2rem',
-                                        display: 'grid',
-                                        gridTemplateColumns: 'auto 1fr 1fr auto',
-                                        alignItems: 'center',
-                                        gap: '1rem'
-                                    }}
+                                {/* BOTÓN AGREGAR UN STEM INDIVIDUAL */}
+                                <button
+                                    type="button"
+                                    className="btn btn-secondary"
+                                    onClick={handleAgregarStem}
+                                    style={{ border: '1px solid #22c55e', color: '#22c55e', fontWeight: 800, borderRadius: '20px', padding: '8px 18px' }}
                                 >
-                                    {/* NÚMERO DE PISTA */}
-                                    <div style={{ background: '#1e2230', width: '32px', height: '32px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '0.85rem', color: '#22c55e' }}>
-                                        {index + 1}
-                                    </div>
-
-                                    {/* SELECCIÓN DE INSTRUMENTO / DROPDOWN AMPLIO */}
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                                        <label style={{ fontSize: '0.78rem', color: '#94a3b8', fontWeight: 700 }}>Instrumento / Tipo de Pista:</label>
-                                        <select
-                                            className="form-control"
-                                            value={stem.tipo}
-                                            onChange={(e) => handleTipoChange(stem.id, e.target.value)}
-                                            style={{ background: '#12141d', color: '#ffffff', fontWeight: 700 }}
-                                        >
-                                            {OPCIONES_INSTRUMENTOS.map(op => (
-                                                <option key={op.value} value={op.value}>{op.label}</option>
-                                            ))}
-                                        </select>
-
-                                        {/* SI ELIGE 'OTRO', INGRESAR NOMBRE PERSONALIZADO */}
-                                        {stem.tipo === 'otro' && (
-                                            <input
-                                                type="text"
-                                                className="form-control"
-                                                placeholder="Escribe el nombre del instrumento (ej. Marimba, Acordeón...)"
-                                                value={stem.nombrePersonalizado}
-                                                onChange={(e) => handleCustomNameChange(stem.id, e.target.value)}
-                                                style={{ marginTop: '4px', borderColor: '#eab308', background: '#1c1917' }}
-                                                required
-                                            />
-                                        )}
-                                    </div>
-
-                                    {/* SELECTOR DE ARCHIVO DE AUDIO */}
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                                        <label style={{ fontSize: '0.78rem', color: '#94a3b8', fontWeight: 700 }}>Archivo de Audio (MP3 / WAV / M4A):</label>
-                                        <label
-                                            style={{
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                justifyContent: 'center',
-                                                gap: '8px',
-                                                background: stem.archivoUrl ? 'rgba(34, 197, 94, 0.2)' : 'rgba(255, 255, 255, 0.08)',
-                                                border: '1px dashed ' + (stem.archivoUrl ? '#22c55e' : 'rgba(255, 255, 255, 0.25)'),
-                                                borderRadius: '8px',
-                                                padding: '8px 14px',
-                                                fontSize: '0.82rem',
-                                                fontWeight: 700,
-                                                color: '#ffffff',
-                                                cursor: 'pointer'
-                                            }}
-                                        >
-                                            <i className="fas fa-file-audio" style={{ color: stem.archivoUrl ? '#22c55e' : '#94a3b8' }}></i>
-                                            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '220px' }}>
-                                                {stem.archivoNombre || 'Adjuntar audio local...'}
-                                            </span>
-                                            <input
-                                                type="file"
-                                                accept="audio/*"
-                                                onChange={(e) => handleArchivoChange(stem.id, e)}
-                                                style={{ display: 'none' }}
-                                            />
-                                        </label>
-                                    </div>
-
-                                    {/* BOTÓN BORRAR PISTA */}
-                                    <button
-                                        type="button"
-                                        className="btn btn-sm btn-danger"
-                                        onClick={() => handleEliminarStem(stem.id)}
-                                        title="Eliminar este stem"
-                                        style={{ borderRadius: '8px', padding: '8px 12px' }}
-                                    >
-                                        <i className="fas fa-trash"></i>
-                                    </button>
-                                </div>
-                            ))}
+                                    <i className="fas fa-plus" style={{ marginRight: '6px' }}></i> +1 Stem Individual
+                                </button>
+                            </div>
                         </div>
+
+                        {/* LISTADO DE FILAS DE STEMS */}
+                        {stemsDinamicos.length === 0 ? (
+                            <div style={{ textAlign: 'center', padding: '2.5rem', background: 'rgba(0,0,0,0.3)', border: '2px dashed rgba(255,255,255,0.1)', borderRadius: '14px' }}>
+                                <i className="fas fa-cloud-upload-alt" style={{ fontSize: '3rem', color: '#22c55e', marginBottom: '1rem' }}></i>
+                                <h4 style={{ color: '#ffffff', margin: '0 0 6px', fontWeight: 800 }}>¡Presiona "⚡ Cargar Todos los Stems de Golpe" para seleccionar todos tus archivos a la vez!</h4>
+                                <p style={{ color: '#94a3b8', fontSize: '0.88rem', margin: 0 }}>El sistema clasificará automáticamente cada archivo (*Batería, Bajo, Teclados, Voces, Click, etc.*) según su nombre.</p>
+                            </div>
+                        ) : (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                                {stemsDinamicos.map((stem, index) => (
+                                    <div
+                                        key={stem.id}
+                                        style={{
+                                            background: stem.archivoUrl ? 'rgba(34, 197, 94, 0.08)' : 'rgba(30, 34, 48, 0.6)',
+                                            border: stem.archivoUrl ? '1px solid #22c55e' : '1px solid rgba(255, 255, 255, 0.1)',
+                                            borderRadius: '14px',
+                                            padding: '1rem 1.2rem',
+                                            display: 'grid',
+                                            gridTemplateColumns: 'auto 1fr 1fr auto',
+                                            alignItems: 'center',
+                                            gap: '1rem'
+                                        }}
+                                    >
+                                        {/* NÚMERO DE PISTA */}
+                                        <div style={{ background: '#1e2230', width: '32px', height: '32px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '0.85rem', color: '#22c55e' }}>
+                                            {index + 1}
+                                        </div>
+
+                                        {/* SELECCIÓN DE INSTRUMENTO / DROPDOWN */}
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                                            <label style={{ fontSize: '0.78rem', color: '#94a3b8', fontWeight: 700 }}>Instrumento / Clasificación:</label>
+                                            <select
+                                                className="form-control"
+                                                value={stem.tipo}
+                                                onChange={(e) => handleTipoChange(stem.id, e.target.value)}
+                                                style={{ background: '#12141d', color: '#ffffff', fontWeight: 700 }}
+                                            >
+                                                {OPCIONES_INSTRUMENTOS.map(op => (
+                                                    <option key={op.value} value={op.value}>{op.label}</option>
+                                                ))}
+                                            </select>
+
+                                            {/* NOMBRE PERSONALIZADO CUANDO TIPO === 'otro' */}
+                                            {stem.tipo === 'otro' && (
+                                                <input
+                                                    type="text"
+                                                    className="form-control"
+                                                    placeholder="Nombre del instrumento..."
+                                                    value={stem.nombrePersonalizado}
+                                                    onChange={(e) => handleCustomNameChange(stem.id, e.target.value)}
+                                                    style={{ marginTop: '4px', borderColor: '#eab308', background: '#1c1917' }}
+                                                    required
+                                                />
+                                            )}
+                                        </div>
+
+                                        {/* ARCHIVO DE AUDIO DETECTADO/CARGADO */}
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                                            <label style={{ fontSize: '0.78rem', color: '#94a3b8', fontWeight: 700 }}>Archivo de Audio:</label>
+                                            <label
+                                                style={{
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center',
+                                                    gap: '8px',
+                                                    background: stem.archivoUrl ? 'rgba(34, 197, 94, 0.2)' : 'rgba(255, 255, 255, 0.08)',
+                                                    border: '1px dashed ' + (stem.archivoUrl ? '#22c55e' : 'rgba(255, 255, 255, 0.25)'),
+                                                    borderRadius: '8px',
+                                                    padding: '8px 14px',
+                                                    fontSize: '0.82rem',
+                                                    fontWeight: 700,
+                                                    color: '#ffffff',
+                                                    cursor: 'pointer'
+                                                }}
+                                            >
+                                                <i className="fas fa-file-audio" style={{ color: stem.archivoUrl ? '#22c55e' : '#94a3b8' }}></i>
+                                                <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '220px' }}>
+                                                    {stem.archivoNombre || 'Adjuntar audio...'}
+                                                </span>
+                                                <input
+                                                    type="file"
+                                                    accept="audio/*"
+                                                    onChange={(e) => handleArchivoChange(stem.id, e)}
+                                                    style={{ display: 'none' }}
+                                                />
+                                            </label>
+                                        </div>
+
+                                        {/* BOTÓN BORRAR PISTA */}
+                                        <button
+                                            type="button"
+                                            className="btn btn-sm btn-danger"
+                                            onClick={() => handleEliminarStem(stem.id)}
+                                            title="Eliminar este stem"
+                                            style={{ borderRadius: '8px', padding: '8px 12px' }}
+                                        >
+                                            <i className="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
                     </div>
 
                     <button
@@ -435,7 +516,7 @@ export default function AdminStemsUploader() {
                             {listaCanciones.length === 0 ? (
                                 <tr>
                                     <td colSpan="6" style={{ textAlign: 'center', color: '#94a3b8', padding: '2rem' }}>
-                                        No hay canciones registradas en la nube. ¡Agrega tus primeros stems dinámicos arriba!
+                                        No hay canciones registradas en la nube. ¡Agrega tus primeros stems masivos arriba!
                                     </td>
                                 </tr>
                             ) : (
