@@ -47,7 +47,7 @@ export default function PlaybackStudioApp() {
     // REFS FOR AUDIO MANAGEMENT
     const audioCtxRef = useRef(null);
     const audioElementsRef = useRef({});
-    const synthNodesRef = useRef([]);
+    const synthNodesRef = useRef(null);
 
     // Sync song parameters and dynamic channel strips when selectedSongId changes
     useEffect(() => {
@@ -96,7 +96,7 @@ export default function PlaybackStudioApp() {
 
         // Create new Audio elements for channels with audioUrl
         channels.forEach(ch => {
-            if (ch.audioUrl) {
+            if (ch.audioUrl && ch.audioUrl.length > 20) {
                 try {
                     const audio = new Audio(ch.audioUrl);
                     audio.loop = true;
@@ -160,6 +160,121 @@ export default function PlaybackStudioApp() {
         }
     };
 
+    // MULTI-TRACK SYNTHESIZER ENGINE (Synthesizes Drums, Bass, Keys for every beat)
+    const playBeatSynth = (beat) => {
+        if (!audioCtxRef.current) return;
+        const ctx = audioCtxRef.current;
+        const hasSolo = channels.some(c => c.solo);
+
+        const isChannelActive = (term) => {
+            const ch = channels.find(c =>
+                (c.key && c.key.toLowerCase().includes(term)) ||
+                (c.id && c.id.toLowerCase().includes(term)) ||
+                (c.label && c.label.toLowerCase().includes(term))
+            );
+            if (!ch) return true;
+            return hasSolo ? ch.solo : (!ch.muted && ch.vol > 0);
+        };
+
+        const getChannelVol = (term) => {
+            const ch = channels.find(c =>
+                (c.key && c.key.toLowerCase().includes(term)) ||
+                (c.id && c.id.toLowerCase().includes(term)) ||
+                (c.label && c.label.toLowerCase().includes(term))
+            );
+            return ch ? (ch.vol / 100) : 0.85;
+        };
+
+        try {
+            const now = ctx.currentTime;
+
+            // 1. BATERÍA & PANDERO (KICK & SNARE & PERCUSSION)
+            if (isChannelActive('bat') || isChannelActive('drum') || isChannelActive('pan') || isChannelActive('percur')) {
+                const vol = getChannelVol('bat');
+                // Kick Drum on beat 0
+                if (beat === 0) {
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.frequency.setValueAtTime(130, now);
+                    osc.frequency.exponentialRampToValueAtTime(0.01, now + 0.18);
+                    gain.gain.setValueAtTime(vol * 0.9, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.start(now);
+                    osc.stop(now + 0.18);
+                }
+                // Snare Drum on beat 2
+                if (beat === 2) {
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(240, now);
+                    gain.gain.setValueAtTime(vol * 0.7, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.14);
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.start(now);
+                    osc.stop(now + 0.14);
+                }
+            }
+
+            // 2. BAJO (SUB BASS NOTE ON BEAT 0 & 2)
+            if ((beat === 0 || beat === 2) && (isChannelActive('baj') || isChannelActive('bass'))) {
+                const vol = getChannelVol('baj');
+                const bassFreqMap = { 'C': 65.41, 'C#': 69.30, 'D': 73.42, 'Eb': 77.78, 'E': 82.41, 'F': 87.31, 'F#': 92.50, 'G': 98.00, 'Ab': 103.83, 'A': 110.00, 'Bb': 116.54, 'B': 123.47 };
+                const freq = bassFreqMap[currentSong.tono] || 73.42;
+
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.type = 'sawtooth';
+                osc.frequency.value = freq;
+                gain.gain.setValueAtTime(vol * 0.45, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.38);
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.start(now);
+                osc.stop(now + 0.38);
+            }
+
+            // 3. TECLADOS / PIANO & GUITARRAS (CHORD STABS ON BEAT 0 & 2)
+            if ((beat === 0 || beat === 2) && (isChannelActive('tec') || isChannelActive('pian') || isChannelActive('key') || isChannelActive('ga') || isChannelActive('ge'))) {
+                const vol = getChannelVol('tec');
+                const chordMap = {
+                    'C': [261.63, 329.63, 392.00],
+                    'C#': [277.18, 349.23, 415.30],
+                    'D': [293.66, 369.99, 440.00],
+                    'Eb': [311.13, 392.00, 466.16],
+                    'E': [329.63, 415.30, 493.88],
+                    'F': [349.23, 440.00, 523.25],
+                    'F#': [369.99, 466.16, 554.37],
+                    'G': [392.00, 493.88, 587.33],
+                    'Ab': [415.30, 523.25, 622.25],
+                    'A': [440.00, 554.37, 659.25],
+                    'Bb': [466.16, 587.33, 698.46],
+                    'B': [493.88, 622.25, 739.99]
+                };
+                const chord = chordMap[currentSong.tono] || chordMap['D'];
+
+                chord.forEach(f => {
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.type = 'triangle';
+                    osc.frequency.value = f;
+                    gain.gain.setValueAtTime(vol * 0.28, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.45);
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.start(now);
+                    osc.stop(now + 0.45);
+                });
+            }
+
+        } catch (e) {
+            // Ignore audio synth errors
+        }
+    };
+
     // AMBIENT SYNTH PAD GENERATOR (Web Audio API Chords based on Song Key)
     const startAmbientPad = () => {
         if (!audioCtxRef.current || !isPadActive) return;
@@ -186,11 +301,11 @@ export default function PlaybackStudioApp() {
         try {
             const filter = audioCtxRef.current.createBiquadFilter();
             filter.type = 'lowpass';
-            filter.frequency.value = 600;
+            filter.frequency.value = 650;
 
             const padGain = audioCtxRef.current.createGain();
             padGain.gain.setValueAtTime(0.001, audioCtxRef.current.currentTime);
-            padGain.gain.exponentialRampToValueAtTime(0.18, audioCtxRef.current.currentTime + 1.2);
+            padGain.gain.exponentialRampToValueAtTime(0.22, audioCtxRef.current.currentTime + 1.0);
 
             filter.connect(padGain);
             padGain.connect(audioCtxRef.current.destination);
@@ -217,10 +332,12 @@ export default function PlaybackStudioApp() {
                     synthNodesRef.current.gain.gain.exponentialRampToValueAtTime(0.0001, audioCtxRef.current.currentTime + 0.3);
                 }
                 setTimeout(() => {
-                    synthNodesRef.current.nodes.forEach(n => {
-                        try { n.stop(); } catch (e) {}
-                    });
-                    synthNodesRef.current = null;
+                    if (synthNodesRef.current?.nodes) {
+                        synthNodesRef.current.nodes.forEach(n => {
+                            try { n.stop(); } catch (e) {}
+                        });
+                        synthNodesRef.current = null;
+                    }
                 }, 300);
             } catch (e) {
                 synthNodesRef.current = null;
@@ -277,7 +394,7 @@ export default function PlaybackStudioApp() {
         return () => clearInterval(interval);
     }, [isPlaying, totalTime]);
 
-    // METRONOME TICKING EFFECT
+    // METRONOME & BEAT SYNTH TICKING EFFECT
     useEffect(() => {
         let timer = null;
         if (isPlaying) {
@@ -285,11 +402,12 @@ export default function PlaybackStudioApp() {
             let beat = 0;
             timer = setInterval(() => {
                 playClickSound(beat === 0);
+                playBeatSynth(beat);
                 beat = (beat + 1) % 4;
             }, intervalMs);
         }
         return () => clearInterval(timer);
-    }, [isPlaying, bpm]);
+    }, [isPlaying, bpm, channels]);
 
     const togglePlay = () => {
         initAudio();
@@ -333,7 +451,7 @@ export default function PlaybackStudioApp() {
         const audioCount = Object.keys(audioElementsRef.current).length;
         showToast(
             nextState
-                ? `▶ Reproduciendo "${currentSong.titulo}" (${bpm} BPM) • ${audioCount > 0 ? `${audioCount} pistas de audio en vivo` : 'Sintetizador activo'}`
+                ? `▶ Reproduciendo "${currentSong.titulo}" (${bpm} BPM) • Meclador Multitrack Activo`
                 : '❚❚ Pausado',
             nextState ? 'success' : 'info'
         );
