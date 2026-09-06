@@ -8,12 +8,15 @@ export default function EstudianteView() {
 
     const userKey = currentUser?.username || 'alumno1';
     const userProfile = db.usuarios?.[userKey] || currentUser || {};
+    const studentArea = userProfile.area || userProfile.instrument || 'Teclado';
     const pagoInfo = calcularEstadoPago(userProfile);
 
-    const tareas = (db.tareas || []).filter(t => !t.area || t.area.toLowerCase() === (userProfile.area || '').toLowerCase());
+    // Tareas y Materiales estrictamente filtrados por el instrumento del alumno
+    const tareas = (db.tareas || []).filter(t => !t.area || (t.area || '').toLowerCase().includes(studentArea.toLowerCase()));
+    const materiales = (db.materiales || []).filter(m => !m.area || (m.area || '').toLowerCase().includes(studentArea.toLowerCase()));
     const entregas = db.entregasTareas || {};
 
-    // Metronome state
+    // Metrónomo
     const [bpm, setBpm] = useState(90);
     const [isPlaying, setIsPlaying] = useState(false);
     const [currentBeat, setCurrentBeat] = useState(0);
@@ -34,19 +37,19 @@ export default function EstudianteView() {
     const calificaciones = db.calificaciones?.[userKey] || { teoria: 85, tecnica: 90, notas: "Estudiante constante." };
 
     return (
-        <div id="view-estudiante" className="app-view">
+        <div id="view-estudiante" className="app-view animate-fade-in">
             {/* SUBVIEW NAV TABS */}
             <div className="subview-nav">
                 {[
                     { id: 'classroom', label: 'Mi Salón & Tareas', icon: 'fas fa-chalkboard-teacher' },
                     { id: 'progreso', label: 'Mi Progreso & Notas', icon: 'fas fa-chart-line' },
+                    { id: 'recursos', label: 'Materiales & Archivos', icon: 'fas fa-folder-open' },
                     { id: 'ensamble', label: 'Mi Ensamble', icon: 'fas fa-guitar' },
-                    { id: 'playback', label: 'Multitrack & Metrónomo', icon: 'fas fa-sliders-h' },
-                    { id: 'recursos', label: 'Anuncios & Recursos', icon: 'fas fa-folder-open' }
+                    { id: 'playback', label: 'Multitrack & Metrónomo', icon: 'fas fa-sliders-h' }
                 ].map(tab => (
                     <button
                         key={tab.id}
-                        className={`btn btn-sm btn-secondary ${currentSub === tab.id ? 'active' : ''}`}
+                        className={`subview-tab ${currentSub === tab.id ? 'active' : ''}`}
                         onClick={() => setActiveSubview(tab.id)}
                     >
                         <i className={tab.icon}></i> {tab.label}
@@ -56,62 +59,69 @@ export default function EstudianteView() {
 
             {/* TAB: CLASSROOM & TAREAS */}
             {currentSub === 'classroom' && (
-                <div className="estudiante-subview">
-                    {/* CLASS STATUS BANNER */}
+                <div className="estudiante-subview animate-fade-in">
                     <div className="class-status-banner">
                         <div>
                             <strong style={{ fontSize: '1rem', color: '#fff' }}>
                                 {db.estatusClases?.mensaje || '✅ Clases Normales Sábado de 10:00 AM a 1:00 PM'}
                             </strong>
                             <div className="text-muted" style={{ fontSize: '0.8rem', marginTop: '4px' }}>
-                                Actualizado: {db.estatusClases?.fechaActualizacion || 'Recientemente'}
+                                Especialidad: <strong>{studentArea}</strong> • Actualizado: {db.estatusClases?.fechaActualizacion || 'Recientemente'}
                             </div>
                         </div>
                     </div>
 
-                    <div className="panel-box">
-                        <div className="panel-header">
-                            <h3><i className="fas fa-tasks"></i> Tareas Asignadas a mi Instrumento ({userProfile.area || 'General'})</h3>
+                    <div className="glass-panel">
+                        <div className="panel-header" style={{ marginBottom: '1.2rem' }}>
+                            <h3 style={{ margin: 0 }}><i className="fas fa-tasks" style={{ color: '#dc2626', marginRight: '8px' }}></i> Tareas Asignadas a mi Instrumento ({studentArea})</h3>
                         </div>
-                        <div className="table-container">
-                            <table className="table-custom">
+                        <div className="table-container" style={{ overflowX: 'auto' }}>
+                            <table className="table-custom" style={{ width: '100%', borderCollapse: 'collapse' }}>
                                 <thead>
-                                    <tr>
-                                        <th>Tarea</th>
-                                        <th>Fecha Límite</th>
-                                        <th>Docente</th>
-                                        <th>Estatus</th>
-                                        <th>Acción</th>
+                                    <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.1)', color: '#94a3b8', fontSize: '0.85rem' }}>
+                                        <th style={{ padding: '12px' }}>Tarea</th>
+                                        <th style={{ padding: '12px' }}>Fecha Límite</th>
+                                        <th style={{ padding: '12px' }}>Archivo Adjunto</th>
+                                        <th style={{ padding: '12px' }}>Estatus</th>
+                                        <th style={{ padding: '12px' }}>Acción</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {tareas.length === 0 ? (
-                                        <tr><td colSpan="5" className="text-muted" style={{ textAlign: 'center' }}>No tienes tareas pendientes para tu instrumento.</td></tr>
+                                        <tr><td colSpan="5" style={{ textAlign: 'center', padding: '2rem', color: '#94a3b8' }}>No tienes tareas pendientes para tu instrumento.</td></tr>
                                     ) : (
                                         tareas.map(t => {
                                             const keyEntrega = `${t.id}_${userKey}`;
                                             const entrega = entregas[keyEntrega];
                                             return (
-                                                <tr key={t.id}>
-                                                    <td>
+                                                <tr key={t.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                                                    <td style={{ padding: '12px' }}>
                                                         <strong>{t.titulo}</strong>
-                                                        <div className="text-muted" style={{ fontSize: '0.8rem' }}>{t.descripcion}</div>
+                                                        <div style={{ color: '#94a3b8', fontSize: '0.8rem', marginTop: '2px' }}>{t.descripcion}</div>
                                                     </td>
-                                                    <td>{t.fechaLimite}</td>
-                                                    <td>{t.maestro}</td>
-                                                    <td>
+                                                    <td style={{ padding: '12px' }}>{t.fechaLimite}</td>
+                                                    <td style={{ padding: '12px' }}>
+                                                        {t.archivoLocal ? (
+                                                            <a href={t.archivoLocal.dataUrl} download={t.archivoLocal.nombre} style={{ color: '#10b981', fontWeight: 700, fontSize: '0.85rem' }}>
+                                                                <i className="fas fa-download" style={{ marginRight: '4px' }}></i> {t.archivoLocal.nombre}
+                                                            </a>
+                                                        ) : (
+                                                            <span style={{ color: '#94a3b8', fontSize: '0.8rem' }}>Sin archivo adjunto</span>
+                                                        )}
+                                                    </td>
+                                                    <td style={{ padding: '12px' }}>
                                                         {entrega ? (
                                                             <span className="badge badge-solvente">Entregado ({entrega.calificacion ? `${entrega.calificacion}/100` : 'En revisión'})</span>
                                                         ) : (
                                                             <span className="badge badge-warning">Pendiente</span>
                                                         )}
                                                     </td>
-                                                    <td>
+                                                    <td style={{ padding: '12px' }}>
                                                         <button
                                                             className="btn btn-sm btn-primary"
                                                             onClick={() => openModal('entregar-tarea', { tareaId: t.id, userKey })}
                                                         >
-                                                            <i className="fas fa-upload"></i> {entrega ? 'Reenviar' : 'Subir Video'}
+                                                            <i className="fas fa-upload" style={{ marginRight: '6px' }}></i> {entrega ? 'Reenviar' : 'Subir Video'}
                                                         </button>
                                                     </td>
                                                 </tr>
@@ -127,81 +137,125 @@ export default function EstudianteView() {
 
             {/* TAB: PROGRESO */}
             {currentSub === 'progreso' && (
-                <div className="estudiante-subview">
+                <div className="estudiante-subview animate-fade-in">
                     {pagoInfo.adeudo > 0 && (
-                        <div style={{ background: 'rgba(239, 68, 68, 0.12)', border: '1px solid rgba(239, 68, 68, 0.3)', padding: '1rem', borderRadius: '12px', marginBottom: '1.5rem' }}>
-                            <strong style={{ color: '#ef4444' }}><i className="fas fa-exclamation-circle"></i> Aviso de Colegiatura:</strong>
-                            <p style={{ fontSize: '0.88rem', color: '#fff', marginTop: '4px' }}>
+                        <div style={{ background: 'rgba(239, 68, 68, 0.12)', border: '1px solid rgba(239, 68, 68, 0.3)', padding: '1rem', borderRadius: '14px', marginBottom: '1.5rem' }}>
+                            <strong style={{ color: '#ef4444' }}><i className="fas fa-exclamation-circle" style={{ marginRight: '6px' }}></i> Aviso de Colegiatura:</strong>
+                            <p style={{ fontSize: '0.88rem', color: '#fff', marginTop: '4px', margin: 0 }}>
                                 Tienes {pagoInfo.adeudo} mes(es) pendiente(s). Por favor acércate a administración o justifica tu prórroga.
                             </p>
                         </div>
                     )}
 
                     <div className="dashboard-grid">
-                        <div className="card">
-                            <div className="card-icon"><i className="fas fa-book-reader"></i></div>
+                        <div className="status-card">
+                            <div className="card-icon green-variant"><i className="fas fa-book-reader"></i></div>
                             <div>
-                                <h3>Evaluación Teórica</h3>
+                                <small style={{ color: '#94a3b8', fontSize: '0.8rem', fontWeight: 700, textTransform: 'uppercase' }}>Evaluación Teórica</small>
                                 <div className="stat-val">{calificaciones.teoria} / 100</div>
                                 <small className="text-muted">Lectura, ritmo y solfeo</small>
                             </div>
                         </div>
-                        <div className="card">
+                        <div className="status-card">
                             <div className="card-icon red-variant"><i className="fas fa-hand-sparkles"></i></div>
                             <div>
-                                <h3>Evaluación Técnica</h3>
+                                <small style={{ color: '#94a3b8', fontSize: '0.8rem', fontWeight: 700, textTransform: 'uppercase' }}>Evaluación Técnica</small>
                                 <div className="stat-val">{calificaciones.tecnica} / 100</div>
                                 <small className="text-muted">Digitación, tempo y postura</small>
                             </div>
                         </div>
-                        <div className="card">
-                            <div className="card-icon"><i className="fas fa-receipt"></i></div>
+                        <div className="status-card">
+                            <div className="card-icon amber-variant"><i className="fas fa-receipt"></i></div>
                             <div>
-                                <h3>Estatus Colegiatura</h3>
+                                <small style={{ color: '#94a3b8', fontSize: '0.8rem', fontWeight: 700, textTransform: 'uppercase' }}>Estatus Colegiatura</small>
                                 <div className="stat-val" style={{ fontSize: '1.3rem' }}>{pagoInfo.label}</div>
                                 <small className="text-muted">{userProfile.motivoNoPago || 'Al corriente'}</small>
                             </div>
                         </div>
                     </div>
 
-                    <div className="panel-box">
-                        <div className="panel-header">
-                            <h3><i className="fas fa-comment-dots"></i> Observaciones de tu Maestro</h3>
+                    <div className="glass-panel">
+                        <div className="panel-header" style={{ marginBottom: '1rem' }}>
+                            <h3 style={{ margin: 0 }}><i className="fas fa-comment-dots" style={{ color: '#3b82f6', marginRight: '8px' }}></i> Observaciones del Maestro ({studentArea})</h3>
                         </div>
-                        <p style={{ fontSize: '0.95rem', lineHeight: '1.6', color: 'var(--text-light)' }}>
+                        <p style={{ fontSize: '0.95rem', lineHeight: '1.6', color: '#cbd5e1', margin: 0 }}>
                             "{userProfile.observacionesMaestro || calificaciones.notas || 'Excelente desempeño en los ensayos y dedicación constante.'}"
                         </p>
                     </div>
                 </div>
             )}
 
+            {/* TAB: RECURSOS Y MATERIALES */}
+            {currentSub === 'recursos' && (
+                <div className="estudiante-subview animate-fade-in">
+                    <div className="glass-panel">
+                        <div className="panel-header" style={{ marginBottom: '1.2rem' }}>
+                            <h3 style={{ margin: 0 }}><i className="fas fa-folder-open" style={{ color: '#10b981', marginRight: '8px' }}></i> Materiales de Estudio de {studentArea} ({materiales.length})</h3>
+                        </div>
+
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1.2rem' }}>
+                            {materiales.length === 0 ? (
+                                <div style={{ color: '#94a3b8', padding: '2rem', textAlign: 'center', gridColumn: '1 / -1' }}>No hay materiales publicados para tu especialidad ({studentArea}).</div>
+                            ) : (
+                                materiales.map(m => (
+                                    <div key={m.id} style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '14px', padding: '1.2rem', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                                        <div>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                                                <span className="badge badge-solvente">{m.area}</span>
+                                                <span style={{ color: '#94a3b8', fontSize: '0.78rem' }}>{m.fecha}</span>
+                                            </div>
+                                            <h4 style={{ margin: '0 0 6px', color: '#ffffff', fontSize: '1.05rem' }}>{m.titulo}</h4>
+                                            {m.descripcion && <p style={{ color: '#cbd5e1', fontSize: '0.85rem', margin: '0 0 12px' }}>{m.descripcion}</p>}
+                                        </div>
+
+                                        <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginTop: '10px' }}>
+                                            {m.enlace && (
+                                                <a href={m.enlace} target="_blank" rel="noreferrer" className="btn btn-sm btn-secondary" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                                                    <i className="fas fa-external-link-alt"></i> Enlace Web
+                                                </a>
+                                            )}
+
+                                            {m.archivoLocal && (
+                                                <a href={m.archivoLocal.dataUrl} download={m.archivoLocal.nombre} className="btn btn-sm btn-primary" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                                                    <i className="fas fa-download"></i> Descargar ({m.archivoLocal.nombre})
+                                                </a>
+                                            )}
+                                        </div>
+                                    </div>
+                                ))
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* TAB: ENSAMBLE */}
             {currentSub === 'ensamble' && (
-                <div className="estudiante-subview">
-                    <div className="panel-box">
-                        <div className="panel-header">
-                            <h3><i className="fas fa-guitar"></i> Mi Participación en Ensambles</h3>
+                <div className="estudiante-subview animate-fade-in">
+                    <div className="glass-panel">
+                        <div className="panel-header" style={{ marginBottom: '1.2rem' }}>
+                            <h3 style={{ margin: 0 }}><i className="fas fa-guitar" style={{ color: '#3b82f6', marginRight: '8px' }}></i> Mi Participación en Ensambles</h3>
                         </div>
-                        <div className="table-container">
-                            <table className="table-custom">
+                        <div className="table-container" style={{ overflowX: 'auto' }}>
+                            <table className="table-custom" style={{ width: '100%', borderCollapse: 'collapse' }}>
                                 <thead>
-                                    <tr>
-                                        <th>Canción</th>
-                                        <th>Tono</th>
-                                        <th>Tempo</th>
-                                        <th>Indicaciones del Director</th>
+                                    <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.1)', color: '#94a3b8', fontSize: '0.85rem' }}>
+                                        <th style={{ padding: '12px' }}>Canción</th>
+                                        <th style={{ padding: '12px' }}>Tono</th>
+                                        <th style={{ padding: '12px' }}>Tempo</th>
+                                        <th style={{ padding: '12px' }}>Indicaciones del Director</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {Object.values(db.ensambleAsignaciones || {}).filter(a => a.username === userKey).length === 0 ? (
-                                        <tr><td colSpan="4" className="text-muted" style={{ textAlign: 'center' }}>No tienes asignaciones activas de ensamble para este fin de semana.</td></tr>
+                                        <tr><td colSpan="4" style={{ textAlign: 'center', padding: '2rem', color: '#94a3b8' }}>No tienes asignaciones activas de ensamble para este fin de semana.</td></tr>
                                     ) : (
                                         Object.values(db.ensambleAsignaciones).filter(a => a.username === userKey).map(asig => (
-                                            <tr key={asig.id}>
-                                                <td><strong>{asig.songId}</strong></td>
-                                                <td><span className="badge badge-solvente">{asig.tono}</span></td>
-                                                <td>{asig.tempo}</td>
-                                                <td>{asig.notes}</td>
+                                            <tr key={asig.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                                                <td style={{ padding: '12px' }}><strong>{asig.songId}</strong></td>
+                                                <td style={{ padding: '12px' }}><span className="badge badge-solvente">{asig.tono}</span></td>
+                                                <td style={{ padding: '12px' }}>{asig.tempo}</td>
+                                                <td style={{ padding: '12px' }}>{asig.notes}</td>
                                             </tr>
                                         ))
                                     )}
@@ -214,86 +268,41 @@ export default function EstudianteView() {
 
             {/* TAB: PLAYBACK & METRONOME */}
             {currentSub === 'playback' && (
-                <div className="estudiante-subview">
-                    <div className="metronome-box">
-                        <div>
-                            <h3 style={{ color: '#fff', marginBottom: '6px' }}><i className="fas fa-stopwatch"></i> Metrónomo de Práctica</h3>
-                            <p className="text-muted">Ajusta el tempo para tus sesiones diarias de instrumento.</p>
-                        </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
-                            <div className="metro-tempo-display">{bpm} <span style={{ fontSize: '1rem', color: 'var(--text-muted)' }}>BPM</span></div>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                                <button className="btn btn-sm btn-secondary" onClick={() => setBpm(b => Math.min(240, b + 5))}>+5 BPM</button>
-                                <button className="btn btn-sm btn-secondary" onClick={() => setBpm(b => Math.max(40, b - 5))}>-5 BPM</button>
+                <div className="estudiante-subview animate-fade-in">
+                    <div className="glass-panel" style={{ marginBottom: '2rem' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem', marginBottom: '1.5rem' }}>
+                            <div>
+                                <h3 style={{ margin: 0, color: '#fff' }}><i className="fas fa-stopwatch" style={{ color: '#dc2626', marginRight: '8px' }}></i> Metrónomo de Práctica</h3>
+                                <p style={{ color: '#94a3b8', fontSize: '0.85rem', margin: '4px 0 0' }}>Ajusta el tempo para tus sesiones diarias de instrumento</p>
+                            </div>
+
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+                                <div style={{ fontSize: '2.5rem', fontWeight: 800, color: '#fff' }}>{bpm} <span style={{ fontSize: '1rem', color: '#94a3b8' }}>BPM</span></div>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                                    <button className="btn btn-sm btn-secondary" onClick={() => setBpm(b => Math.min(240, b + 5))}>+5 BPM</button>
+                                    <button className="btn btn-sm btn-secondary" onClick={() => setBpm(b => Math.max(40, b - 5))}>-5 BPM</button>
+                                </div>
                             </div>
                         </div>
-                        <div className="metro-beats-container">
+
+                        <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', marginBottom: '1.5rem' }}>
                             {[0, 1, 2, 3].map(beat => (
-                                <div key={beat} className={`metro-beat-dot ${currentBeat === beat && isPlaying ? 'active' : ''}`}></div>
+                                <div key={beat} style={{
+                                    width: '18px', height: '18px', borderRadius: '50%',
+                                    background: currentBeat === beat && isPlaying ? '#dc2626' : 'rgba(255,255,255,0.1)',
+                                    boxShadow: currentBeat === beat && isPlaying ? '0 0 15px #dc2626' : 'none',
+                                    transition: 'all 0.1s ease'
+                                }}></div>
                             ))}
                         </div>
+
                         <button
-                            className={`btn ${isPlaying ? 'btn-danger' : 'btn-primary'}`}
+                            className={`btn ${isPlaying ? 'btn-secondary' : 'btn-primary'}`}
                             onClick={() => setIsPlaying(!isPlaying)}
+                            style={{ borderRadius: '12px', padding: '12px 24px', fontWeight: 800, width: '100%' }}
                         >
-                            <i className={isPlaying ? 'fas fa-stop' : 'fas fa-play'}></i> {isPlaying ? 'Detener' : 'Iniciar Metrónomo'}
+                            <i className={isPlaying ? 'fas fa-stop' : 'fas fa-play'} style={{ marginRight: '8px' }}></i> {isPlaying ? 'Detener Metrónomo' : 'Iniciar Metrónomo'}
                         </button>
-                    </div>
-
-                    <div className="panel-box">
-                        <div className="panel-header">
-                            <h3><i className="fas fa-sliders-h"></i> Multitrack Mixer de Práctica (Simulación Stems)</h3>
-                        </div>
-                        <p className="text-muted" style={{ marginBottom: '1rem' }}>Silencia o ajusta el volumen de cada instrumento para ensayar tu parte.</p>
-                        <div className="multitrack-mixer-grid">
-                            {['Click & Cues', 'Batería', 'Bajo', 'Guitarras', 'Teclados', 'Voz Principal'].map(track => (
-                                <div key={track} className="track-card">
-                                    <div className="track-title"><i className="fas fa-volume-up"></i> {track}</div>
-                                    <input type="range" min="0" max="100" defaultValue="80" style={{ accentColor: 'var(--primary-red)' }} />
-                                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                        <button className="btn btn-sm btn-secondary" style={{ padding: '2px 8px', fontSize: '0.72rem' }}>Mute</button>
-                                        <button className="btn btn-sm btn-secondary" style={{ padding: '2px 8px', fontSize: '0.72rem' }}>Solo</button>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {/* TAB: RECURSOS */}
-            {currentSub === 'recursos' && (
-                <div className="estudiante-subview">
-                    <div className="panel-box">
-                        <div className="panel-header">
-                            <h3><i className="fas fa-folder-open"></i> Materiales de Estudio y Enlaces</h3>
-                        </div>
-                        <div className="table-container">
-                            <table className="table-custom">
-                                <thead>
-                                    <tr>
-                                        <th>Área</th>
-                                        <th>Título</th>
-                                        <th>Descripción</th>
-                                        <th>Recurso</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {(db.materiales || []).map(m => (
-                                        <tr key={m.id}>
-                                            <td><span className="badge badge-solvente">{m.area}</span></td>
-                                            <td><strong>{m.titulo}</strong></td>
-                                            <td>{m.descripcion}</td>
-                                            <td>
-                                                <a href={m.enlace} target="_blank" rel="noreferrer" style={{ color: 'var(--accent-teal)' }}>
-                                                    <i className="fas fa-external-link-alt"></i> Ver Práctica
-                                                </a>
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
                     </div>
                 </div>
             )}
