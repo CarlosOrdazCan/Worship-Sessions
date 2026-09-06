@@ -28,16 +28,7 @@ export default function PlaybackStudioApp() {
     const [isPadActive, setIsPadActive] = useState(true);
     const [activeSection, setActiveSection] = useState('V1');
 
-    // Sync song parameters when selectedSongId changes
-    useEffect(() => {
-        if (currentSong) {
-            setBpm(currentSong.bpm || 135);
-            setTimeSig(currentSong.timeSig || '4/4');
-        }
-    }, [selectedSongId, currentSong]);
-
-    // CHANNEL STRIPS STATE (matching screenshot tracks exactly)
-    const [channels, setChannels] = useState([
+    const DEFAULT_CHANNELS = [
         { id: 'bateria', label: 'Batería', vol: 85, muted: false, solo: false, key: 'bateria' },
         { id: 'pandero', label: 'Pandero', vol: 70, muted: false, solo: false, key: 'percursion' },
         { id: 'loop', label: 'Loop', vol: 80, muted: false, solo: false, key: 'loop' },
@@ -49,7 +40,31 @@ export default function PlaybackStudioApp() {
         { id: 'teclados', label: 'Teclados', vol: 90, muted: false, solo: false, key: 'teclados' },
         { id: 'voces', label: 'Voces', vol: 75, muted: false, solo: false, key: 'voces' },
         { id: 'master', label: 'Master', vol: 95, muted: false, solo: false, key: 'master' }
-    ]);
+    ];
+
+    const [channels, setChannels] = useState(DEFAULT_CHANNELS);
+
+    // Sync song parameters and dynamic channel strips when selectedSongId changes
+    useEffect(() => {
+        if (currentSong) {
+            setBpm(currentSong.bpm || 135);
+            setTimeSig(currentSong.timeSig || '4/4');
+
+            if (currentSong.stemsList && currentSong.stemsList.length > 0) {
+                const dynamicStrips = currentSong.stemsList.map((s, idx) => ({
+                    id: s.id || `st_${idx}`,
+                    label: s.label || s.tipo,
+                    vol: 85,
+                    muted: false,
+                    solo: false,
+                    key: s.tipo
+                }));
+                setChannels(dynamicStrips);
+            } else {
+                setChannels(DEFAULT_CHANNELS);
+            }
+        }
+    }, [selectedSongId, currentSong]);
 
     // SECTIONS MARKERS
     const songSections = [

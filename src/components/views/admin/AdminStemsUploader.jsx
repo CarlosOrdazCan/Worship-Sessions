@@ -4,7 +4,31 @@ import { useWorship } from '../../../services/WorshipContext';
 export default function AdminStemsUploader() {
     const { db, updateDb, showToast } = useWorship();
 
-    // NUEVA CANCIÓN FORM STATE
+    // LISTA AMPLIA DE OPCIONES DE INSTRUMENTOS
+    const OPCIONES_INSTRUMENTOS = [
+        { value: 'bateria', label: '🥁 Batería (Drums)' },
+        { value: 'pandero', label: '🪘 Pandero / Percusión / Shaker' },
+        { value: 'loop', label: '🔁 Loop / Secuencia Rítmica' },
+        { value: 'fx', label: '💥 Efectos / Fx / Atmósfera' },
+        { value: 'bajo', label: '🎸 Bajo Eléctrico' },
+        { value: 'bajosnt', label: '🎹 Bajo Synth / Sub / KeyBass' },
+        { value: 'ga', label: '🎸 Guitarra Acústica (GA)' },
+        { value: 'ge1', label: '⚡ Guitarra Eléctrica 1 (GE1)' },
+        { value: 'ge2', label: '⚡ Guitarra Eléctrica 2 (GE2)' },
+        { value: 'g_lider', label: '🎸 Guitarra Líder / Solo' },
+        { value: 'teclados', label: '🎹 Teclados / Piano / Rhodes' },
+        { value: 'synths', label: '🎹 Sintetizadores / Leads / Arps' },
+        { value: 'cuerdas', label: '🎻 Cuerdas / Strings / Violín / Cello' },
+        { value: 'metales', label: '🎺 Metales / Horns / Trompeta / Sax' },
+        { value: 'voz_lead', label: '🎤 Voz Principal (Lead Vocal)' },
+        { value: 'voces_back', label: '🎤 Voces de Acompañamiento (Backing Vocals)' },
+        { value: 'guia_voz', label: '🎤 Guía de Voz (Vocal Guide / Cue)' },
+        { value: 'click', label: '⏱️ Click / Metrónomo' },
+        { value: 'master', label: '🔊 Master Mix / Pista General' },
+        { value: 'otro', label: '➕ Otro... (Personalizado)' }
+    ];
+
+    // METADATOS DE LA NUEVA CANCIÓN
     const [nuevaCancion, setNuevaCancion] = useState({
         titulo: '',
         autor: '',
@@ -14,58 +38,87 @@ export default function AdminStemsUploader() {
         coverUrl: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=150&auto=format&fit=crop&q=80'
     });
 
-    // STEMS FILES STATE (storing file object or objectURL)
-    const STEM_KEYS = [
-        { id: 'bateria', label: 'Batería Multitrack', icon: 'fas fa-drum' },
-        { id: 'pandero', label: 'Pandero & Percusiones', icon: 'fas fa-drum-steelpan' },
-        { id: 'loop', label: 'Loop Rítmico', icon: 'fas fa-redo' },
-        { id: 'fx', label: 'Efectos / Fx', icon: 'fas fa-bolt' },
-        { id: 'bajo', label: 'Bajo Eléctrico', icon: 'fas fa-guitar' },
-        { id: 'bajosnt', label: 'Bajo Synth / Sub', icon: 'fas fa-wave-square' },
-        { id: 'ga', label: 'GA (Guitarra Acústica)', icon: 'fas fa-guitar' },
-        { id: 'ge', label: 'GE (Guitarra Eléctrica)', icon: 'fas fa-bolt' },
-        { id: 'teclados', label: 'Teclados & Synths', icon: 'fas fa-music' },
-        { id: 'voces', label: 'Voces de Acompañamiento', icon: 'fas fa-microphone' },
-        { id: 'click', label: 'Metrónomo & Guía de Voz', icon: 'fas fa-stopwatch' }
-    ];
+    // LISTADO DINÁMICO DE STEMS AGREGADOS UNO POR UNO
+    const [stemsDinamicos, setStemsDinamicos] = useState([
+        { id: 's_init_1', tipo: 'click', nombrePersonalizado: '', archivoUrl: null, archivoNombre: '' },
+        { id: 's_init_2', tipo: 'bateria', nombrePersonalizado: '', archivoUrl: null, archivoNombre: '' },
+        { id: 's_init_3', tipo: 'bajo', nombrePersonalizado: '', archivoUrl: null, archivoNombre: '' },
+        { id: 's_init_4', tipo: 'teclados', nombrePersonalizado: '', archivoUrl: null, archivoNombre: '' }
+    ]);
 
-    const [stemsArchivos, setStemsArchivos] = useState({
-        bateria: null,
-        pandero: null,
-        loop: null,
-        fx: null,
-        bajo: null,
-        bajosnt: null,
-        ga: null,
-        ge: null,
-        teclados: null,
-        voces: null,
-        click: null
-    });
+    // AGREGAR NUEVO STEM / PISTA
+    const handleAgregarStem = () => {
+        const nuevoId = 'stem_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4);
+        setStemsDinamicos(prev => [
+            ...prev,
+            { id: nuevoId, tipo: 'bateria', nombrePersonalizado: '', archivoUrl: null, archivoNombre: '' }
+        ]);
+        showToast('Nuevo stem añadido a la lista. Selecciona el instrumento y sube tu archivo.', 'info');
+    };
 
-    const [stemsNombres, setStemsNombres] = useState({});
+    // ELIMINAR UN STEM ESPECÍFICO
+    const handleEliminarStem = (id) => {
+        setStemsDinamicos(prev => prev.filter(s => s.id !== id));
+        showToast('Stem removido', 'info');
+    };
 
-    // HANDLE FILE SELECTION FOR SPECIFIC STEM
-    const handleFileChange = (stemId, e) => {
+    // CAMBIAR TIPO DE INSTRUMENTO
+    const handleTipoChange = (id, tipoValue) => {
+        setStemsDinamicos(prev => prev.map(s => s.id === id ? { ...s, tipo: tipoValue } : s));
+    };
+
+    // CAMBIAR NOMBRE PERSONALIZADO (CUANDO TIPO === 'otro')
+    const handleCustomNameChange = (id, nameVal) => {
+        setStemsDinamicos(prev => prev.map(s => s.id === id ? { ...s, nombrePersonalizado: nameVal } : s));
+    };
+
+    // CAMBIAR ARCHIVO DE AUDIO
+    const handleArchivoChange = (id, e) => {
         const file = e.target.files?.[0];
         if (!file) return;
 
         const objectUrl = URL.createObjectURL(file);
-        setStemsArchivos(prev => ({ ...prev, [stemId]: objectUrl }));
-        setStemsNombres(prev => ({ ...prev, [stemId]: file.name }));
-        showToast(`Stem ${file.name} listo para subir`, 'info');
+        setStemsDinamicos(prev => prev.map(s => s.id === id ? {
+            ...s,
+            archivoUrl: objectUrl,
+            archivoNombre: file.name
+        } : s));
+
+        showToast(`Archivo ${file.name} asignado al stem`, 'info');
     };
 
-    // SUBMIT CANCIÓN MULTITRACK A LA NUBE
+    // GUARDAR CANCIÓN EN LA NUBE
     const handleGuardarCancion = (e) => {
         e.preventDefault();
         if (!nuevaCancion.titulo || !nuevaCancion.autor) {
-            showToast('Ingresa al menos el título y autor de la canción', 'error');
+            showToast('Ingresa el título y autor de la canción', 'error');
+            return;
+        }
+
+        if (stemsDinamicos.length === 0) {
+            showToast('Agrega al menos 1 stem para publicar la canción', 'error');
             return;
         }
 
         const songId = 'c_' + Date.now();
-        const countUploaded = Object.values(stemsArchivos).filter(Boolean).length;
+
+        // CONVERTIR STEMS DINÁMICOS A FORMATO CANCIÓN
+        const stemsProcesados = stemsDinamicos.map(s => {
+            const opcionBase = OPCIONES_INSTRUMENTOS.find(o => o.value === s.tipo);
+            let nombreLabel = opcionBase ? opcionBase.label.replace(/^[\u2700-\u27BF]|[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2011-\u26FF]|\uD83E[\uDD10-\uDDFF]/g, '').trim() : s.tipo;
+
+            if (s.tipo === 'otro' && s.nombrePersonalizado) {
+                nombreLabel = s.nombrePersonalizado;
+            }
+
+            return {
+                id: s.id,
+                tipo: s.tipo,
+                label: nombreLabel,
+                url: s.archivoUrl,
+                archivoNombre: s.archivoNombre || 'Audio sin subir'
+            };
+        });
 
         const cancionGuardada = {
             id: songId,
@@ -76,20 +129,16 @@ export default function AdminStemsUploader() {
             timeSig: nuevaCancion.timeSig,
             cover: nuevaCancion.coverUrl,
             fechaCarga: new Date().toLocaleDateString('es-MX'),
-            stems: { ...stemsArchivos },
-            stemsNombres: { ...stemsNombres },
-            totalStems: countUploaded || 11
+            stemsList: stemsProcesados,
+            totalStems: stemsProcesados.length
         };
 
-        updateDb(prev => {
-            const cancExistentes = prev.canciones || [];
-            return {
-                ...prev,
-                canciones: [cancionGuardada, ...cancExistentes]
-            };
-        });
+        updateDb(prev => ({
+            ...prev,
+            canciones: [cancionGuardada, ...(prev.canciones || [])]
+        }));
 
-        // RESET FORM
+        // RESET FORMULARIO
         setNuevaCancion({
             titulo: '',
             autor: '',
@@ -98,16 +147,16 @@ export default function AdminStemsUploader() {
             timeSig: '4/4',
             coverUrl: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=150&auto=format&fit=crop&q=80'
         });
-        setStemsArchivos({
-            bateria: null, pandero: null, loop: null, fx: null, bajo: null,
-            bajosnt: null, ga: null, ge: null, teclados: null, voces: null, click: null
-        });
-        setStemsNombres({});
 
-        showToast(`🎵 Canción "${cancionGuardada.titulo}" subida exitosamente a Playback Cloud`, 'success');
+        setStemsDinamicos([
+            { id: 's_init_1', tipo: 'click', nombrePersonalizado: '', archivoUrl: null, archivoNombre: '' },
+            { id: 's_init_2', tipo: 'bateria', nombrePersonalizado: '', archivoUrl: null, archivoNombre: '' }
+        ]);
+
+        showToast(`🎵 Canción "${cancionGuardada.titulo}" subida con ${cancionGuardada.totalStems} stems dinámicos`, 'success');
     };
 
-    // BORRAR CANCIÓN DE LA NUBE
+    // ELIMINAR CANCIÓN
     const handleEliminarCancion = (id, titulo) => {
         if (window.confirm(`¿Eliminar la canción "${titulo}" de Playback Cloud?`)) {
             updateDb(prev => ({
@@ -122,7 +171,7 @@ export default function AdminStemsUploader() {
 
     return (
         <div className="admin-stems-uploader animate-fade-in">
-            {/* BANNER NUBE PLAYBACK */}
+            {/* BANNER HEADER */}
             <div style={{
                 background: 'linear-gradient(135deg, rgba(34, 197, 94, 0.15), rgba(15, 23, 42, 0.8))',
                 border: '1px solid rgba(34, 197, 94, 0.3)',
@@ -137,35 +186,35 @@ export default function AdminStemsUploader() {
             }}>
                 <div>
                     <span style={{ background: '#22c55e', color: '#000000', fontSize: '0.75rem', fontWeight: 800, padding: '4px 12px', borderRadius: '12px', textTransform: 'uppercase' }}>
-                        Playback Cloud Studio
+                        Playback Cloud Studio • Carga Dinámica
                     </span>
                     <h2 style={{ margin: '8px 0 4px', color: '#ffffff', fontSize: '1.6rem', fontWeight: 800 }}>
                         <i className="fas fa-cloud-upload-alt" style={{ color: '#22c55e', marginRight: '10px' }}></i>
-                        Cargar Canción & Stems Multitrack
+                        Cargar Canción & Stems (Personalizados)
                     </h2>
                     <p style={{ color: '#cbd5e1', fontSize: '0.9rem', margin: 0 }}>
-                        Sube pistas separadas stem por stem (MP3, WAV, M4A) para los ensambles de la academia. Se integrarán automáticamente a la consola iOS Playback.
+                        Agrega libremente stems uno por uno seleccionando el instrumento exacto o escribiendo nombres personalizados.
                     </p>
                 </div>
             </div>
 
             {/* FORMULARIO DE CARGA */}
             <div className="panel-box" style={{ marginBottom: '2.5rem' }}>
-                <div className="panel-header" style={{ marginBottom: '1.5rem' }}>
-                    <h3 style={{ margin: 0 }}>
-                        <i className="fas fa-plus-circle" style={{ color: '#22c55e', marginRight: '8px' }}></i>
-                        1. Información General de la Canción
-                    </h3>
-                </div>
-
                 <form onSubmit={handleGuardarCancion}>
+                    <div className="panel-header" style={{ marginBottom: '1.5rem' }}>
+                        <h3 style={{ margin: 0 }}>
+                            <i className="fas fa-music" style={{ color: '#22c55e', marginRight: '8px' }}></i>
+                            1. Datos Principales de la Canción
+                        </h3>
+                    </div>
+
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1.2rem', marginBottom: '2rem' }}>
                         <div className="form-group">
                             <label style={{ display: 'block', color: '#cbd5e1', fontSize: '0.85rem', fontWeight: 700, marginBottom: '6px' }}>Título de la Canción *</label>
                             <input
                                 type="text"
                                 className="form-control"
-                                placeholder="Ej. Júbilo, Generación Libre"
+                                placeholder="Ej. Júbilo, Rey de Reyes"
                                 value={nuevaCancion.titulo}
                                 onChange={(e) => setNuevaCancion({ ...nuevaCancion, titulo: e.target.value })}
                                 required
@@ -210,7 +259,7 @@ export default function AdminStemsUploader() {
                         </div>
 
                         <div className="form-group">
-                            <label style={{ display: 'block', color: '#cbd5e1', fontSize: '0.85rem', fontWeight: 700, marginBottom: '6px' }}>Compás (Time Signature)</label>
+                            <label style={{ display: 'block', color: '#cbd5e1', fontSize: '0.85rem', fontWeight: 700, marginBottom: '6px' }}>Compás</label>
                             <select
                                 className="form-control"
                                 value={nuevaCancion.timeSig}
@@ -224,93 +273,143 @@ export default function AdminStemsUploader() {
                         </div>
                     </div>
 
-                    {/* SECCIÓN CARGA STEM POR STEM */}
-                    <div style={{ marginBottom: '1.5rem' }}>
-                        <h4 style={{ color: '#ffffff', fontSize: '1.1rem', fontWeight: 800, marginBottom: '1rem' }}>
-                            <i className="fas fa-sliders-h" style={{ color: '#3b82f6', marginRight: '8px' }}></i>
-                            2. Subir Pistas Separadas (Stems Audio Files)
-                        </h4>
-                        <p style={{ color: '#94a3b8', fontSize: '0.85rem', marginBottom: '1.2rem' }}>
-                            Selecciona los archivos de audio locales (WAV, MP3, M4A) para cada instrumento:
-                        </p>
+                    {/* SECCIÓN CARGA DE STEMS UNO POR UNO */}
+                    <div style={{ background: 'rgba(255, 255, 255, 0.02)', border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: '16px', padding: '1.5rem', marginBottom: '2rem' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem', marginBottom: '1.2rem' }}>
+                            <div>
+                                <h4 style={{ color: '#ffffff', fontSize: '1.15rem', fontWeight: 800, margin: 0 }}>
+                                    <i className="fas fa-sliders-h" style={{ color: '#22c55e', marginRight: '8px' }}></i>
+                                    2. Agregar Stems uno por uno ({stemsDinamicos.length} Pistas)
+                                </h4>
+                                <p style={{ color: '#94a3b8', fontSize: '0.85rem', margin: '4px 0 0' }}>
+                                    Selecciona el instrumento del menú desplegable o ingresa uno personalizado, luego adjunta el audio.
+                                </p>
+                            </div>
 
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1rem' }}>
-                            {STEM_KEYS.map(stem => {
-                                const tieneArchivo = Boolean(stemsArchivos[stem.id]);
-                                const nombreArchivo = stemsNombres[stem.id];
-                                return (
-                                    <div
-                                        key={stem.id}
-                                        style={{
-                                            background: tieneArchivo ? 'rgba(34, 197, 94, 0.08)' : 'rgba(255, 255, 255, 0.03)',
-                                            border: tieneArchivo ? '1px solid #22c55e' : '1px solid rgba(255, 255, 255, 0.08)',
-                                            borderRadius: '12px',
-                                            padding: '1rem',
-                                            transition: 'all 0.2s ease'
-                                        }}
-                                    >
-                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
-                                            <span style={{ fontWeight: 700, fontSize: '0.9rem', color: tieneArchivo ? '#22c55e' : '#ffffff' }}>
-                                                <i className={stem.icon} style={{ marginRight: '6px', color: tieneArchivo ? '#22c55e' : '#94a3b8' }}></i>
-                                                {stem.label}
-                                            </span>
-                                            {tieneArchivo && (
-                                                <span style={{ background: '#22c55e', color: '#000', fontSize: '0.68rem', fontWeight: 800, padding: '2px 8px', borderRadius: '10px' }}>
-                                                    Cargado
-                                                </span>
-                                            )}
-                                        </div>
+                            {/* BOTÓN AGREGAR STEM */}
+                            <button
+                                type="button"
+                                className="btn btn-secondary"
+                                onClick={handleAgregarStem}
+                                style={{ border: '1px solid #22c55e', color: '#22c55e', fontWeight: 800, borderRadius: '20px', padding: '8px 18px' }}
+                            >
+                                <i className="fas fa-plus" style={{ marginRight: '6px' }}></i> Agregar Nuevo Stem / Pista
+                            </button>
+                        </div>
 
+                        {/* LISTADO DE FILAS DE STEMS DINÁMICOS */}
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                            {stemsDinamicos.map((stem, index) => (
+                                <div
+                                    key={stem.id}
+                                    style={{
+                                        background: stem.archivoUrl ? 'rgba(34, 197, 94, 0.08)' : 'rgba(30, 34, 48, 0.6)',
+                                        border: stem.archivoUrl ? '1px solid #22c55e' : '1px solid rgba(255, 255, 255, 0.1)',
+                                        borderRadius: '14px',
+                                        padding: '1rem 1.2rem',
+                                        display: 'grid',
+                                        gridTemplateColumns: 'auto 1fr 1fr auto',
+                                        alignItems: 'center',
+                                        gap: '1rem'
+                                    }}
+                                >
+                                    {/* NÚMERO DE PISTA */}
+                                    <div style={{ background: '#1e2230', width: '32px', height: '32px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '0.85rem', color: '#22c55e' }}>
+                                        {index + 1}
+                                    </div>
+
+                                    {/* SELECCIÓN DE INSTRUMENTO / DROPDOWN AMPLIO */}
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                                        <label style={{ fontSize: '0.78rem', color: '#94a3b8', fontWeight: 700 }}>Instrumento / Tipo de Pista:</label>
+                                        <select
+                                            className="form-control"
+                                            value={stem.tipo}
+                                            onChange={(e) => handleTipoChange(stem.id, e.target.value)}
+                                            style={{ background: '#12141d', color: '#ffffff', fontWeight: 700 }}
+                                        >
+                                            {OPCIONES_INSTRUMENTOS.map(op => (
+                                                <option key={op.value} value={op.value}>{op.label}</option>
+                                            ))}
+                                        </select>
+
+                                        {/* SI ELIGE 'OTRO', INGRESAR NOMBRE PERSONALIZADO */}
+                                        {stem.tipo === 'otro' && (
+                                            <input
+                                                type="text"
+                                                className="form-control"
+                                                placeholder="Escribe el nombre del instrumento (ej. Marimba, Acordeón...)"
+                                                value={stem.nombrePersonalizado}
+                                                onChange={(e) => handleCustomNameChange(stem.id, e.target.value)}
+                                                style={{ marginTop: '4px', borderColor: '#eab308', background: '#1c1917' }}
+                                                required
+                                            />
+                                        )}
+                                    </div>
+
+                                    {/* SELECTOR DE ARCHIVO DE AUDIO */}
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                                        <label style={{ fontSize: '0.78rem', color: '#94a3b8', fontWeight: 700 }}>Archivo de Audio (MP3 / WAV / M4A):</label>
                                         <label
                                             style={{
                                                 display: 'flex',
                                                 alignItems: 'center',
                                                 justifyContent: 'center',
                                                 gap: '8px',
-                                                background: tieneArchivo ? 'rgba(34, 197, 94, 0.2)' : 'rgba(255, 255, 255, 0.06)',
-                                                border: '1px dashed ' + (tieneArchivo ? '#22c55e' : 'rgba(255,255,255,0.2)'),
+                                                background: stem.archivoUrl ? 'rgba(34, 197, 94, 0.2)' : 'rgba(255, 255, 255, 0.08)',
+                                                border: '1px dashed ' + (stem.archivoUrl ? '#22c55e' : 'rgba(255, 255, 255, 0.25)'),
                                                 borderRadius: '8px',
-                                                padding: '8px 12px',
-                                                fontSize: '0.8rem',
+                                                padding: '8px 14px',
+                                                fontSize: '0.82rem',
                                                 fontWeight: 700,
                                                 color: '#ffffff',
                                                 cursor: 'pointer'
                                             }}
                                         >
-                                            <i className="fas fa-upload"></i>
-                                            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '200px' }}>
-                                                {nombreArchivo || 'Examinar archivo audio...'}
+                                            <i className="fas fa-file-audio" style={{ color: stem.archivoUrl ? '#22c55e' : '#94a3b8' }}></i>
+                                            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '220px' }}>
+                                                {stem.archivoNombre || 'Adjuntar audio local...'}
                                             </span>
                                             <input
                                                 type="file"
                                                 accept="audio/*"
-                                                onChange={(e) => handleFileChange(stem.id, e)}
+                                                onChange={(e) => handleArchivoChange(stem.id, e)}
                                                 style={{ display: 'none' }}
                                             />
                                         </label>
                                     </div>
-                                );
-                            })}
+
+                                    {/* BOTÓN BORRAR PISTA */}
+                                    <button
+                                        type="button"
+                                        className="btn btn-sm btn-danger"
+                                        onClick={() => handleEliminarStem(stem.id)}
+                                        title="Eliminar este stem"
+                                        style={{ borderRadius: '8px', padding: '8px 12px' }}
+                                    >
+                                        <i className="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            ))}
                         </div>
                     </div>
 
                     <button
                         type="submit"
                         className="btn btn-primary pulse-active"
-                        style={{ padding: '12px 30px', borderRadius: '30px', fontWeight: 800, fontSize: '1rem' }}
+                        style={{ padding: '12px 36px', borderRadius: '30px', fontWeight: 800, fontSize: '1rem' }}
                     >
                         <i className="fas fa-cloud-upload-alt" style={{ marginRight: '8px' }}></i>
-                        Publicar Canción a Playback Cloud
+                        Publicar Canción Multitrack en la Nube
                     </button>
                 </form>
             </div>
 
-            {/* BIBLIOTECA DE CANCIONES SUBIDAS A LA NUBE */}
+            {/* BIBLIOTECA DE CANCIONES SUBIDAS */}
             <div className="panel-box">
                 <div className="panel-header" style={{ marginBottom: '1.2rem' }}>
                     <h3 style={{ margin: 0 }}>
                         <i className="fas fa-music" style={{ color: '#ec4899', marginRight: '8px' }}></i>
-                        Canciones Disponibles en Playback Cloud ({listaCanciones.length})
+                        Canciones Registradas en Playback Cloud ({listaCanciones.length})
                     </h3>
                 </div>
 
@@ -322,7 +421,7 @@ export default function AdminStemsUploader() {
                                 <th>Tono</th>
                                 <th>BPM</th>
                                 <th>Compás</th>
-                                <th>Stems Cargados</th>
+                                <th>Stems Configurados</th>
                                 <th>Acción</th>
                             </tr>
                         </thead>
@@ -330,7 +429,7 @@ export default function AdminStemsUploader() {
                             {listaCanciones.length === 0 ? (
                                 <tr>
                                     <td colSpan="6" style={{ textAlign: 'center', color: '#94a3b8', padding: '2rem' }}>
-                                        No hay canciones cargadas en la nube. ¡Utiliza el formulario superior para subir la primera canción multitrack!
+                                        No hay canciones registradas en la nube. ¡Agrega tus primeros stems dinámicos arriba!
                                     </td>
                                 </tr>
                             ) : (
@@ -348,7 +447,7 @@ export default function AdminStemsUploader() {
                                         <td><span className="badge badge-solvente" style={{ background: 'rgba(34, 197, 94, 0.15)', color: '#22c55e' }}>{c.tono}</span></td>
                                         <td><strong>{c.bpm} BPM</strong></td>
                                         <td>{c.timeSig || '4/4'}</td>
-                                        <td><span className="badge badge-solvente">{c.totalStems || 11} Pistas</span></td>
+                                        <td><span className="badge badge-solvente">{c.stemsList ? c.stemsList.length : (c.totalStems || 11)} Stems</span></td>
                                         <td>
                                             <button
                                                 className="btn btn-sm btn-danger"
