@@ -109,25 +109,7 @@ export default function PastorDashboard() {
 
     return (
         <div id="view-pastor" className="app-view animate-fade-in">
-            {/* SUBVIEW NAV TABS */}
-            <div className="subview-nav">
-                {[
-                    { id: 'vision', label: 'Visión Global', icon: 'fas fa-chart-line' },
-                    { id: 'expedientes', label: 'Expedientes Alumnos', icon: 'fas fa-id-card' },
-                    { id: 'docentes', label: 'Directorio Docentes', icon: 'fas fa-chalkboard-teacher' },
-                    { id: 'colegiaturas', label: 'Colegiaturas & Estatus', icon: 'fas fa-file-invoice-dollar' },
-                    { id: 'cobertura', label: 'Cobertura Pastoral (Notificaciones)', icon: 'fas fa-heart' },
-                    { id: 'eventos', label: 'Eventos & Agenda', icon: 'fas fa-calendar-alt' }
-                ].map(tab => (
-                    <button
-                        key={tab.id}
-                        className={`subview-tab ${currentSub === tab.id ? 'active' : ''}`}
-                        onClick={() => setActiveSubview(tab.id)}
-                    >
-                        <i className={tab.icon}></i> {tab.label}
-                    </button>
-                ))}
-            </div>
+
 
             {/* TAB 1: VISIÓN GLOBAL */}
             {currentSub === 'vision' && (

@@ -153,23 +153,7 @@ export default function ProduccionView() {
 
     return (
         <div id="view-produccion" className="app-view animate-fade-in">
-            {/* SUBVIEW NAV TABS */}
-            <div className="subview-nav">
-                {[
-                    { id: 'playback', label: 'Sala de Ensayo (App iOS Playback)', icon: 'fas fa-sliders-h' },
-                    { id: 'estatus', label: 'Estatus Clases & Plantillas', icon: 'fas fa-calendar-check' },
-                    { id: 'anuncios', label: 'Anuncios Staff', icon: 'fas fa-bullhorn' },
-                    { id: 'colegiaturas', label: 'Control Colegiaturas', icon: 'fas fa-file-invoice-dollar' }
-                ].map(tab => (
-                    <button
-                        key={tab.id}
-                        className={`subview-tab ${currentSub === tab.id ? 'active' : ''}`}
-                        onClick={() => setActiveSubview(tab.id)}
-                    >
-                        <i className={tab.icon}></i> {tab.label}
-                    </button>
-                ))}
-            </div>
+
 
             {/* TAB: SALA DE ENSAYO PLAYBACK IOS REPLICA */}
             {currentSub === 'playback' && (

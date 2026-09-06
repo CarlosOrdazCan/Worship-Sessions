@@ -39,24 +39,7 @@ export default function EstudianteView() {
 
     return (
         <div id="view-estudiante" className="app-view animate-fade-in">
-            {/* SUBVIEW NAV TABS */}
-            <div className="subview-nav">
-                {[
-                    { id: 'classroom', label: 'Mi Salón & Tareas', icon: 'fas fa-chalkboard-teacher' },
-                    { id: 'progreso', label: 'Mi Progreso & Notas', icon: 'fas fa-chart-line' },
-                    { id: 'recursos', label: 'Materiales & Archivos', icon: 'fas fa-folder-open' },
-                    { id: 'ensamble', label: 'Mi Ensamble', icon: 'fas fa-guitar' },
-                    { id: 'playback', label: 'Multitrack & Metrónomo', icon: 'fas fa-sliders-h' }
-                ].map(tab => (
-                    <button
-                        key={tab.id}
-                        className={`subview-tab ${currentSub === tab.id ? 'active' : ''}`}
-                        onClick={() => setActiveSubview(tab.id)}
-                    >
-                        <i className={tab.icon}></i> {tab.label}
-                    </button>
-                ))}
-            </div>
+
 
             {/* TAB: CLASSROOM & TAREAS */}
             {currentSub === 'classroom' && (

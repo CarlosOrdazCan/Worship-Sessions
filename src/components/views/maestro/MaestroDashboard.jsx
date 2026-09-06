@@ -212,26 +212,7 @@ export default function MaestroDashboard() {
                 </div>
             </div>
 
-            {/* PESTAÑAS DE NAVEGACIÓN */}
-            <div className="subview-nav">
-                {[
-                    { id: 'dashboard', label: 'Mi Dashboard', icon: 'fas fa-chart-bar' },
-                    { id: 'perfil', label: 'Mi Perfil', icon: 'fas fa-user' },
-                    { id: 'classroom', label: 'Tareas & Calificaciones (Classroom)', icon: 'fas fa-tasks' },
-                    { id: 'alumnos', label: 'Mis Alumnos', icon: 'fas fa-user-graduate' },
-                    { id: 'materiales', label: 'Materiales & Archivos (500MB)', icon: 'fas fa-folder-open' },
-                    { id: 'ensambles', label: 'Ensambles & Sala de Ensayo', icon: 'fas fa-music' },
-                    { id: 'anuncios', label: 'Anuncios & Cobertura Pastoral', icon: 'fas fa-bullhorn' }
-                ].map(tab => (
-                    <button
-                        key={tab.id}
-                        className={`subview-tab ${currentSub === tab.id ? 'active' : ''}`}
-                        onClick={() => setActiveSubview(tab.id)}
-                    >
-                        <i className={tab.icon}></i> {tab.label}
-                    </button>
-                ))}
-            </div>
+
 
             {/* TAB 1: MI DASHBOARD (RESUMEN GENERAL ESTILO GOOGLE CLASSROOM) */}
             {currentSub === 'dashboard' && (

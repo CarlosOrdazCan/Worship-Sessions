@@ -28,21 +28,7 @@ export default function AdoracionView() {
 
     return (
         <div id="view-adoracion" className="app-view">
-            {/* SUBVIEW NAV TABS */}
-            <div className="subview-nav">
-                {[
-                    { id: 'control', label: 'Plan Ensamble Dominical', icon: 'fas fa-users' },
-                    { id: 'repertorio', label: 'Repertorio Musical', icon: 'fas fa-music' }
-                ].map(tab => (
-                    <button
-                        key={tab.id}
-                        className={`btn btn-sm btn-secondary ${currentSub === tab.id ? 'active' : ''}`}
-                        onClick={() => setActiveSubview(tab.id)}
-                    >
-                        <i className={tab.icon}></i> {tab.label}
-                    </button>
-                ))}
-            </div>
+
 
             {/* TAB: CONTROL */}
             {currentSub === 'control' && (
