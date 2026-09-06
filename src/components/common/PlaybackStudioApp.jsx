@@ -23,7 +23,7 @@ export default function PlaybackStudioApp() {
     const [isPlaying, setIsPlaying] = useState(false);
     const [bpm, setBpm] = useState(currentSong.bpm || 135);
     const [timeSig, setTimeSig] = useState(currentSong.timeSig || '4/4');
-    const [currentTime, setCurrentTime] = useState(7); // seconds (00:07)
+    const [currentTime, setCurrentTime] = useState(7); // seconds
     const [totalTime, setTotalTime] = useState(614); // 10:14
     const [isPadActive, setIsPadActive] = useState(true);
     const [activeSection, setActiveSection] = useState('V1');
@@ -44,6 +44,11 @@ export default function PlaybackStudioApp() {
 
     const [channels, setChannels] = useState(DEFAULT_CHANNELS);
 
+    // REFS FOR AUDIO MANAGEMENT
+    const audioCtxRef = useRef(null);
+    const audioElementsRef = useRef({});
+    const synthNodesRef = useRef([]);
+
     // Sync song parameters and dynamic channel strips when selectedSongId changes
     useEffect(() => {
         if (currentSong) {
@@ -57,14 +62,60 @@ export default function PlaybackStudioApp() {
                     vol: 85,
                     muted: false,
                     solo: false,
-                    key: s.tipo
+                    key: s.tipo,
+                    audioUrl: s.url || s.archivoUrl
                 }));
                 setChannels(dynamicStrips);
+            } else if (currentSong.stems) {
+                const legacyStrips = Object.entries(currentSong.stems).map(([key, url], idx) => ({
+                    id: `legacy_${key}_${idx}`,
+                    label: key.toUpperCase(),
+                    vol: 85,
+                    muted: false,
+                    solo: false,
+                    key: key,
+                    audioUrl: url
+                }));
+                setChannels(legacyStrips.length > 0 ? legacyStrips : DEFAULT_CHANNELS);
             } else {
                 setChannels(DEFAULT_CHANNELS);
             }
         }
     }, [selectedSongId, currentSong]);
+
+    // PREPARE / CLEANUP REAL AUDIO ELEMENTS FOR UPLOADED STEMS
+    useEffect(() => {
+        // Cleanup existing audio elements
+        Object.values(audioElementsRef.current).forEach(audio => {
+            try {
+                audio.pause();
+                audio.src = '';
+            } catch (e) {}
+        });
+        audioElementsRef.current = {};
+
+        // Create new Audio elements for channels with audioUrl
+        channels.forEach(ch => {
+            if (ch.audioUrl) {
+                try {
+                    const audio = new Audio(ch.audioUrl);
+                    audio.loop = true;
+                    audio.preload = 'auto';
+                    audioElementsRef.current[ch.id] = audio;
+                } catch (e) {
+                    console.warn('Error al cargar audio stem:', e);
+                }
+            }
+        });
+
+        return () => {
+            Object.values(audioElementsRef.current).forEach(audio => {
+                try {
+                    audio.pause();
+                } catch (e) {}
+            });
+        };
+    }, [channels, selectedSongId]);
 
     // SECTIONS MARKERS
     const songSections = [
@@ -77,9 +128,7 @@ export default function PlaybackStudioApp() {
         { id: 'O', label: 'Outro', color: '#ef4444', startSec: 240 }
     ];
 
-    // AUDIO CONTEXT FOR METRONOME & SYNTH PADS
-    const audioCtxRef = useRef(null);
-
+    // INITIALIZE WEB AUDIO CONTEXT
     const initAudio = () => {
         if (!audioCtxRef.current) {
             const AudioCtx = window.AudioContext || window.webkitAudioContext;
@@ -92,6 +141,7 @@ export default function PlaybackStudioApp() {
         }
     };
 
+    // PLAY METRONOME CLICK SOUND
     const playClickSound = (high = false) => {
         if (!audioCtxRef.current) return;
         try {
@@ -109,6 +159,103 @@ export default function PlaybackStudioApp() {
             // Ignore audio context errors
         }
     };
+
+    // AMBIENT SYNTH PAD GENERATOR (Web Audio API Chords based on Song Key)
+    const startAmbientPad = () => {
+        if (!audioCtxRef.current || !isPadActive) return;
+
+        stopAmbientPad();
+
+        const keyFreqMap = {
+            'C': [130.81, 164.81, 196.00],
+            'C#': [138.59, 174.61, 207.65],
+            'D': [146.83, 185.00, 220.00],
+            'Eb': [155.56, 196.00, 233.08],
+            'E': [164.81, 207.65, 246.94],
+            'F': [174.61, 220.00, 261.63],
+            'F#': [185.00, 233.08, 277.18],
+            'G': [196.00, 246.94, 293.66],
+            'Ab': [207.65, 261.63, 311.13],
+            'A': [220.00, 277.18, 329.63],
+            'Bb': [233.08, 293.66, 349.23],
+            'B': [246.94, 311.13, 369.99]
+        };
+
+        const freqs = keyFreqMap[currentSong.tono] || keyFreqMap['D'];
+
+        try {
+            const filter = audioCtxRef.current.createBiquadFilter();
+            filter.type = 'lowpass';
+            filter.frequency.value = 600;
+
+            const padGain = audioCtxRef.current.createGain();
+            padGain.gain.setValueAtTime(0.001, audioCtxRef.current.currentTime);
+            padGain.gain.exponentialRampToValueAtTime(0.18, audioCtxRef.current.currentTime + 1.2);
+
+            filter.connect(padGain);
+            padGain.connect(audioCtxRef.current.destination);
+
+            const nodes = freqs.map(freq => {
+                const osc = audioCtxRef.current.createOscillator();
+                osc.type = 'triangle';
+                osc.frequency.value = freq;
+                osc.connect(filter);
+                osc.start();
+                return osc;
+            });
+
+            synthNodesRef.current = { nodes, gain: padGain };
+        } catch (e) {
+            console.warn('Pad synth error:', e);
+        }
+    };
+
+    const stopAmbientPad = () => {
+        if (synthNodesRef.current?.nodes) {
+            try {
+                if (synthNodesRef.current.gain) {
+                    synthNodesRef.current.gain.gain.exponentialRampToValueAtTime(0.0001, audioCtxRef.current.currentTime + 0.3);
+                }
+                setTimeout(() => {
+                    synthNodesRef.current.nodes.forEach(n => {
+                        try { n.stop(); } catch (e) {}
+                    });
+                    synthNodesRef.current = null;
+                }, 300);
+            } catch (e) {
+                synthNodesRef.current = null;
+            }
+        }
+    };
+
+    // PLAY / PAUSE AUDIO CONTROL EFFECT
+    useEffect(() => {
+        const hasSolo = channels.some(c => c.solo);
+
+        // Control real audio elements for uploaded stems
+        channels.forEach(ch => {
+            const audio = audioElementsRef.current[ch.id];
+            if (!audio) return;
+
+            const isMuted = ch.muted;
+            const isSolo = ch.solo;
+            const isActiveTrack = hasSolo ? isSolo : !isMuted;
+
+            if (isPlaying && isActiveTrack) {
+                audio.volume = Math.max(0, Math.min(1, ch.vol / 100));
+                audio.play().catch(err => console.warn('Audio play error:', err));
+            } else {
+                audio.pause();
+            }
+        });
+
+        // Control Ambient Synth Pad
+        if (isPlaying && isPadActive) {
+            startAmbientPad();
+        } else {
+            stopAmbientPad();
+        }
+    }, [isPlaying, channels, isPadActive, selectedSongId]);
 
     // PLAYHEAD TIMER EFFECT
     useEffect(() => {
@@ -148,11 +295,22 @@ export default function PlaybackStudioApp() {
         initAudio();
         const nextState = !isPlaying;
         setIsPlaying(nextState);
-        showToast(nextState ? `▶ Reproduciendo ${currentSong.titulo} (135 BPM)` : '❚❚ Pausado', nextState ? 'success' : 'info');
+
+        const hasUploadedAudio = Object.keys(audioElementsRef.current).length > 0;
+
+        showToast(
+            nextState
+                ? `▶ Reproduciendo ${currentSong.titulo} (${bpm} BPM) ${hasUploadedAudio ? '• Stems de Audio Activos' : '• Pad Synthesizer Activo'}`
+                : '❚❚ Pausado',
+            nextState ? 'success' : 'info'
+        );
     };
 
     const handleRewind = () => {
         setCurrentTime(0);
+        Object.values(audioElementsRef.current).forEach(audio => {
+            try { audio.currentTime = 0; } catch (e) {}
+        });
         showToast('Rebobinado al inicio 00:00', 'info');
     };
 
@@ -210,7 +368,8 @@ export default function PlaybackStudioApp() {
 
                 {/* CENTER TITLE */}
                 <div className="playback-header-center">
-                    <span className="playback-song-title">Repertorio del Domingo</span>
+                    <span className="playback-song-title">{currentSong.titulo}</span>
+                    <div style={{ fontSize: '0.75rem', color: '#94a3b8' }}>{currentSong.autor} • Tono: {currentSong.tono}</div>
                 </div>
 
                 {/* RIGHT TRANSPORT CONTROLS */}
@@ -286,6 +445,9 @@ export default function PlaybackStudioApp() {
                             onClick={() => {
                                 setActiveSection(sec.id);
                                 setCurrentTime(sec.startSec);
+                                Object.values(audioElementsRef.current).forEach(audio => {
+                                    try { audio.currentTime = sec.startSec; } catch (e) {}
+                                });
                             }}
                         >
                             [{sec.id}] {sec.label}
@@ -333,6 +495,8 @@ export default function PlaybackStudioApp() {
                 {channels.map((ch) => {
                     const isMuted = ch.muted;
                     const isSolo = ch.solo;
+                    const hasAudioFile = Boolean(ch.audioUrl);
+
                     return (
                         <div
                             key={ch.id}
@@ -389,7 +553,8 @@ export default function PlaybackStudioApp() {
                             </div>
 
                             {/* BOTTOM TRACK LABEL BADGE */}
-                            <div className="playback-track-label">
+                            <div className="playback-track-label" title={ch.label}>
+                                {hasAudioFile && <i className="fas fa-volume-up" style={{ color: '#22c55e', marginRight: '4px' }}></i>}
                                 {ch.label}
                             </div>
                         </div>
