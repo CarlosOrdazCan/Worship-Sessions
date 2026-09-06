@@ -27,6 +27,15 @@
     gap: 12px;
 }
 
+.sidebar-graphic-logo {
+    max-width: 100%;
+    height: auto;
+    max-height: 48px;
+    object-fit: contain;
+    mix-blend-mode: screen;
+    filter: brightness(1.2);
+}
+
 .user-role-badge {
     display: inline-flex;
     align-items: center;
