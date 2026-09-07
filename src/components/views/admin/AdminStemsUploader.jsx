@@ -352,9 +352,9 @@ export default function AdminStemsUploader() {
                             </div>
 
                             <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-                                {/* BOTÓN CARGAR TODOS DE GOLPE */}
-                                <label className="btn btn-primary pulse-active" style={{ cursor: 'pointer', borderRadius: '20px', padding: '8px 20px', display: 'inline-flex', alignItems: 'center', gap: '8px', fontWeight: 800 }}>
-                                    <i className="fas fa-folder-open"></i> ⚡ Cargar Todos los Stems de Golpe
+                                {/* BOTÓN CARGAR TODOS DE GOLPE (AZUL BRILANTE) */}
+                                <label className="btn btn-primary pulse-active" style={{ cursor: 'pointer', borderRadius: '20px', padding: '10px 24px', display: 'inline-flex', alignItems: 'center', gap: '8px', fontWeight: 800, background: '#2563eb', color: '#ffffff', border: 'none', boxShadow: '0 4px 15px rgba(37, 99, 235, 0.4)' }}>
+                                    <i className="fas fa-folder-open" style={{ fontSize: '1.1rem' }}></i> ⚡ Cargar Todos los Stems de Golpe
                                     <input
                                         type="file"
                                         accept="audio/*"

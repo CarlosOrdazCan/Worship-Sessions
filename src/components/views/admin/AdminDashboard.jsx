@@ -76,6 +76,39 @@ export default function AdminDashboard() {
                 </div>
             </div>
 
+            {/* BARRA DE SECCIONES ADMIN */}
+            <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', margin: '1rem 0 1.5rem', background: '#161822', padding: '12px 16px', borderRadius: '14px', border: '1px solid rgba(255,255,255,0.08)' }}>
+                <button
+                    className={`btn btn-sm ${currentSub === 'panel' ? 'btn-primary' : 'btn-secondary'}`}
+                    onClick={() => setActiveSubview('panel')}
+                >
+                    <i className="fas fa-chart-line"></i> Panel & Estadísticas
+                </button>
+
+                <button
+                    className={`btn btn-sm ${currentSub === 'usuarios' ? 'btn-primary' : 'btn-secondary'}`}
+                    onClick={() => setActiveSubview('usuarios')}
+                >
+                    <i className="fas fa-users-cog"></i> Gestión de Usuarios
+                </button>
+
+                {/* BOTÓN DESTACADO NUBE DE STEMS */}
+                <button
+                    className={`btn btn-sm ${currentSub === 'stems_cloud' ? 'btn-primary pulse-active' : 'btn-secondary'}`}
+                    onClick={() => setActiveSubview('stems_cloud')}
+                    style={{ background: currentSub === 'stems_cloud' ? '#22c55e' : '#2563eb', color: '#ffffff', border: 'none', fontWeight: 800, padding: '8px 18px', borderRadius: '10px' }}
+                >
+                    <i className="fas fa-cloud-upload-alt"></i> ⚡ Cargar Canciones & Stems (Playback Cloud)
+                </button>
+
+                <button
+                    className={`btn btn-sm ${currentSub === 'respaldos' ? 'btn-primary' : 'btn-secondary'}`}
+                    onClick={() => setActiveSubview('respaldos')}
+                >
+                    <i className="fas fa-database"></i> Respaldos & Sistema
+                </button>
+            </div>
+
             {/* SUBVIEW 1: PANEL & ESTADÍSTICAS */}
             {currentSub === 'panel' && (
                 <div className="admin-subview">

@@ -2,12 +2,18 @@ import React, { useState, useEffect } from 'react';
 import { useWorship } from '../../services/WorshipContext';
 
 export default function ModalManager() {
-    const { modal, closeModal, updateDb, showToast } = useWorship();
+    const { modal, closeModal } = useWorship();
     if (!modal.name) return null;
 
+    const handleOverlayClick = (e) => {
+        if (e.target === e.currentTarget) {
+            closeModal();
+        }
+    };
+
     return (
-        <div className="modal-overlay" onClick={closeModal}>
-            <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+        <div className="modal-overlay" onClick={handleOverlayClick}>
+            <div className="modal-content">
                 {modal.name === 'usuario' && <UserModal data={modal.data} onClose={closeModal} />}
                 {modal.name === 'calificar' && <GradeModal data={modal.data} onClose={closeModal} />}
                 {modal.name === 'entregar-tarea' && <DeliverHomeworkModal data={modal.data} onClose={closeModal} />}
@@ -23,31 +29,73 @@ function UserModal({ data, onClose }) {
     const { updateDb, showToast } = useWorship();
     const isEdit = !!data?.key;
 
+    const INSTRUMENTOS_OPCIONES = [
+        'Teclado',
+        'Batería',
+        'Bajo',
+        'Guitarra Eléctrica',
+        'Guitarra Acústica',
+        'Canto',
+        'Saxofón',
+        'Violín',
+        'Producción',
+        'Pastoral',
+        'Ensamble',
+        'Otro'
+    ];
+
+    const initialArea = data?.area || data?.instrument || 'Teclado';
+    const isCustomArea = !INSTRUMENTOS_OPCIONES.includes(initialArea);
+
     const [form, setForm] = useState({
         username: data?.key || '',
+        usernameEdited: isEdit,
         nombre: data?.nombre || '',
         password: data?.password || 'can2026**',
         rol: data?.rol || 'estudiante',
-        area: data?.area || 'Teclado'
+        area: isCustomArea ? 'Otro' : initialArea,
+        areaCustom: isCustomArea ? initialArea : ''
     });
+
+    const handleNombreChange = (val) => {
+        setForm(prev => {
+            const next = { ...prev, nombre: val };
+            if (!isEdit && !prev.usernameEdited) {
+                const slug = val.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]/g, "");
+                next.username = slug;
+            }
+            return next;
+        });
+    };
 
     const handleSubmit = (e) => {
         e.preventDefault();
         const uKey = form.username.trim().toLowerCase();
-        if (!uKey) return;
+        if (!uKey) {
+            showToast('Ingresa un usuario (login) válido', 'error');
+            return;
+        }
+
+        const areaFinal = form.area === 'Otro' ? (form.areaCustom || 'Música') : form.area;
 
         updateDb(prev => ({
             ...prev,
             usuarios: {
-                ...prev.usuarios,
+                ...(prev.usuarios || {}),
                 [uKey]: {
                     ...(prev.usuarios?.[uKey] || {}),
-                    ...form
+                    key: uKey,
+                    username: uKey,
+                    nombre: form.nombre,
+                    password: form.password,
+                    rol: form.rol,
+                    area: areaFinal,
+                    instrument: areaFinal
                 }
             }
         }));
 
-        showToast(`Usuario ${form.nombre || uKey} guardado exitosamente`, 'success');
+        showToast(`Usuario "${form.nombre || uKey}" guardado exitosamente`, 'success');
         onClose();
     };
 
@@ -59,19 +107,43 @@ function UserModal({ data, onClose }) {
             </div>
             <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
                 <div className="form-group">
-                    <label>Nombre Completo:</label>
-                    <input type="text" className="form-control" value={form.nombre} onChange={(e) => setForm({ ...form, nombre: e.target.value })} required />
+                    <label style={{ display: 'block', marginBottom: '6px', fontWeight: 700 }}>Nombre Completo:</label>
+                    <input
+                        type="text"
+                        className="form-control"
+                        placeholder="Ej. Juan Pérez, Carlos Ordaz"
+                        value={form.nombre}
+                        onChange={(e) => handleNombreChange(e.target.value)}
+                        required
+                    />
                 </div>
+
                 <div className="form-group">
-                    <label>Usuario (Login):</label>
-                    <input type="text" className="form-control" value={form.username} onChange={(e) => setForm({ ...form, username: e.target.value })} disabled={isEdit} required />
+                    <label style={{ display: 'block', marginBottom: '6px', fontWeight: 700 }}>Usuario (Login / Identificador):</label>
+                    <input
+                        type="text"
+                        className="form-control"
+                        placeholder="Ej. juanperez"
+                        value={form.username}
+                        onChange={(e) => setForm({ ...form, username: e.target.value, usernameEdited: true })}
+                        disabled={isEdit}
+                        required
+                    />
                 </div>
+
                 <div className="form-group">
-                    <label>Contraseña:</label>
-                    <input type="password" className="form-control" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} required />
+                    <label style={{ display: 'block', marginBottom: '6px', fontWeight: 700 }}>Contraseña:</label>
+                    <input
+                        type="password"
+                        className="form-control"
+                        value={form.password}
+                        onChange={(e) => setForm({ ...form, password: e.target.value })}
+                        required
+                    />
                 </div>
+
                 <div className="form-group">
-                    <label>Rol en el Sistema:</label>
+                    <label style={{ display: 'block', marginBottom: '6px', fontWeight: 700 }}>Rol en el Sistema:</label>
                     <select className="form-control" value={form.rol} onChange={(e) => setForm({ ...form, rol: e.target.value })}>
                         <option value="estudiante">Estudiante / Alumno</option>
                         <option value="maestro">Maestro / Docente</option>
@@ -81,12 +153,48 @@ function UserModal({ data, onClose }) {
                         <option value="admin">Administrador</option>
                     </select>
                 </div>
+
+                {/* DROPDOWN DE INSTRUMENTO / ÁREA */}
                 <div className="form-group">
-                    <label>Área o Instrumento:</label>
-                    <input type="text" className="form-control" placeholder="Ej. Batería, Piano, Pastoral" value={form.area} onChange={(e) => setForm({ ...form, area: e.target.value })} />
+                    <label style={{ display: 'block', marginBottom: '6px', fontWeight: 700 }}>Área o Instrumento:</label>
+                    <select
+                        className="form-control"
+                        value={form.area}
+                        onChange={(e) => setForm({ ...form, area: e.target.value })}
+                    >
+                        {INSTRUMENTOS_OPCIONES.map(inst => (
+                            <option key={inst} value={inst}>
+                                {inst === 'Teclado' ? '🎹 Teclado / Piano' :
+                                 inst === 'Batería' ? '🥁 Batería' :
+                                 inst === 'Bajo' ? '🎸 Bajo Eléctrico' :
+                                 inst === 'Guitarra Eléctrica' ? '⚡ Guitarra Eléctrica' :
+                                 inst === 'Guitarra Acústica' ? '🎸 Guitarra Acústica' :
+                                 inst === 'Canto' ? '🎤 Canto / Voz' :
+                                 inst === 'Saxofón' ? '🎷 Saxofón / Metales' :
+                                 inst === 'Violín' ? '🎻 Violín / Cuerdas' :
+                                 inst === 'Producción' ? '🎧 Producción / Staff' :
+                                 inst === 'Pastoral' ? '✝️ Pastoral / Dirección' :
+                                 inst === 'Ensamble' ? '🎼 Ensamble / Adoración' : '➕ Otro... (Personalizado)'}
+                            </option>
+                        ))}
+                    </select>
+
+                    {/* CAMPO DE TEXTO SI SELECCIONA 'OTRO' */}
+                    {form.area === 'Otro' && (
+                        <input
+                            type="text"
+                            className="form-control"
+                            placeholder="Escribe el instrumento personalizado..."
+                            value={form.areaCustom}
+                            onChange={(e) => setForm({ ...form, areaCustom: e.target.value })}
+                            style={{ marginTop: '8px', borderColor: '#22c55e' }}
+                            required
+                        />
+                    )}
                 </div>
-                <button type="submit" className="btn btn-primary" style={{ marginTop: '8px' }}>
-                    <i className="fas fa-save"></i> Guardar Usuario
+
+                <button type="submit" className="btn btn-primary" style={{ marginTop: '10px', borderRadius: '10px', padding: '10px 20px', fontWeight: 800 }}>
+                    <i className="fas fa-save" style={{ marginRight: '6px' }}></i> Guardar Usuario
                 </button>
             </form>
         </div>
