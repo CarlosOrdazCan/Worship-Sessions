@@ -3,17 +3,36 @@ import { useWorship } from '../../services/WorshipContext';
 
 export default function ModalManager() {
     const { modal, closeModal } = useWorship();
+    const mouseDownTargetRef = React.useRef(null);
+
     if (!modal.name) return null;
 
+    const handleMouseDown = (e) => {
+        mouseDownTargetRef.current = e.target;
+    };
+
     const handleOverlayClick = (e) => {
-        if (e.target === e.currentTarget) {
+        const hasSelection = typeof window !== 'undefined' && window.getSelection && window.getSelection().toString().length > 0;
+        if (
+            e.target === e.currentTarget &&
+            mouseDownTargetRef.current === e.currentTarget &&
+            !hasSelection
+        ) {
             closeModal();
         }
     };
 
     return (
-        <div className="modal-overlay" onClick={handleOverlayClick}>
-            <div className="modal-content">
+        <div 
+            className="modal-overlay" 
+            onMouseDown={handleMouseDown}
+            onClick={handleOverlayClick}
+        >
+            <div 
+                className="modal-content"
+                onMouseDown={(e) => e.stopPropagation()}
+                onClick={(e) => e.stopPropagation()}
+            >
                 {modal.name === 'usuario' && <UserModal data={modal.data} onClose={closeModal} />}
                 {modal.name === 'calificar' && <GradeModal data={modal.data} onClose={closeModal} />}
                 {modal.name === 'entregar-tarea' && <DeliverHomeworkModal data={modal.data} onClose={closeModal} />}
