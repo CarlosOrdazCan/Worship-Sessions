@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useWorship } from '../../../services/WorshipContext';
 import { normalizeRol } from '../../../services/worshipDb';
 import PlaybackStudioApp from '../../common/PlaybackStudioApp';
+import CustomDatePicker from '../../common/CustomDatePicker';
 
 export default function MaestroDashboard() {
     const { db, updateDb, activeSubview, setActiveSubview, currentUser, updateUserProfile, showToast } = useWorship();
@@ -474,13 +475,9 @@ export default function MaestroDashboard() {
 
                                 <div className="form-group">
                                     <label style={{ display: 'block', fontSize: '0.85rem', marginBottom: '6px' }}>Fecha Límite:</label>
-                                    <input
-                                        type="date"
-                                        className="form-control"
+                                    <CustomDatePicker
                                         value={nuevaTarea.fechaLimite}
-                                        onChange={(e) => setNuevaTarea({ ...nuevaTarea, fechaLimite: e.target.value })}
-                                        style={{ padding: '10px', borderRadius: '10px', background: 'rgba(255,255,255,0.05)', color: '#fff' }}
-                                        required
+                                        onChange={(val) => setNuevaTarea({ ...nuevaTarea, fechaLimite: val })}
                                     />
                                 </div>
 
@@ -715,13 +712,9 @@ export default function MaestroDashboard() {
                                 <label style={{ fontWeight: 700, color: '#fff', fontSize: '0.9rem' }}>
                                     <i className="fas fa-calendar-alt" style={{ marginRight: '6px', color: '#3b82f6' }}></i> Fecha de la Clase:
                                 </label>
-                                <input
-                                    type="date"
-                                    className="form-control"
+                                <CustomDatePicker
                                     value={fechaClase}
-                                    onChange={(e) => setFechaClase(e.target.value)}
-                                    style={{ width: '220px' }}
-                                    required
+                                    onChange={(val) => setFechaClase(val)}
                                 />
                             </div>
 
