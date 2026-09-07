@@ -497,60 +497,34 @@ export default function PlaybackStudioApp() {
         return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
     };
 
+    const handleSeek = (newSecs) => {
+        const sec = Number(newSecs);
+        setCurrentTime(sec);
+        Object.values(audioElementsRef.current).forEach(audio => {
+            try { audio.currentTime = sec; } catch (e) {}
+        });
+    };
+
     return (
         <div className="playback-ios-container">
-            {/* 1. TOP HEADER TRANSPORT BAR */}
-            <div className="playback-top-header">
-                {/* LEFT TRANSPORT METRICS */}
-                <div className="playback-header-left">
-                    <div className="playback-metric-badge">
-                        <span className="playback-metric-value">{bpm}</span>
-                        <span className="playback-metric-label">BPM</span>
-                    </div>
-                    <div className="playback-metric-badge">
-                        <span className="playback-metric-value">{timeSig}</span>
-                    </div>
-
-                    <div className="playback-clock-display">
-                        <div className="playback-clock-main">{formatTime(currentTime)}</div>
-                        <div className="playback-clock-sub">0:00 / {formatTime(totalTime)}</div>
+            {/* 1. TOP HEADER TRANSPORT BAR - SIMPLIFIED */}
+            <div className="playback-top-header" style={{ justifyContent: 'space-between', padding: '14px 20px' }}>
+                {/* SONG TITLE & ARTIST */}
+                <div className="playback-header-center" style={{ textAlign: 'left' }}>
+                    <span className="playback-song-title" style={{ fontSize: '1.4rem', fontWeight: 800 }}>{currentSong.titulo}</span>
+                    <div style={{ fontSize: '0.88rem', color: '#94a3b8', marginTop: '2px' }}>
+                        {currentSong.autor} • Tono: <strong style={{ color: '#22c55e' }}>{currentSong.tono}</strong>
                     </div>
                 </div>
 
-                {/* CENTER TITLE */}
-                <div className="playback-header-center">
-                    <span className="playback-song-title">{currentSong.titulo}</span>
-                    <div style={{ fontSize: '0.75rem', color: '#94a3b8' }}>{currentSong.autor} • Tono: {currentSong.tono}</div>
-                </div>
-
-                {/* RIGHT TRANSPORT CONTROLS */}
-                <div className="playback-header-right">
-                    {/* MAIN NEON PLAY BUTTON */}
-                    <button className={`playback-btn-play ${isPlaying ? 'playing' : ''}`} onClick={togglePlay} title="Play / Pause">
-                        <i className={isPlaying ? 'fas fa-pause' : 'fas fa-play'}></i>
-                    </button>
-
-                    {/* PAD BUTTON */}
-                    <button
-                        className={`playback-pill-btn ${isPadActive ? 'active' : ''}`}
-                        onClick={() => setIsPadActive(!isPadActive)}
-                    >
-                        PAD
-                    </button>
-
-                    {/* REWIND BUTTON */}
-                    <button className="playback-icon-btn" onClick={handleRewind} title="Ir al Inicio">
+                {/* PLAY & REWIND CONTROLS */}
+                <div className="playback-header-right" style={{ gap: '12px' }}>
+                    <button className="playback-icon-btn" onClick={handleRewind} title="Ir al Inicio (00:00)">
                         <i className="fas fa-step-backward"></i>
                     </button>
 
-                    {/* EDITAR BUTTON */}
-                    <button className="playback-pill-btn green-outline">
-                        EDITAR
-                    </button>
-
-                    {/* MENU ICON */}
-                    <button className="playback-icon-btn" title="Menú">
-                        <i className="fas fa-bars"></i>
+                    <button className={`playback-btn-play ${isPlaying ? 'playing' : ''}`} onClick={togglePlay} title="Play / Pause">
+                        <i className={isPlaying ? 'fas fa-pause' : 'fas fa-play'}></i>
                     </button>
                 </div>
             </div>
@@ -584,61 +558,26 @@ export default function PlaybackStudioApp() {
                 </div>
             </div>
 
-            {/* 3. SECTION MARKERS & AUDIO WAVEFORM SECTION */}
-            <div className="playback-waveform-section">
-                {/* SECTION MARKER BADGES */}
-                <div className="playback-sections-header">
-                    {songSections.map(sec => (
-                        <button
-                            key={sec.id}
-                            className={`playback-section-badge ${activeSection === sec.id ? 'active' : ''}`}
-                            style={{ '--sec-color': sec.color }}
-                            onClick={() => {
-                                setActiveSection(sec.id);
-                                setCurrentTime(sec.startSec);
-                                Object.values(audioElementsRef.current).forEach(audio => {
-                                    try { audio.currentTime = sec.startSec; } catch (e) {}
-                                });
-                            }}
-                        >
-                            [{sec.id}] {sec.label}
-                        </button>
-                    ))}
+            {/* 3. TIMELINE & SEEK BAR (BARRA DE PROGRESO DE MINUTO ESPECÍFICO) */}
+            <div style={{ background: '#161822', padding: '16px 24px', borderRadius: '16px', margin: '1rem 0', border: '1px solid rgba(255,255,255,0.08)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', color: '#94a3b8', fontSize: '0.85rem', fontWeight: 700 }}>
+                    <span><i className="fas fa-clock" style={{ marginRight: '6px', color: '#22c55e' }}></i> {formatTime(currentTime)}</span>
+                    <span>Duración Total: {formatTime(totalTime)}</span>
                 </div>
-
-                {/* WAVEFORM CANVAS / VISUALIZER WITH PLAYHEAD LINE */}
-                <div className="playback-waveform-visualizer">
-                    <div className="playback-waveform-graph">
-                        {[...Array(64)].map((_, i) => {
-                            const h1 = 20 + Math.sin(i * 0.4) * 35 + Math.cos(i * 0.2) * 25;
-                            return (
-                                <div
-                                    key={i}
-                                    className="playback-wave-bar"
-                                    style={{
-                                        height: `${Math.max(15, Math.min(90, h1))}%`,
-                                        opacity: (i / 64) * 614 < currentTime ? 0.95 : 0.45
-                                    }}
-                                ></div>
-                            );
-                        })}
-                    </div>
-
-                    {/* VERTICAL PLAYHEAD CURSOR LINE */}
-                    <div
-                        className="playback-playhead-line"
-                        style={{ left: `${Math.min(100, (currentTime / totalTime) * 100)}%` }}
-                    >
-                        <div className="playback-playhead-head"></div>
-                    </div>
-                </div>
-            </div>
-
-            {/* MUTE MY INSTRUMENT ACTION BAR */}
-            <div className="playback-quick-actions">
-                <button className="playback-mute-my-inst-btn" onClick={handleMuteMyInstrument}>
-                    <i className="fas fa-volume-mute"></i> MUTEAR MI INSTRUMENTO ({myInstrument.toUpperCase()})
-                </button>
+                <input
+                    type="range"
+                    min="0"
+                    max={totalTime}
+                    value={currentTime}
+                    onChange={(e) => handleSeek(e.target.value)}
+                    style={{
+                        width: '100%',
+                        height: '10px',
+                        borderRadius: '5px',
+                        accentColor: '#22c55e',
+                        cursor: 'pointer'
+                    }}
+                />
             </div>
 
             {/* 4. VERTICAL CHANNEL STRIP MIXER CONSOLE GRID */}

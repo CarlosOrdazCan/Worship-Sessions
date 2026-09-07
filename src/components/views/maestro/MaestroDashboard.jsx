@@ -25,6 +25,61 @@ export default function MaestroDashboard() {
     const [nuevaTarea, setNuevaTarea] = useState({ titulo: '', descripcion: '', fechaLimite: '', horaLimite: '23:59' });
     const [archivoTarea, setArchivoTarea] = useState(null);
 
+    // ESTADO PARA TOMAR ASISTENCIA & EVALUACIÓN POR CLASE (TEORÍA Y TÉCNICA)
+    const hoyFecha = new Date().toISOString().slice(0, 10);
+    const [fechaClase, setFechaClase] = useState(hoyFecha);
+    const [asistenciaClaseForm, setAsistenciaClaseForm] = useState({});
+
+    const handleSaveAsistenciaClase = (e) => {
+        e.preventDefault();
+        if (!fechaClase) {
+            showToast('Selecciona una fecha de clase válida', 'error');
+            return;
+        }
+
+        updateDb(prev => {
+            const currentAsistencia = { ...(prev.asistenciaClase || {}) };
+            const currentCalificaciones = { ...(prev.calificaciones || {}) };
+
+            myStudents.forEach(s => {
+                const formData = asistenciaClaseForm[s.key] || {
+                    estado: 'presente',
+                    teoria: (prev.calificaciones?.[s.key]?.teoria || 85),
+                    tecnica: (prev.calificaciones?.[s.key]?.tecnica || 90),
+                    notas: ''
+                };
+
+                const keyLog = `${fechaClase}_${s.key}`;
+                currentAsistencia[keyLog] = {
+                    fecha: fechaClase,
+                    username: s.key,
+                    nombre: s.nombre || s.key,
+                    area: teacherArea,
+                    estado: formData.estado || 'presente',
+                    teoria: Number(formData.teoria) || 85,
+                    tecnica: Number(formData.tecnica) || 90,
+                    notas: formData.notas || ''
+                };
+
+                // Actualizar la calificación general del alumno con el último registro
+                currentCalificaciones[s.key] = {
+                    teoria: Number(formData.teoria) || 85,
+                    tecnica: Number(formData.tecnica) || 90,
+                    notas: formData.notas || '',
+                    ultimaActualizacion: fechaClase
+                };
+            });
+
+            return {
+                ...prev,
+                asistenciaClase: currentAsistencia,
+                calificaciones: currentCalificaciones
+            };
+        });
+
+        showToast(`Asistencia y Evaluaciones (Teoría y Técnica) guardadas para la clase del ${fechaClase}`, 'success');
+    };
+
     // ESTADO PARA NUEVO MATERIAL (archivos hasta 500MB)
     const [nuevoMaterial, setNuevoMaterial] = useState({ titulo: '', descripcion: '', enlace: '' });
     const [archivoMaterial, setArchivoMaterial] = useState(null);
@@ -202,14 +257,6 @@ export default function MaestroDashboard() {
                     </div>
                 </div>
 
-                <div style={{ display: 'flex', gap: '10px' }}>
-                    <button className="btn btn-secondary" onClick={() => setActiveSubview('perfil')}>
-                        <i className="fas fa-user-cog" style={{ marginRight: '6px' }}></i> Mi Perfil
-                    </button>
-                    <button className="btn btn-primary" onClick={() => setActiveSubview('ensambles')}>
-                        <i className="fas fa-sliders-h" style={{ marginRight: '6px' }}></i> Sala de Ensayo (Playback)
-                    </button>
-                </div>
             </div>
 
 
@@ -590,38 +637,231 @@ export default function MaestroDashboard() {
                 </div>
             )}
 
-            {/* TAB 4: MIS ALUMNOS */}
+            {/* TAB 4: LISTA DE ALUMNOS (DIRECTORIO DE CLASE) */}
             {currentSub === 'alumnos' && (
                 <div className="maestro-subview animate-fade-in">
                     <div className="glass-panel">
                         <div className="panel-header" style={{ marginBottom: '1.2rem' }}>
-                            <h3 style={{ margin: 0 }}><i className="fas fa-user-graduate" style={{ color: '#3b82f6', marginRight: '8px' }}></i> Directorio de Alumnos de {teacherArea} ({myStudents.length})</h3>
+                            <h3 style={{ margin: 0 }}><i className="fas fa-user-graduate" style={{ color: '#3b82f6', marginRight: '8px' }}></i> Lista y Directorio de Alumnos ({teacherArea})</h3>
+                            <span style={{ fontSize: '0.85rem', color: '#94a3b8' }}>Total matriculados: {myStudents.length}</span>
                         </div>
                         <div className="table-container" style={{ overflowX: 'auto' }}>
                             <table className="table-custom" style={{ width: '100%', borderCollapse: 'collapse' }}>
                                 <thead>
                                     <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.1)', color: '#94a3b8', fontSize: '0.85rem' }}>
                                         <th style={{ padding: '12px' }}>Alumno</th>
-                                        <th style={{ padding: '12px' }}>Instrumento</th>
-                                        <th style={{ padding: '12px' }}>Teoría (0-100)</th>
-                                        <th style={{ padding: '12px' }}>Técnica (0-100)</th>
+                                        <th style={{ padding: '12px' }}>Área / Instrumento</th>
+                                        <th style={{ padding: '12px' }}>Contacto / WhatsApp</th>
+                                        <th style={{ padding: '12px' }}>Promedio Teoría</th>
+                                        <th style={{ padding: '12px' }}>Promedio Técnica</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {myStudents.map(s => {
-                                        const cal = db.calificaciones?.[s.key] || { teoria: 85, tecnica: 90 };
-                                        return (
-                                            <tr key={s.key} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                                    {myStudents.length === 0 ? (
+                                        <tr><td colSpan="5" style={{ textAlign: 'center', padding: '2rem', color: '#94a3b8' }}>No hay alumnos registrados en esta especialidad.</td></tr>
+                                    ) : (
+                                        myStudents.map(s => {
+                                            const cal = db.calificaciones?.[s.key] || { teoria: 85, tecnica: 90 };
+                                            const phone = s.phone || s.telefono;
+                                            return (
+                                                <tr key={s.key} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                                                    <td style={{ padding: '12px' }}>
+                                                        <strong>{s.nombre || s.key}</strong>
+                                                        <div style={{ color: '#94a3b8', fontSize: '0.78rem' }}>@{s.key}</div>
+                                                    </td>
+                                                    <td style={{ padding: '12px' }}>
+                                                        <span className="badge badge-solvente">{s.area || s.instrument || teacherArea}</span>
+                                                    </td>
+                                                    <td style={{ padding: '12px' }}>
+                                                        {phone ? (
+                                                            <a href={`https://wa.me/${phone.replace(/[^0-9]/g, '')}`} target="_blank" rel="noreferrer" style={{ color: '#22c55e', fontWeight: 700, fontSize: '0.85rem', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                                                                <i className="fab fa-whatsapp"></i> {phone}
+                                                            </a>
+                                                        ) : (
+                                                            <span style={{ color: '#94a3b8', fontSize: '0.8rem' }}>Sin teléfono</span>
+                                                        )}
+                                                    </td>
+                                                    <td style={{ padding: '12px' }}>
+                                                        <strong style={{ color: cal.teoria >= 80 ? '#22c55e' : '#f59e0b' }}>{cal.teoria}</strong> / 100
+                                                    </td>
+                                                    <td style={{ padding: '12px' }}>
+                                                        <strong style={{ color: cal.tecnica >= 80 ? '#22c55e' : '#f59e0b' }}>{cal.tecnica}</strong> / 100
+                                                    </td>
+                                                </tr>
+                                            );
+                                        })
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* TAB 4.5: REGISTRO DE ASISTENCIA Y EVALUACIÓN POR CLASE (TEORÍA Y TÉCNICA) */}
+            {currentSub === 'asistencia' && (
+                <div className="maestro-subview animate-fade-in">
+                    <div className="glass-panel" style={{ marginBottom: '2rem' }}>
+                        <div className="panel-header" style={{ marginBottom: '1.2rem' }}>
+                            <h3 style={{ margin: 0 }}>
+                                <i className="fas fa-calendar-check" style={{ color: '#22c55e', marginRight: '8px' }}></i> 
+                                Tomar Asistencia y Evaluar Clase (Teoría & Técnica)
+                            </h3>
+                            <span style={{ fontSize: '0.85rem', color: '#94a3b8' }}>Evalúa por sesión de clase a tus alumnos</span>
+                        </div>
+
+                        <form onSubmit={handleSaveAsistenciaClase}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '1.5rem', flexWrap: 'wrap', background: 'rgba(255,255,255,0.03)', padding: '12px 16px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.08)' }}>
+                                <label style={{ fontWeight: 700, color: '#fff', fontSize: '0.9rem' }}>
+                                    <i className="fas fa-calendar-alt" style={{ marginRight: '6px', color: '#3b82f6' }}></i> Fecha de la Clase:
+                                </label>
+                                <input
+                                    type="date"
+                                    className="form-control"
+                                    value={fechaClase}
+                                    onChange={(e) => setFechaClase(e.target.value)}
+                                    style={{ width: '200px', padding: '8px 12px', background: 'rgba(255,255,255,0.08)', color: '#fff', borderRadius: '8px' }}
+                                    required
+                                />
+                            </div>
+
+                            <div className="table-container" style={{ overflowX: 'auto', marginBottom: '1.5rem' }}>
+                                <table className="table-custom" style={{ width: '100%', borderCollapse: 'collapse' }}>
+                                    <thead>
+                                        <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.1)', color: '#94a3b8', fontSize: '0.85rem' }}>
+                                            <th style={{ padding: '12px' }}>Alumno</th>
+                                            <th style={{ padding: '12px' }}>Asistencia</th>
+                                            <th style={{ padding: '12px' }}>Nota Teoría (0-100)</th>
+                                            <th style={{ padding: '12px' }}>Nota Técnica (0-100)</th>
+                                            <th style={{ padding: '12px' }}>Observaciones de Clase</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {myStudents.length === 0 ? (
+                                            <tr><td colSpan="5" style={{ textAlign: 'center', padding: '2rem', color: '#94a3b8' }}>No hay alumnos inscritos en esta clase.</td></tr>
+                                        ) : (
+                                            myStudents.map(s => {
+                                                const keyLog = `${fechaClase}_${s.key}`;
+                                                const savedRecord = db.asistenciaClase?.[keyLog];
+                                                const currentForm = asistenciaClaseForm[s.key] || {
+                                                    estado: savedRecord?.estado || 'presente',
+                                                    teoria: savedRecord?.teoria || (db.calificaciones?.[s.key]?.teoria || 85),
+                                                    tecnica: savedRecord?.tecnica || (db.calificaciones?.[s.key]?.tecnica || 90),
+                                                    notas: savedRecord?.notas || ''
+                                                };
+
+                                                return (
+                                                    <tr key={s.key} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                                                        <td style={{ padding: '12px' }}>
+                                                            <strong>{s.nombre || s.key}</strong>
+                                                            <div style={{ color: '#94a3b8', fontSize: '0.78rem' }}>@{s.key}</div>
+                                                        </td>
+                                                        <td style={{ padding: '12px' }}>
+                                                            <select
+                                                                className="form-control"
+                                                                value={currentForm.estado}
+                                                                onChange={(e) => setAsistenciaClaseForm({
+                                                                    ...asistenciaClaseForm,
+                                                                    [s.key]: { ...currentForm, estado: e.target.value }
+                                                                })}
+                                                                style={{ padding: '6px 10px', borderRadius: '8px', background: currentForm.estado === 'presente' ? 'rgba(34,197,94,0.15)' : currentForm.estado === 'ausente' ? 'rgba(239,68,68,0.15)' : 'rgba(245,158,11,0.15)', color: currentForm.estado === 'presente' ? '#22c55e' : currentForm.estado === 'ausente' ? '#ef4444' : '#f59e0b', fontWeight: 700 }}
+                                                            >
+                                                                <option value="presente">🟢 Presente</option>
+                                                                <option value="retardo">🟡 Retardo</option>
+                                                                <option value="ausente">🔴 Ausente / Falta</option>
+                                                            </select>
+                                                        </td>
+                                                        <td style={{ padding: '12px' }}>
+                                                            <input
+                                                                type="number"
+                                                                min="0"
+                                                                max="100"
+                                                                value={currentForm.teoria}
+                                                                onChange={(e) => setAsistenciaClaseForm({
+                                                                    ...asistenciaClaseForm,
+                                                                    [s.key]: { ...currentForm, teoria: e.target.value }
+                                                                })}
+                                                                style={{ width: '85px', padding: '6px 10px', borderRadius: '8px', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)', color: '#fff', fontWeight: 700 }}
+                                                                required
+                                                            />
+                                                        </td>
+                                                        <td style={{ padding: '12px' }}>
+                                                            <input
+                                                                type="number"
+                                                                min="0"
+                                                                max="100"
+                                                                value={currentForm.tecnica}
+                                                                onChange={(e) => setAsistenciaClaseForm({
+                                                                    ...asistenciaClaseForm,
+                                                                    [s.key]: { ...currentForm, tecnica: e.target.value }
+                                                                })}
+                                                                style={{ width: '85px', padding: '6px 10px', borderRadius: '8px', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)', color: '#fff', fontWeight: 700 }}
+                                                                required
+                                                            />
+                                                        </td>
+                                                        <td style={{ padding: '12px' }}>
+                                                            <input
+                                                                type="text"
+                                                                placeholder="Desempeño o comentarios..."
+                                                                value={currentForm.notas}
+                                                                onChange={(e) => setAsistenciaClaseForm({
+                                                                    ...asistenciaClaseForm,
+                                                                    [s.key]: { ...currentForm, notas: e.target.value }
+                                                                })}
+                                                                style={{ width: '100%', minWidth: '180px', padding: '6px 10px', borderRadius: '8px', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)', color: '#fff' }}
+                                                            />
+                                                        </td>
+                                                    </tr>
+                                                );
+                                            })
+                                        )}
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <button type="submit" className="btn btn-primary" style={{ padding: '12px 24px', borderRadius: '12px', fontWeight: 800 }}>
+                                <i className="fas fa-save" style={{ marginRight: '8px' }}></i> Guardar Asistencia & Calificaciones de la Clase
+                            </button>
+                        </form>
+                    </div>
+
+                    {/* HISTORIAL DE ASISTENCIAS Y EVALUACIONES REGISTRADAS */}
+                    <div className="glass-panel">
+                        <div className="panel-header" style={{ marginBottom: '1.2rem' }}>
+                            <h3 style={{ margin: 0 }}><i className="fas fa-history" style={{ color: '#3b82f6', marginRight: '8px' }}></i> Historial de Clases y Evaluaciones Registradas</h3>
+                        </div>
+
+                        <div className="table-container" style={{ overflowX: 'auto' }}>
+                            <table className="table-custom" style={{ width: '100%', borderCollapse: 'collapse' }}>
+                                <thead>
+                                    <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.1)', color: '#94a3b8', fontSize: '0.85rem' }}>
+                                        <th style={{ padding: '12px' }}>Fecha Clase</th>
+                                        <th style={{ padding: '12px' }}>Alumno</th>
+                                        <th style={{ padding: '12px' }}>Asistencia</th>
+                                        <th style={{ padding: '12px' }}>Teoría</th>
+                                        <th style={{ padding: '12px' }}>Técnica</th>
+                                        <th style={{ padding: '12px' }}>Observaciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {!db.asistenciaClase || Object.keys(db.asistenciaClase).length === 0 ? (
+                                        <tr><td colSpan="6" style={{ textAlign: 'center', padding: '2rem', color: '#94a3b8' }}>No hay registros de clases guardados todavía.</td></tr>
+                                    ) : (
+                                        Object.entries(db.asistenciaClase).map(([k, rec]) => (
+                                            <tr key={k} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                                                <td style={{ padding: '12px' }}><strong>{rec.fecha}</strong></td>
+                                                <td style={{ padding: '12px' }}>{rec.nombre || rec.username}</td>
                                                 <td style={{ padding: '12px' }}>
-                                                    <strong>{s.nombre || s.key}</strong>
-                                                    <div style={{ color: '#94a3b8', fontSize: '0.78rem' }}>@{s.key}</div>
+                                                    <span className={`badge ${rec.estado === 'presente' ? 'badge-solvente' : rec.estado === 'retardo' ? 'badge-warning' : 'badge-danger'}`}>
+                                                        {rec.estado}
+                                                    </span>
                                                 </td>
-                                                <td style={{ padding: '12px' }}>{s.area || s.instrument || teacherArea}</td>
-                                                <td style={{ padding: '12px' }}><strong>{cal.teoria}</strong> / 100</td>
-                                                <td style={{ padding: '12px' }}><strong>{cal.tecnica}</strong> / 100</td>
+                                                <td style={{ padding: '12px' }}><strong>{rec.teoria}</strong> / 100</td>
+                                                <td style={{ padding: '12px' }}><strong>{rec.tecnica}</strong> / 100</td>
+                                                <td style={{ padding: '12px' }}><small style={{ color: '#cbd5e1' }}>{rec.notas || '-'}</small></td>
                                             </tr>
-                                        );
-                                    })}
+                                        ))
+                                    )}
                                 </tbody>
                             </table>
                         </div>

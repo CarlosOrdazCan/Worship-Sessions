@@ -24,9 +24,11 @@ export const MENU_BY_ROLE = {
     ],
     maestro: [
         { id: 'dashboard', label: 'Mi Dashboard', icon: 'fas fa-chart-bar' },
+        { id: 'perfil', label: 'Mi Perfil', icon: 'fas fa-user-cog' },
+        { id: 'ensambles', label: 'Sala de Ensayo (Playback)', icon: 'fas fa-sliders-h' },
         { id: 'classroom', label: 'Tareas & Classroom', icon: 'fas fa-tasks' },
-        { id: 'alumnos', label: 'Alumnos & Asistencia', icon: 'fas fa-user-graduate' },
-        { id: 'ensambles', label: 'Ensambles', icon: 'fas fa-music' },
+        { id: 'alumnos', label: 'Lista de Alumnos', icon: 'fas fa-user-graduate' },
+        { id: 'asistencia', label: 'Tomar Asistencia & Notas', icon: 'fas fa-calendar-check' },
         { id: 'materiales', label: 'Materiales & Práctica', icon: 'fas fa-book' },
         { id: 'anuncios', label: 'Anuncios Staff', icon: 'fas fa-bullhorn' }
     ],
