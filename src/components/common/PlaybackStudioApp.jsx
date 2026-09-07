@@ -5,26 +5,25 @@ export default function PlaybackStudioApp() {
     const { db, currentUser, showToast } = useWorship();
     const myInstrument = currentUser?.area || currentUser?.instrument || 'Teclados';
 
-    // DEFAULT SETLIST + UPLOADED SONGS FROM PLAYBACK CLOUD
-    const defaultSetlist = [
-        { id: 's1', titulo: 'Júbilo', tono: 'D', autor: 'Miel San Marcos', bpm: 135, timeSig: '4/4', cover: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=150&auto=format&fit=crop&q=80' },
-        { id: 's2', titulo: 'Bienvenido...', tono: 'C', autor: 'Elevation Worship', bpm: 128, timeSig: '4/4', cover: 'https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=150&auto=format&fit=crop&q=80' },
-        { id: 's3', titulo: 'Hay Libertad', tono: 'F', autor: 'La Imet', bpm: 140, timeSig: '4/4', cover: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=150&auto=format&fit=crop&q=80' },
-        { id: 's4', titulo: 'Rey de Reyes', tono: 'D', autor: 'Hillsong Worship', bpm: 72, timeSig: '6/8', cover: 'https://images.unsplash.com/photo-1498038432885-c6f3f1b912ee?w=150&auto=format&fit=crop&q=80' }
-    ];
-
-    const uploadedSongs = db.canciones || [];
-    const setlist = [...uploadedSongs, ...defaultSetlist];
+    // ONLY SONGS UPLOADED BY USER FROM PLAYBACK CLOUD
+    const setlist = db.canciones || [];
 
     // PLAYBACK STATE
-    const [selectedSongId, setSelectedSongId] = useState('s1');
+    const [selectedSongId, setSelectedSongId] = useState(setlist[0]?.id || '');
+
+    useEffect(() => {
+        if (!selectedSongId && setlist.length > 0) {
+            setSelectedSongId(setlist[0].id);
+        }
+    }, [setlist, selectedSongId]);
+
     const currentSong = setlist.find(s => s.id === selectedSongId) || setlist[0];
 
     const [isPlaying, setIsPlaying] = useState(false);
-    const [bpm, setBpm] = useState(currentSong.bpm || 135);
-    const [timeSig, setTimeSig] = useState(currentSong.timeSig || '4/4');
-    const [currentTime, setCurrentTime] = useState(7); // seconds
-    const [totalTime, setTotalTime] = useState(614); // 10:14
+    const [bpm, setBpm] = useState(currentSong?.bpm || 135);
+    const [timeSig, setTimeSig] = useState(currentSong?.timeSig || '4/4');
+    const [currentTime, setCurrentTime] = useState(0); // seconds
+    const [totalTime, setTotalTime] = useState(300); // 5:00
     const [isPadActive, setIsPadActive] = useState(true);
     const [activeSection, setActiveSection] = useState('V1');
 
@@ -504,6 +503,18 @@ export default function PlaybackStudioApp() {
             try { audio.currentTime = sec; } catch (e) {}
         });
     };
+
+    if (!currentSong || setlist.length === 0) {
+        return (
+            <div style={{ background: '#161822', borderRadius: '18px', padding: '3.5rem 2rem', textAlign: 'center', border: '1px solid rgba(255,255,255,0.08)' }}>
+                <i className="fas fa-cloud-upload-alt" style={{ fontSize: '3.5rem', color: '#22c55e', marginBottom: '1.2rem' }}></i>
+                <h2 style={{ color: '#ffffff', marginBottom: '0.6rem', fontSize: '1.5rem' }}>No hay canciones en la Sala de Ensayo</h2>
+                <p style={{ color: '#94a3b8', maxWidth: '520px', margin: '0 auto 1.5rem', fontSize: '0.92rem', lineHeight: '1.6' }}>
+                    Sube las canciones y los stems de tu ensamble en el apartado de <strong style={{ color: '#2563eb' }}>Administración ➔ Cargar Canciones & Stems (Playback Cloud)</strong> para escucharlas y controlar sus faders en vivo.
+                </p>
+            </div>
+        );
+    }
 
     return (
         <div className="playback-ios-container">
