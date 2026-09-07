@@ -720,7 +720,7 @@ export default function MaestroDashboard() {
                                     className="form-control"
                                     value={fechaClase}
                                     onChange={(e) => setFechaClase(e.target.value)}
-                                    style={{ width: '200px', padding: '8px 12px', background: 'rgba(255,255,255,0.08)', color: '#fff', borderRadius: '8px' }}
+                                    style={{ width: '220px' }}
                                     required
                                 />
                             </div>

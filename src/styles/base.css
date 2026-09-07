@@ -253,3 +253,37 @@ option:hover, option:focus, option:active, option:checked {
     color: var(--text-muted);
 }
 
+/* INPUT DATE & TIME DARK THEME CALENDAR STYLING */
+input[type="date"], input[type="time"], .form-control[type="date"], .form-control[type="time"] {
+    color-scheme: dark !important;
+    background-color: #121420 !important;
+    color: #ffffff !important;
+    border: 1px solid rgba(255, 69, 0, 0.4) !important;
+    border-radius: 12px !important;
+    padding: 10px 16px !important;
+    font-size: 0.9rem !important;
+    font-weight: 700 !important;
+    outline: none !important;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4) !important;
+    transition: all 0.2s ease !important;
+}
+
+input[type="date"]:focus, input[type="time"]:focus, .form-control[type="date"]:focus, .form-control[type="time"]:focus {
+    border-color: #ff4500 !important;
+    box-shadow: 0 0 16px rgba(255, 69, 0, 0.5) !important;
+}
+
+/* CALENDAR PICKER ICON INVERT COLOR & NEON GLOW */
+input[type="date"]::-webkit-calendar-picker-indicator, input[type="time"]::-webkit-calendar-picker-indicator {
+    filter: invert(0.8) sepia(1) saturate(5) hue-rotate(340deg) !important;
+    cursor: pointer !important;
+    padding: 4px !important;
+    border-radius: 6px !important;
+    transition: transform 0.2s ease !important;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator:hover, input[type="time"]::-webkit-calendar-picker-indicator:hover {
+    filter: invert(1) !important;
+    transform: scale(1.1) !important;
+}
+
