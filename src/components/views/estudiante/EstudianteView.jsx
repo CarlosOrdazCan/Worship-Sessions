@@ -3,8 +3,21 @@ import { useWorship } from '../../../services/WorshipContext';
 import { calcularEstadoPago } from '../../../services/worshipDb';
 import PlaybackStudioApp from '../../common/PlaybackStudioApp';
 
+export function checkDeadlinePassed(fechaLimite, horaLimite = '23:59') {
+    if (!fechaLimite) return false;
+    try {
+        const [year, month, day] = fechaLimite.split('-').map(Number);
+        const [hours, minutes] = (horaLimite || '23:59').split(':').map(Number);
+        const deadline = new Date(year, month - 1, day, hours, minutes, 59);
+        const now = new Date();
+        return now > deadline;
+    } catch (e) {
+        return false;
+    }
+}
+
 export default function EstudianteView() {
-    const { db, activeSubview, setActiveSubview, currentUser, openModal, showToast } = useWorship();
+    const { db, updateDb, activeSubview, setActiveSubview, currentUser, openModal, showToast } = useWorship();
     const currentSub = activeSubview || 'classroom';
 
     const userKey = currentUser?.username || 'alumno1';
@@ -16,6 +29,20 @@ export default function EstudianteView() {
     const tareas = (db.tareas || []).filter(t => !t.area || (t.area || '').toLowerCase().includes(studentArea.toLowerCase()));
     const materiales = (db.materiales || []).filter(m => !m.area || (m.area || '').toLowerCase().includes(studentArea.toLowerCase()));
     const entregas = db.entregasTareas || {};
+
+    const handleDeleteEntrega = (keyEntrega, tituloTarea) => {
+        if (window.confirm(`¿Estás seguro de eliminar tu entrega para "${tituloTarea}"? Podrás subir una nueva evidencia antes de que expire la fecha límite.`)) {
+            updateDb(prev => {
+                const nextEntregas = { ...(prev.entregasTareas || {}) };
+                delete nextEntregas[keyEntrega];
+                return {
+                    ...prev,
+                    entregasTareas: nextEntregas
+                };
+            });
+            showToast('Entrega eliminada con éxito', 'info');
+        }
+    };
 
     // Metrónomo
     const [bpm, setBpm] = useState(90);
@@ -77,13 +104,24 @@ export default function EstudianteView() {
                                         tareas.map(t => {
                                             const keyEntrega = `${t.id}_${userKey}`;
                                             const entrega = entregas[keyEntrega];
+                                            const isExpired = checkDeadlinePassed(t.fechaLimite, t.horaLimite || '23:59');
+                                            const isGraded = Boolean(entrega?.calificacion || entrega?.estado === 'calificado');
+                                            const canModify = !isExpired && !isGraded;
+
                                             return (
                                                 <tr key={t.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
                                                     <td style={{ padding: '12px' }}>
                                                         <strong>{t.titulo}</strong>
                                                         <div style={{ color: '#94a3b8', fontSize: '0.8rem', marginTop: '2px' }}>{t.descripcion}</div>
                                                     </td>
-                                                    <td style={{ padding: '12px' }}>{t.fechaLimite}</td>
+                                                    <td style={{ padding: '12px' }}>
+                                                        <span>{t.fechaLimite} {t.horaLimite ? `(${t.horaLimite})` : ''}</span>
+                                                        {isExpired && (
+                                                            <div style={{ color: '#ef4444', fontSize: '0.75rem', fontWeight: 700, marginTop: '2px' }}>
+                                                                <i className="fas fa-clock" style={{ marginRight: '3px' }}></i> Plazo vencido
+                                                            </div>
+                                                        )}
+                                                    </td>
                                                     <td style={{ padding: '12px' }}>
                                                         {t.archivoLocal ? (
                                                             <a href={t.archivoLocal.dataUrl} download={t.archivoLocal.nombre} style={{ color: '#10b981', fontWeight: 700, fontSize: '0.85rem' }}>
@@ -95,18 +133,55 @@ export default function EstudianteView() {
                                                     </td>
                                                     <td style={{ padding: '12px' }}>
                                                         {entrega ? (
-                                                            <span className="badge badge-solvente">Entregado ({entrega.calificacion ? `${entrega.calificacion}/100` : 'En revisión'})</span>
+                                                            isGraded ? (
+                                                                <span className="badge badge-solvente">Calificado ({entrega.calificacion}/100)</span>
+                                                            ) : isExpired ? (
+                                                                <span className="badge badge-warning">Entregado (Plazo Cerrado)</span>
+                                                            ) : (
+                                                                <span className="badge badge-solvente">Entregado (En revisión)</span>
+                                                            )
+                                                        ) : isExpired ? (
+                                                            <span className="badge badge-danger">Plazo Vencido (No entregado)</span>
                                                         ) : (
                                                             <span className="badge badge-warning">Pendiente</span>
                                                         )}
                                                     </td>
                                                     <td style={{ padding: '12px' }}>
-                                                        <button
-                                                            className="btn btn-sm btn-primary"
-                                                            onClick={() => openModal('entregar-tarea', { tareaId: t.id, userKey })}
-                                                        >
-                                                            <i className="fas fa-upload" style={{ marginRight: '6px' }}></i> {entrega ? 'Reenviar' : 'Subir Video'}
-                                                        </button>
+                                                        {entrega ? (
+                                                            canModify ? (
+                                                                <div style={{ display: 'flex', gap: '6px' }}>
+                                                                    <button
+                                                                        className="btn btn-sm btn-secondary"
+                                                                        onClick={() => openModal('entregar-tarea', { tareaId: t.id, userKey, existingUrl: entrega.videoUrl })}
+                                                                        title="Editar entrega"
+                                                                    >
+                                                                        <i className="fas fa-edit" style={{ marginRight: '4px' }}></i> Editar
+                                                                    </button>
+                                                                    <button
+                                                                        className="btn btn-sm btn-danger"
+                                                                        onClick={() => handleDeleteEntrega(keyEntrega, t.titulo)}
+                                                                        title="Eliminar entrega"
+                                                                    >
+                                                                        <i className="fas fa-trash" style={{ marginRight: '4px' }}></i> Eliminar
+                                                                    </button>
+                                                                </div>
+                                                            ) : (
+                                                                <span style={{ color: '#94a3b8', fontSize: '0.78rem', fontWeight: 700 }}>
+                                                                    <i className="fas fa-lock" style={{ color: '#ef4444', marginRight: '4px' }}></i> Entrega Bloqueada
+                                                                </span>
+                                                            )
+                                                        ) : !isExpired ? (
+                                                            <button
+                                                                className="btn btn-sm btn-primary"
+                                                                onClick={() => openModal('entregar-tarea', { tareaId: t.id, userKey })}
+                                                            >
+                                                                <i className="fas fa-upload" style={{ marginRight: '6px' }}></i> Subir Video
+                                                            </button>
+                                                        ) : (
+                                                            <span style={{ color: '#ef4444', fontSize: '0.78rem', fontWeight: 700 }}>
+                                                                <i className="fas fa-times-circle" style={{ marginRight: '4px' }}></i> Expiró el Plazo
+                                                            </span>
+                                                        )}
                                                     </td>
                                                 </tr>
                                             );

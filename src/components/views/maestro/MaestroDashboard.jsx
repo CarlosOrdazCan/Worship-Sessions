@@ -213,6 +213,17 @@ export default function MaestroDashboard() {
         showToast(`Material de ${teacherArea} publicado a la clase`, 'success');
     };
 
+    // ELIMINAR MATERIAL DE ESTUDIO
+    const handleDeleteMaterial = (matId, titulo) => {
+        if (window.confirm(`¿Estás seguro de eliminar el material "${titulo}"?`)) {
+            updateDb(prev => ({
+                ...prev,
+                materiales: (prev.materiales || []).filter(m => m.id !== matId)
+            }));
+            showToast(`Material "${titulo}" eliminado exitosamente`, 'info');
+        }
+    };
+
     // GUARDAR CALIFICACIÓN INDIVIDUAL DE ALUMNO CON COMENTARIO (CLASSROOM)
     const handleGuardarEvaluacionTarea = (tareaId, studentKey) => {
         const keyEntrega = `${tareaId}_${studentKey}`;
@@ -941,7 +952,7 @@ export default function MaestroDashboard() {
                                             <h4 style={{ margin: '0 0 6px', color: '#ffffff', fontSize: '1.05rem' }}>{m.titulo}</h4>
                                         </div>
 
-                                        <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginTop: '10px' }}>
+                                        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '12px', paddingTop: '10px', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
                                             {m.enlace && (
                                                 <a href={m.enlace} target="_blank" rel="noreferrer" className="btn btn-sm btn-secondary" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
                                                     <i className="fas fa-external-link-alt"></i> Abrir Enlace
@@ -953,6 +964,14 @@ export default function MaestroDashboard() {
                                                     <i className="fas fa-download"></i> Descargar ({m.archivoLocal.nombre})
                                                 </a>
                                             )}
+
+                                            <button className="btn btn-sm btn-secondary" onClick={() => openModal('material', m)} title="Editar Material">
+                                                <i className="fas fa-edit"></i> Editar
+                                            </button>
+
+                                            <button className="btn btn-sm btn-danger" onClick={() => handleDeleteMaterial(m.id, m.titulo)} title="Eliminar Material">
+                                                <i className="fas fa-trash"></i> Eliminar
+                                            </button>
                                         </div>
                                     </div>
                                 ))

@@ -39,6 +39,7 @@ export default function ModalManager() {
                 {modal.name === 'evaluar-tarea' && <EvaluateHomeworkModal data={modal.data} onClose={closeModal} />}
                 {modal.name === 'cancion' && <SongModal onClose={closeModal} />}
                 {modal.name === 'asistencia' && <AttendanceModal data={modal.data} onClose={closeModal} />}
+                {modal.name === 'material' && <MaterialModal data={modal.data} onClose={closeModal} />}
             </div>
         </div>
     );
@@ -273,49 +274,150 @@ function GradeModal({ data, onClose }) {
 
 function DeliverHomeworkModal({ data, onClose }) {
     const { updateDb, showToast } = useWorship();
-    const [videoUrl, setVideoUrl] = useState('');
+    const key = `${data.tareaId}_${data.userKey}`;
+    const [videoUrl, setVideoUrl] = useState(data?.existingUrl || '');
 
     const handleSubmit = (e) => {
         e.preventDefault();
         if (!videoUrl) return;
 
-        const key = `${data.tareaId}_${data.userKey}`;
+        const now = new Date();
+        const fechaEntrega = now.toISOString().slice(0, 10);
+        const horaEntrega = now.toTimeString().slice(0, 5);
+
         updateDb(prev => ({
             ...prev,
             entregasTareas: {
                 ...(prev.entregasTareas || {}),
                 [key]: {
-                    id: 'e_' + Date.now(),
+                    ...(prev.entregasTareas?.[key] || {}),
+                    id: prev.entregasTareas?.[key]?.id || 'e_' + Date.now(),
                     tareaId: data.tareaId,
                     username: data.userKey,
                     videoUrl,
-                    fechaEntrega: new Date().toISOString().slice(0, 10),
+                    fechaEntrega,
+                    horaEntrega,
                     estado: 'entregado',
-                    calificacion: null,
-                    feedback: ''
+                    calificacion: prev.entregasTareas?.[key]?.calificacion || null,
+                    comentario: prev.entregasTareas?.[key]?.comentario || ''
                 }
             }
         }));
-        showToast('Tarea entregada exitosamente', 'success');
+        showToast(data?.existingUrl ? 'Entrega de tarea actualizada exitosamente' : 'Tarea entregada exitosamente', 'success');
         onClose();
     };
 
     return (
         <div>
             <div className="modal-header">
-                <h3><i className="fas fa-upload"></i> Entregar Tarea Práctica</h3>
+                <h3><i className="fas fa-upload"></i> {data?.existingUrl ? 'Editar Entrega de Tarea' : 'Entregar Tarea Práctica'}</h3>
                 <button className="modal-close" onClick={onClose}>&times;</button>
             </div>
             <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
                 <div className="form-group">
-                    <label>Enlace de Video o Grabación (YouTube, Drive, etc.):</label>
+                    <label style={{ fontWeight: 700 }}>Enlace de Video o Grabación (YouTube, Drive, etc.):</label>
                     <input type="url" className="form-control" placeholder="https://www.youtube.com/watch?v=..." value={videoUrl} onChange={(e) => setVideoUrl(e.target.value)} required />
                 </div>
                 <p className="text-muted" style={{ fontSize: '0.82rem' }}>
                     Sube tu práctica a YouTube (No listado) o Google Drive y pega aquí el enlace público para tu maestro.
                 </p>
-                <button type="submit" className="btn btn-primary">
-                    <i className="fas fa-paper-plane"></i> Enviar Entrega
+                <button type="submit" className="btn btn-primary" style={{ borderRadius: '10px', padding: '10px 20px', fontWeight: 800 }}>
+                    <i className="fas fa-paper-plane"></i> {data?.existingUrl ? 'Guardar Cambios de Entrega' : 'Enviar Entrega'}
+                </button>
+            </form>
+        </div>
+    );
+}
+
+function MaterialModal({ data, onClose }) {
+    const { updateDb, showToast } = useWorship();
+    const isEdit = !!data?.id;
+
+    const [form, setForm] = useState({
+        titulo: data?.titulo || '',
+        descripcion: data?.descripcion || '',
+        enlace: data?.enlace || '',
+        area: data?.area || 'General'
+    });
+    const [archivoLocal, setArchivoLocal] = useState(data?.archivoLocal || null);
+
+    const handleFile = (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        if (file.size > 500 * 1024 * 1024) {
+            showToast('El archivo supera los 500 MB permitidos', 'error');
+            return;
+        }
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+            setArchivoLocal({
+                nombre: file.name,
+                tipo: file.type,
+                tamano: (file.size / (1024 * 1024)).toFixed(2) + ' MB',
+                dataUrl: ev.target.result
+            });
+            showToast(`Archivo "${file.name}" seleccionado`, 'info');
+        };
+        reader.readAsDataURL(file);
+    };
+
+    const handleSubmit = (e) => {
+        e.preventDefault();
+        if (!form.titulo && !archivoLocal) {
+            showToast('Ingresa un título o adjunta un archivo', 'error');
+            return;
+        }
+
+        updateDb(prev => {
+            const list = prev.materiales || [];
+            if (isEdit) {
+                const nextList = list.map(m => m.id === data.id ? { ...m, ...form, archivoLocal } : m);
+                return { ...prev, materiales: nextList };
+            } else {
+                const newMat = {
+                    id: 'm_' + Date.now(),
+                    ...form,
+                    archivoLocal,
+                    fecha: new Date().toISOString().slice(0, 10)
+                };
+                return { ...prev, materiales: [newMat, ...list] };
+            }
+        });
+
+        showToast(isEdit ? `Material "${form.titulo}" actualizado exitosamente` : `Material "${form.titulo}" publicado exitosamente`, 'success');
+        onClose();
+    };
+
+    return (
+        <div>
+            <div className="modal-header">
+                <h3><i className="fas fa-book"></i> {isEdit ? 'Editar Material de Estudio' : 'Publicar Nuevo Material'}</h3>
+                <button className="modal-close" onClick={onClose}>&times;</button>
+            </div>
+            <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                <div className="form-group">
+                    <label style={{ fontWeight: 700 }}>Título del Material:</label>
+                    <input type="text" className="form-control" value={form.titulo} onChange={(e) => setForm({ ...form, titulo: e.target.value })} required />
+                </div>
+                <div className="form-group">
+                    <label style={{ fontWeight: 700 }}>Descripción (Opcional):</label>
+                    <textarea className="form-control" rows="2" value={form.descripcion} onChange={(e) => setForm({ ...form, descripcion: e.target.value })} />
+                </div>
+                <div className="form-group">
+                    <label style={{ fontWeight: 700 }}>Enlace Web / Video (Opcional):</label>
+                    <input type="url" className="form-control" value={form.enlace} onChange={(e) => setForm({ ...form, enlace: e.target.value })} />
+                </div>
+                <div className="form-group" style={{ background: 'rgba(255,255,255,0.03)', padding: '1rem', borderRadius: '10px', border: '1px dashed rgba(16,185,129,0.4)' }}>
+                    <label style={{ fontWeight: 700, color: '#10b981', display: 'block', marginBottom: '6px' }}>Adjuntar / Reemplazar Archivo Local (Hasta 500 MB):</label>
+                    <input type="file" onChange={handleFile} style={{ fontSize: '0.85rem' }} />
+                    {archivoLocal && (
+                        <div style={{ marginTop: '8px', color: '#10b981', fontSize: '0.85rem', fontWeight: 700 }}>
+                            <i className="fas fa-check-circle" style={{ marginRight: '6px' }}></i> {archivoLocal.nombre} ({archivoLocal.tamano})
+                        </div>
+                    )}
+                </div>
+                <button type="submit" className="btn btn-primary" style={{ marginTop: '10px', borderRadius: '10px', padding: '10px 20px', fontWeight: 800 }}>
+                    <i className="fas fa-save" style={{ marginRight: '6px' }}></i> {isEdit ? 'Guardar Cambios' : 'Publicar Material'}
                 </button>
             </form>
         </div>
